@@ -75,6 +75,31 @@ npx skills add jeandybryan/yerro-sprints \
 La herramienta elige la ruta de instalación para el host. Verifica en la
 configuración de Skills de tu host que aparezcan las seis.
 
+### Proyectos con pnpm
+
+La CLI `skills` (de [vercel-labs/skills](https://github.com/vercel-labs/skills))
+se instala a sí misma con pnpm. En un proyecto que ya usa pnpm, `npx skills`
+puede fallar con `EBADDEVENGINES`: `npx` es `npm exec`, y npm rechaza el
+`devEngines.packageManager` del proyecto antes de ejecutar nada.
+
+En un proyecto pnpm, usa `pnpm dlx`:
+
+```bash
+pnpm dlx skills add jeandybryan/yerro-sprints --list
+pnpm dlx skills add jeandybryan/yerro-sprints \
+  --skill '*' \
+  --agent cursor \
+  --copy \
+  --yes
+```
+
+Si por convención el equipo insiste en `npx`, antepón `--force` (degrada el
+aviso de motor a *warning* y deja correr la CLI):
+
+```bash
+npx --force skills add jeandybryan/yerro-sprints --list
+```
+
 ### Instalación manual
 
 Copia `skills/` al directorio de skills soportado por el host. En Cursor puede

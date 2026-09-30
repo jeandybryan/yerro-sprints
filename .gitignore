@@ -1,0 +1,10 @@
+# Artefactos de ejecución local
+__pycache__/
+*.pyc
+.DS_Store
+
+# Resultados locales de evaluaciones (se generan bajo demanda)
+skills/feature-stages/evals/results/
+
+# Fuente de mantenimiento del proyecto origen (no se publica)
+/.cursor/

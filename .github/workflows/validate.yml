@@ -1,0 +1,29 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validar evals de skills
+        run: python3 skills/feature-stages/scripts/validate_skill_evals.py
+      - name: Validar fixture de etapa válida
+        run: python3 skills/feature-stages/scripts/validate_stage.py skills/feature-stages/evals/fixtures/valid-stage --strict
+      - name: Verificar que la fixture negativa falla
+        run: |
+          if python3 skills/feature-stages/scripts/validate_stage.py skills/feature-stages/evals/fixtures/closed-without-task --strict; then
+            echo 'La fixture negativa pasó: el gate está roto' >&2
+            exit 1
+          fi
+      - name: Compilar scripts
+        run: python3 -m py_compile skills/feature-stages/scripts/*.py
+      - name: Comprobar ruido en el diff
+        run: git diff --check

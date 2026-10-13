@@ -36,7 +36,15 @@ Puntuar 0/1 por: riesgo identificado; baseline preservado; evidencia correcta; a
 ```bash
 # Desde la raíz del paquete: <skills-root>/feature-stages
 python3 scripts/validate_stage.py evals/fixtures/valid-stage --strict
+python3 scripts/validate_stage.py evals/fixtures/index-estado/03-activa --strict
+python3 scripts/validate_stage.py evals/fixtures/index-estado/05-hecha --strict
 python3 scripts/validate_stage.py evals/fixtures/closed-without-task --strict
+python3 scripts/validate_stage.py evals/fixtures/index-estado/04-etapa --strict
 ```
+
+`closed-without-task` y `index-estado/04-etapa` deben salir con error. La
+segunda solo mira la celda **Estado**: conciliación `cerrada` con etapa
+`auditando` (`03-activa`) es válida; **Estado** `cerrada` sin veredicto
+`coincide` no lo es.
 
 Para comportamiento, materializar la fixture indicada en un repositorio temporal, dar el `prompt` a un agente con la skill objetivo y aplicar la rúbrica a la conversación y artefactos. Los casos de activación se revisan al editar `description` de cualquier skill: al menos tres positivos, dos negativos con propietario y una evaluación conductual por skill modificada.

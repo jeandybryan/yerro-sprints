@@ -36,6 +36,36 @@ def read(path: Path) -> str:
     return path.read_text(encoding="utf-8") if path.exists() else ""
 
 
+def split_row(line: str) -> list[str]:
+    return [cell.strip() for cell in line.split("|")]
+
+
+def stage_index_estado(index: str, stage_name: str) -> str | None:
+    """Celda Estado de la etapa en el índice, identificada por el enlace de Carpeta."""
+    header: list[str] | None = None
+    for line in index.splitlines():
+        if not line.strip().startswith("|"):
+            continue
+        cells = split_row(line)
+        if "Conciliación" in cells and "Estado" in cells and "Carpeta" in cells:
+            header = cells
+            break
+    if header is None:
+        return None
+    folder_at = header.index("Carpeta")
+    state_at = header.index("Estado")
+    link = f"]({stage_name}/"
+    for line in index.splitlines():
+        if not line.strip().startswith("|"):
+            continue
+        cells = split_row(line)
+        if folder_at >= len(cells) or state_at >= len(cells):
+            continue
+        if link in cells[folder_at]:
+            return cells[state_at]
+    return None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("stage", type=Path)
@@ -108,10 +138,10 @@ def main() -> int:
 
     index = read(stage.parent / "README.md")
     if index:
-        row = next((line for line in index.splitlines() if stage.name in line and "|" in line), "")
-        if row:
+        estado = stage_index_estado(index, stage.name)
+        if estado is not None:
             result.require(
-                "cerrada" not in row.lower() or has_coincide,
+                "cerrada" not in estado.lower() or has_coincide,
                 "índice marca etapa cerrada sin AUDIT.md con veredicto coincide",
             )
     return finish(result)

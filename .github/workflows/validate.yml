@@ -16,11 +16,18 @@ jobs:
       - name: Validar evals de skills
         run: python3 skills/feature-stages/scripts/validate_skill_evals.py
       - name: Validar fixture de etapa válida
-        run: python3 skills/feature-stages/scripts/validate_stage.py skills/feature-stages/evals/fixtures/valid-stage --strict
+        run: |
+          python3 skills/feature-stages/scripts/validate_stage.py skills/feature-stages/evals/fixtures/valid-stage --strict
+          python3 skills/feature-stages/scripts/validate_stage.py skills/feature-stages/evals/fixtures/index-estado/03-activa --strict
+          python3 skills/feature-stages/scripts/validate_stage.py skills/feature-stages/evals/fixtures/index-estado/05-hecha --strict
       - name: Verificar que la fixture negativa falla
         run: |
           if python3 skills/feature-stages/scripts/validate_stage.py skills/feature-stages/evals/fixtures/closed-without-task --strict; then
             echo 'La fixture negativa pasó: el gate está roto' >&2
+            exit 1
+          fi
+          if python3 skills/feature-stages/scripts/validate_stage.py skills/feature-stages/evals/fixtures/index-estado/04-etapa --strict; then
+            echo 'El índice cerrado pasó sin veredicto coincide: el gate está roto' >&2
             exit 1
           fi
       - name: Compilar scripts

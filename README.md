@@ -191,7 +191,9 @@ Pídele: **"audita la etapa NN"**.
 | `borrador-corte` → `abierta` → `cerrada` | `borrador` → `conciliando` → `lista` → `implementando` → `auditando` → `cerrada` |
 
 La conciliación y el trabajo activo se anotan por separado en el índice; una
-etapa quedará `bloqueada` solo con una causa y un desbloqueador escritos.
+etapa quedará `bloqueada` solo con una causa y un desbloqueador escritos. El
+validador trata la etapa como cerrada solo cuando la celda **Estado** de su
+fila lo dice.
 
 ### Reglas de oro
 
@@ -212,14 +214,31 @@ python3 skills/feature-stages/scripts/validate_stage.py \
   skills/feature-stages/evals/fixtures/valid-stage --strict
 ```
 
-El segundo comando debe terminar correctamente. La fixture negativa
-`closed-without-task` debe fallar: prueba que el gate rechaza una conciliación
-cerrada sin lista implementable.
+El segundo comando debe terminar correctamente. Estas dos fixtures también
+deben terminar correctamente: conciliación `cerrada` con etapa `auditando`, y
+etapa `cerrada` con veredicto `coincide`.
+
+```bash
+python3 skills/feature-stages/scripts/validate_stage.py \
+  skills/feature-stages/evals/fixtures/index-estado/03-activa --strict
+python3 skills/feature-stages/scripts/validate_stage.py \
+  skills/feature-stages/evals/fixtures/index-estado/05-hecha --strict
+```
+
+La fixture negativa `closed-without-task` debe fallar: prueba que el gate
+rechaza una conciliación cerrada sin lista implementable. `index-estado/04-etapa`
+también debe fallar: el índice marca **Estado** `cerrada` sin veredicto
+`coincide`.
 
 ```bash
 if python3 skills/feature-stages/scripts/validate_stage.py \
   skills/feature-stages/evals/fixtures/closed-without-task --strict; then
   echo 'La fixture negativa pasó: el gate está roto' >&2
+  exit 1
+fi
+if python3 skills/feature-stages/scripts/validate_stage.py \
+  skills/feature-stages/evals/fixtures/index-estado/04-etapa --strict; then
+  echo 'El índice cerrado pasó sin veredicto coincide: el gate está roto' >&2
   exit 1
 fi
 ```
@@ -231,7 +250,7 @@ python3 -m py_compile skills/feature-stages/scripts/*.py
 git diff --check
 ```
 
-Estas cuatro verificaciones se ejecutan automáticamente en CI
+Estas verificaciones se ejecutan automáticamente en CI
 (`.github/workflows/validate.yml`).
 
 ## Actualización, versionado y seguridad

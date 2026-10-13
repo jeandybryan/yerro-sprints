@@ -23,6 +23,7 @@ los artefactos.
 - [ ] Ningún gate fue rebajado para que una fixture pase.
 - [ ] Se ejecutaron las validaciones locales (ver README, sección de validación).
 - [ ] La fixture negativa `closed-without-task` sigue fallando.
+- [ ] `index-estado/04-etapa` sigue fallando y `03-activa` / `05-hecha` pasan.
 - [ ] Cualquier cambio de descripción revisa los casos de activación positivos
       y negativos.
 - [ ] Cualquier cambio de flujo, plantilla o validador añadió una prueba de regresión.
@@ -33,16 +34,25 @@ los artefactos.
 python3 skills/feature-stages/scripts/validate_skill_evals.py
 python3 skills/feature-stages/scripts/validate_stage.py \
   skills/feature-stages/evals/fixtures/valid-stage --strict
+python3 skills/feature-stages/scripts/validate_stage.py \
+  skills/feature-stages/evals/fixtures/index-estado/03-activa --strict
+python3 skills/feature-stages/scripts/validate_stage.py \
+  skills/feature-stages/evals/fixtures/index-estado/05-hecha --strict
 python3 -m py_compile skills/feature-stages/scripts/*.py
 git diff --check
 ```
 
-La fixture negativa debe fallar:
+Las fixtures negativas deben fallar:
 
 ```bash
 if python3 skills/feature-stages/scripts/validate_stage.py \
   skills/feature-stages/evals/fixtures/closed-without-task --strict; then
   echo 'La fixture negativa pasó: el gate está roto' >&2
+  exit 1
+fi
+if python3 skills/feature-stages/scripts/validate_stage.py \
+  skills/feature-stages/evals/fixtures/index-estado/04-etapa --strict; then
+  echo 'El índice cerrado pasó sin veredicto coincide: el gate está roto' >&2
   exit 1
 fi
 ```

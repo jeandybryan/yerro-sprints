@@ -24,6 +24,7 @@ los artefactos.
 - [ ] Se ejecutaron las validaciones locales (ver README, sección de validación).
 - [ ] La fixture negativa `closed-without-task` sigue fallando.
 - [ ] `index-estado/04-etapa` sigue fallando y `03-activa` / `05-hecha` pasan.
+- [ ] `ca-tipo` sin `--strict` solo avisa `CA-05`; con `--strict` falla.
 - [ ] Cualquier cambio de descripción revisa los casos de activación positivos
       y negativos.
 - [ ] Cualquier cambio de flujo, plantilla o validador añadió una prueba de regresión.
@@ -53,6 +54,13 @@ fi
 if python3 skills/feature-stages/scripts/validate_stage.py \
   skills/feature-stages/evals/fixtures/index-estado/04-etapa --strict; then
   echo 'El índice cerrado pasó sin veredicto coincide: el gate está roto' >&2
+  exit 1
+fi
+python3 skills/feature-stages/scripts/validate_stage.py \
+  skills/feature-stages/evals/fixtures/ca-tipo
+if python3 skills/feature-stages/scripts/validate_stage.py \
+  skills/feature-stages/evals/fixtures/ca-tipo --strict; then
+  echo 'ca-tipo con --strict pasó: el gate está roto' >&2
   exit 1
 fi
 ```

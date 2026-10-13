@@ -17,7 +17,19 @@ TASK_RE = re.compile(
     re.M | re.S,
 )
 STATE_RE = re.compile(r"\*\*Estado:\*\*\s*([^\n]+)")
-CA_TYPE_RE = re.compile(r"\[(?:condición de salida\s*\|\s*invariante acumulado|invariante acumulado\s*\|\s*condición de salida)\]", re.I)
+# Misma línea del CA: placeholder, una opción entre corchetes, o prosa.
+# No basta la palabra suelta «salida» o «invariante» en el cuerpo.
+CA_TYPE_RE = re.compile(
+    "|".join(
+        (
+            r"\[condición de salida(?:\s*\|\s*invariante acumulado)?\]",
+            r"\[invariante acumulado(?:\s*\|\s*condición de salida)?\]",
+            r"\bsalida de etapa\b",
+            r"\binvariante acumulada\b",
+        )
+    ),
+    re.I,
+)
 EVIDENCE_RE = re.compile(r"estructural|conductual|sistema|ambiental", re.I)
 
 

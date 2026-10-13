@@ -243,6 +243,21 @@ if python3 skills/feature-stages/scripts/validate_stage.py \
 fi
 ```
 
+`ca-tipo` declara el tipo elegido (`[condición de salida]`,
+`[invariante acumulado]`, `Salida de etapa`, `Invariante acumulada` y el
+placeholder en orden inverso). Sin `--strict` solo avisa `CA-05`, que no
+trae marcador. Con `--strict` ese aviso es error y el proceso falla.
+
+```bash
+python3 skills/feature-stages/scripts/validate_stage.py \
+  skills/feature-stages/evals/fixtures/ca-tipo
+if python3 skills/feature-stages/scripts/validate_stage.py \
+  skills/feature-stages/evals/fixtures/ca-tipo --strict; then
+  echo 'ca-tipo con --strict pasó: el gate está roto' >&2
+  exit 1
+fi
+```
+
 También:
 
 ```bash

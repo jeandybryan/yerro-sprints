@@ -9,6 +9,10 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Corregido
 
+- El validador reconoce el tipo de un CA cuando la línea elige una opción
+  (`[condición de salida]`, `[invariante acumulado]`) o lo declara en prosa
+  (`Salida de etapa`, `Invariante acumulada`). El placeholder con las dos
+  opciones sigue valiendo. Una línea sin esos marcadores sigue avisando.
 - El validador del índice marca una etapa como cerrada solo si la celda
   **Estado** de su fila contiene `cerrada`. La conciliación puede estar
   `cerrada` mientras la etapa sigue en `lista`, `implementando` o `auditando`.
@@ -19,6 +23,8 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 - Fixture `index-estado`: `03-activa` y `05-hecha` deben pasar;
   `04-etapa` debe fallar.
+- Fixture `ca-tipo`: los CA con marcador no avisan; `CA-05`, sin marcador,
+  avisa y con `--strict` falla el proceso.
 
 ## [1.0.0] - 2026-09-30
 

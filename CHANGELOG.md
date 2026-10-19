@@ -24,6 +24,9 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
   mención del nombre en **Trabajo activo** de otra fila no cuenta.
 
 ### Añadido
+- Trazabilidad ejecutable con decisiones `S-NN`, `Origen: S-NN`, `Test-first:` y `Test:` en tareas, y `**Trazabilidad:**` en auditorías.
+- Nuevas fixtures negativas para decisión origen, test-first y trazabilidad de evidencia; `validate_stage.py` las rechaza en modo estricto.
+
 
 - Contrato ejecutable de solo lectura: `next_step.py` lee los artefactos y
   devuelve el estado público (`trabajando`, `verificando`, `listo`,

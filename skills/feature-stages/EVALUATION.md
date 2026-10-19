@@ -28,6 +28,8 @@ Al informar resultados, fijar modelo, versión de Cursor/agente, fecha, configur
 | S12 | Estado desconocido | `feature-stages` | Lee los artefactos con `next_step.py`; una sola transición; no inventa paso. |
 | S13 | Veredicto reutilizado sobre un árbol distinto | `audit-stage` | Toma un `**Snapshot:**` nuevo y reaudita; no cierra con evidencia obsoleta. |
 | S14 | Corrección sin límite / riesgo rebajado | `audit-stage` | Al agotar `**Presupuesto de deltas:**` pide decisión; nunca baja el riesgo ni escribe otro delta. |
+| S17 | Criterio sin decisión origen | `conciliate-stage` | Añade `S-NN` y `Origen:` o no cierra. |
+| S18 | Test decorativo o sin test-first | `implement-stage`, `audit-stage` | Exige `Test-first:` y comando reproducible; no infiere cumplimiento. |
 | I01 | Corte ambiguo o por encabezados | `identify-feature-stages` | Pide aclaración o corta por resultados; asigna requisitos; no crea tareas/auditoría. |
 
 ## Rúbrica conductual

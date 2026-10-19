@@ -16,6 +16,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from snapshot import SnapshotError, identity  # noqa: E402
 
 CA_RE = re.compile(r"^\s*-\s*\*\*(CA-\d+)\b", re.M)
+DECISION_RE = re.compile(r"^\s*-\s*\*\*(S-\d+)\s+—", re.M)
+CA_ORIGIN_RE = re.compile(r"\bOrigen:\s*(S-\d+)", re.I)
+TEST_FIRST_RE = re.compile(r"^\s*Test-first:\s*(.+)$", re.I | re.M)
+TEST_COMMAND_RE = re.compile(r"(?:^|;\s*)Test:\s*([^;\n]+)", re.I | re.M)
+TRACE_RE = re.compile(r"^\s*\*\*Trazabilidad:\*\*\s*(.+)$", re.I | re.M)
+E_COMMAND_RE = re.compile(r"\|\s*E-\d+\s*\|.*?\|\s*([^|]+?)\s*\|.*?\|")
 TASK_RE = re.compile(
     r"^\s*-\s*\[[ xX]\]\s*((?:D\d+-)?T\d+)\b(.*?)(?=^\s*-\s*\[[ xX]\]|\Z)",
     re.M | re.S,
@@ -124,6 +130,9 @@ def main() -> int:
     closed = bool(state and "cerrada" in state.group(1).lower())
     ca_ids = CA_RE.findall(conciliation)
     result.require(bool(ca_ids), "no hay CA-NN en CONCILIACION.md")
+    decision_ids = DECISION_RE.findall(conciliation)
+    result.require(bool(decision_ids), "no hay decisiones S-NN en CONCILIACION.md", legacy=True)
+    result.require(len(decision_ids) == len(set(decision_ids)), "hay IDs S-NN duplicados")
     result.require(len(ca_ids) == len(set(ca_ids)), "hay IDs CA duplicados")
 
     declared_risk = RISK_RE.search(conciliation)
@@ -141,6 +150,11 @@ def main() -> int:
             f"{ca} no declara tipo condición de salida/invariante acumulado",
             legacy=True,
         )
+        result.require(
+            bool(CA_ORIGIN_RE.search(line)),
+            f"{ca} no enlaza una decisión S-NN mediante Origen:",
+            legacy=True,
+        )
         result.require(bool(EVIDENCE_RE.search(line)), f"{ca} no declara nivel de evidencia")
 
     task_bodies: dict[str, str] = {}
@@ -152,6 +166,8 @@ def main() -> int:
         for task_id, body in TASK_RE.findall(tasks):
             task_bodies[task_id] = body
             result.require(bool(re.search(r"CA-\d+", body)), f"{task_id} no enlaza CA-NN")
+            result.require(bool(TEST_FIRST_RE.search(body)), f"{task_id} no declara Test-first:", legacy=True)
+            result.require(bool(TEST_COMMAND_RE.search(body)), f"{task_id} no declara Test:", legacy=True)
             verification = re.search(r"Verificar:\s*(.*)", body, re.I)
             result.require(bool(verification), f"{task_id} no contiene Verificar:")
             if verification:
@@ -190,6 +206,8 @@ def main() -> int:
                 f"AUDIT coincide no demuestra {ca}=cumple",
             )
         result.require("### Ledger de evidencia" in audit, "AUDIT coincide sin ledger de evidencia", legacy=True)
+        result.require(bool(TRACE_RE.search(audit)), "AUDIT coincide sin **Trazabilidad:** CA → T → E", legacy=True)
+        result.require(bool(re.search(r"\bE-\d+\b", audit)), "AUDIT coincide sin evidencia E-NN", legacy=True)
         for body in coincide_passes:
             valid_snapshots = [
                 item.strip() for item in SNAPSHOT_RE.findall(body)

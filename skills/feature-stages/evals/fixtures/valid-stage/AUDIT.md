@@ -4,6 +4,7 @@
 
 **Snapshot:** head=0000000000000000000000000000000000000000 tree=1111111111111111111111111111111111111111 dirty=no exclude=ninguno
 **Riesgo auditado:** medio
+**Trazabilidad:** CA-01 → T1 → test_focal.py → E-01
 
 | Criterio | Afirmaciones auditadas | Tareas | Resultado | Evidencia reproducible | Limitaciones |
 |----------|-------------------------|--------|-----------|-------------------------|--------------|

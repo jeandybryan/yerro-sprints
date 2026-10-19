@@ -112,9 +112,13 @@ STAGE = """# Etapa 01 — snapshot
 **Estado:** cerrada
 **Riesgo:** medio
 
+## Aclaraciones
+
+- **S-01 — Decisión:** se valida el snapshot antes del cierre.
+
 ## Criterios de aceptación
 
-- **CA-01 — [condición de salida]:** estímulo → resultado; límite; evidencia `conductual`.
+- **CA-01 — [condición de salida]:** estímulo → resultado; límite; evidencia `conductual`. Origen: S-01
 """
 
 TASKS = """# Tareas
@@ -124,6 +128,7 @@ TASKS = """# Tareas
 ## Listado
 
 - [ ] T1 — implementar salida (CA-01)
+  Test-first: sí; Test: pytest -q test_focal.py;
   Verificar: nivel `conductual`; ejecutar test focalizado; oráculo observable: exit 0.
 """
 
@@ -133,6 +138,7 @@ AUDIT = """# Auditoría
 
 **Snapshot:** {snapshot}
 **Riesgo auditado:** medio
+**Trazabilidad:** S-01 → CA-01 → T1 → test_focal.py → E-01
 
 | Criterio | Afirmaciones auditadas | Tareas | Resultado | Evidencia reproducible | Limitaciones |
 |----------|-------------------------|--------|-----------|-------------------------|--------------|

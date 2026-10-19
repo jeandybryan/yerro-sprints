@@ -60,3 +60,4 @@ skills/
   implement-stage/SKILL.md
   audit-stage/SKILL.md
 ```
+- Cada CA nuevo debe enlazar una decisión `S-NN`; cada tarea nueva debe declarar `Test-first:` y `Test:`; una auditoría debe conservar la cadena `S → CA → T → test → E`.

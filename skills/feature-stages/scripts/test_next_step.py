@@ -168,6 +168,9 @@ def check_cli() -> None:
 VALIDATE_REJECTED = [
     ("coincide-sin-snapshot", "sin **Snapshot:**"),
     ("snapshot-de-pasada-anterior", "sin **Snapshot:**"),
+    ("trazabilidad-invalida", "no hay decisiones S-NN"),
+    ("test-first-invalido", "no declara Test-first"),
+    ("audit-trazabilidad-invalida", "sin **Trazabilidad:**"),
     ("riesgo-rebajado", "rebaja el riesgo"),
 ]
 

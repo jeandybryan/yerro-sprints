@@ -126,15 +126,17 @@ Una frase que describa qué capacidad queda utilizable al cerrar la etapa.
 ## Aclaraciones
 
 - **Baseline:** versión/fecha de la conciliación que estas decisiones fijan.
-- AAAA-MM-DD — **Decisión:** …
+- **S-01 — Decisión:** …
+  - Cita: «…»
   - Motivo: …
   - Consecuencias: …
+  - Fecha: AAAA-MM-DD
 
 ## Criterios de aceptación
 
 - **CA-01 — [condición de salida | invariante acumulado]:** precondición/estímulo → resultado
   observable; fallo, límite o promesa negativa relevante; evidencia
-  `estructural | conductual | sistema | ambiental`.
+  `estructural | conductual | sistema | ambiental`. `Origen: S-01`.
   - Si es `ambiental`: entorno/configuración, ventana, umbral y artefacto/log esperado.
 - **CA-02:** …
 
@@ -194,7 +196,8 @@ action, acceptance criterion/source pointer, and verification.
 
 ## Listado
 
-- [ ] T1 — … (CA-01; spec §…)
+- [ ] T1 — … (CA-01; Origen: S-01; spec §…)
+  Test-first: sí; Test: <comando que debe fallar antes del cambio>;
   Impacto: módulos/contratos | datos/migración | config | lifecycle/recovery |
   observabilidad | perfil/hardware | limpieza/rollback (solo lo aplicable).
   Verificar: nivel `estructural | conductual | sistema | ambiental`; procedimiento
@@ -232,6 +235,7 @@ Items the agent must not do even if convenient (from “No entra”).
 **Contra:** TAREAS.md (principal)
 **Snapshot:** head=… tree=… dirty=… exclude=…
 **Riesgo auditado:** bajo | medio | alto
+**Trazabilidad:** S-01 → CA-01 → T1 → <test> → E-01
 **Baseline:** conciliación cerrada <fecha>; origen de tareas <fecha>; entorno <entorno/configuración relevante>
 
 | Criterio | Afirmaciones auditadas | Tareas | Resultado | Evidencia reproducible | Limitaciones |
@@ -250,7 +254,8 @@ Items the agent must not do even if convenient (from “No entra”).
 
 - Tests/lints relevantes ejecutados en esta pasada.
 - Métodos `Verificar:` de TAREAS cubiertos.
-- Trazabilidad inversa de cambios a CA/tarea revisada.
+- Trazabilidad inversa de cambios a S/CA/tarea revisada.
+- Cada `Test-first:` existía y fallaba o demostraba el hueco antes de la implementación; la auditoría registra la mutación o la razón por la que no aplica.
 
 ### Desviaciones de alcance
 
@@ -273,6 +278,14 @@ same candidate. If the tree changes after the pass, the verdict is stale and
 the stage must be audited again; never reuse it to close. The feature root is
 excluded so writing this file does not invalidate its own evidence, and
 `exclude=` travels inside the value so verification recomputes the same tree.
+
+## Trazabilidad y test-first
+
+- Cada decisión acordada tiene un ID estable `S-NN`, cita verbal exacta cuando la haya, fecha, motivo y consecuencias. No se recicla un ID para otra decisión.
+- Cada `CA-NN` incluye `Origen: S-NN`; un criterio sin decisión origen no puede cerrar en modo estricto.
+- Cada tarea incluye `Test-first: sí` y `Test: <comando>`. El comando debe expresar el oráculo y existir antes de marcar la tarea como implementada.
+- `AUDIT.md` conserva `**Trazabilidad:** S-NN → CA-NN → T-NN → test → E-NN` y no acepta evidencia sin procedimiento reproducible.
+- Si el test-first no puede ejecutarse, la tarea es `no verificado`; no se infiere `cumple`.
 
 `**Riesgo auditado:**` must be greater than or equal to the risk frozen in
 `CONCILIACION.md`. Raising it is a finding; lowering it requires reopening the

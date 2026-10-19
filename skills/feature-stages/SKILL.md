@@ -168,12 +168,12 @@ independently blocks the same step.
 - Stages are **implementable deliverables**, not 1:1 spec headings.
 - Each stage has one observable outcome, dependencies, acceptance
   criteria, risks/compatibility notes, and explicit exclusions.
-- A criterion is a **condición de salida** or an **invariante acumulado**.
+- A criterion is a **condición de salida** or an **invariante acumulado** and links to its decision source through `Origen: S-NN`.
   A condición de salida can be true at that historical point (for example
   “does not yet start a loop”); later approved stages may supersede it. An
   invariante acumulado must remain true and is rechecked by later audits.
 - Spec context sections bind to stages; they are not stages by themselves.
-- Tasks say **how** to satisfy criteria; they do not replace criteria.
+- Tasks say **how** to satisfy criteria; they do not replace criteria. Every implementation task declares `Test-first: sí` and a reproducible `Test:` command before implementation.
 - Evidence has a declared level: **structural** (source/config), **conductual**
   (focused test), **system** (integrated process) or **ambiental** (real
   host/hardware/operation). Verification proves the agreed build; validation

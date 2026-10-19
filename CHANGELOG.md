@@ -9,6 +9,10 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Corregido
 
+- `generate-stage-tasks` ya no pide ejecutar el validador estructural antes de
+  escribir `TAREAS.md`: con la conciliación cerrada y sin lista, el contrato
+  falla por diseño. Antes de escribir se confirma la transición con
+  `next_step.py`; el validador se ejecuta después.
 - El validador reconoce el tipo de un CA cuando la línea elige una opción
   (`[condición de salida]`, `[invariante acumulado]`) o lo declara en prosa
   (`Salida de etapa`, `Invariante acumulada`). El placeholder con las dos
@@ -21,6 +25,21 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Añadido
 
+- Contrato ejecutable de solo lectura: `next_step.py` lee los artefactos y
+  devuelve el estado público (`trabajando`, `verificando`, `listo`,
+  `necesita-decision`), la única skill siguiente y los bloqueos con su
+  resolución. `doctor.py` comprueba la coherencia entre el índice y los
+  artefactos. Ambos aceptan `--json`; `next_step.py` acepta `--stage` y
+  `--check` para CI.
+- Fixtures de transición (`transiciones/`) y negativas (`sin-tareas`,
+  `abierta`, `inconsistente`, `dependencia`, `bloqueada`, `ambiguo`,
+  `cierre-pendiente`, `delta-huerfano`, `sin-conciliacion`,
+  `conciliacion-invalida`, `sin-principal`) con `test_next_step.py`, más pasos
+  de CI que verifican las transiciones y que `doctor.py` rechaza un índice
+  cerrado sin veredicto.
+- Fixtures estructurales de `doctor.py` (`doctor-estructural/`, `huerfana/`,
+  `indice-sin-tabla/`): cada regla estructural tiene una etapa que la viola, y
+  la suite falla si el script deja de reportarla.
 - Fixture `index-estado`: `03-activa` y `05-hecha` deben pasar;
   `04-etapa` debe fallar.
 - Fixture `ca-tipo`: los CA con marcador no avisan; `CA-05`, sin marcador,

@@ -15,6 +15,24 @@ jobs:
           python-version: '3.11'
       - name: Validar evals de skills
         run: python3 skills/feature-stages/scripts/validate_skill_evals.py
+      - name: Validar transiciones y salud del árbol
+        run: |
+          python3 skills/feature-stages/scripts/test_next_step.py
+          python3 skills/feature-stages/scripts/doctor.py skills/feature-stages/evals/fixtures/transiciones
+      - name: Verificar que doctor rechaza un árbol incoherente
+        run: |
+          if python3 skills/feature-stages/scripts/doctor.py skills/feature-stages/evals/fixtures/inconsistente; then
+            echo 'doctor aceptó un índice cerrado sin veredicto: el gate está roto' >&2
+            exit 1
+          fi
+          if python3 skills/feature-stages/scripts/doctor.py skills/feature-stages/evals/fixtures/doctor-estructural; then
+            echo 'doctor aceptó etapas sin lista, sin auditoría o con deltas mal formados: el gate está roto' >&2
+            exit 1
+          fi
+          if python3 skills/feature-stages/scripts/doctor.py skills/feature-stages/evals/fixtures/huerfana; then
+            echo 'doctor aceptó una carpeta de etapa sin fila en el índice: el gate está roto' >&2
+            exit 1
+          fi
       - name: Validar fixture de etapa válida
         run: |
           python3 skills/feature-stages/scripts/validate_stage.py skills/feature-stages/evals/fixtures/valid-stage --strict

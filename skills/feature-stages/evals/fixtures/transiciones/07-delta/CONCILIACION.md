@@ -1,0 +1,11 @@
+# Etapa 07 — delta pendiente
+
+**Estado:** cerrada
+
+## Criterios de aceptación
+
+- **CA-01 — [condición de salida]:** estímulo → resultado observable; no falla; evidencia `conductual`.
+
+## Preguntas abiertas
+
+- `Ninguna`

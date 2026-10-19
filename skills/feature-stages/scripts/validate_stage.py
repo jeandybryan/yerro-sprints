@@ -9,7 +9,11 @@ from __future__ import annotations
 
 import argparse
 import re
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from snapshot import SnapshotError, identity  # noqa: E402
 
 CA_RE = re.compile(r"^\s*-\s*\*\*(CA-\d+)\b", re.M)
 TASK_RE = re.compile(
@@ -31,6 +35,16 @@ CA_TYPE_RE = re.compile(
     re.I,
 )
 EVIDENCE_RE = re.compile(r"estructural|conductual|sistema|ambiental", re.I)
+SNAPSHOT_RE = re.compile(r"^\s*\*\*Snapshot:\*\*\s*(.+?)\s*$", re.M | re.I)
+SNAPSHOT_VALUE_RE = re.compile(
+    r"^head=(?:[0-9a-f]{7,40}|sin-head)\s+tree=[0-9a-f]{7,40}\s+dirty=(?:si|no)\s+exclude=\S+$",
+    re.I,
+)
+RISK_RE = re.compile(r"^\s*\*\*Riesgo:\*\*\s*(bajo|medio|alto)\b", re.M | re.I)
+AUDITED_RISK_RE = re.compile(r"^\s*\*\*Riesgo auditado:\*\*\s*(bajo|medio|alto)\b", re.M | re.I)
+RISK_RANK = {"bajo": 0, "medio": 1, "alto": 2}
+VERDICT_RE = re.compile(r"^\s*\*\*Veredicto:\*\*\s*(.+?)\s*$", re.I | re.M)
+AUDIT_PASS_RE = re.compile(r"^##\s+Pasada\b.*?$(.*?)(?=^##\s+Pasada\b|\Z)", re.M | re.S | re.I)
 
 
 class Result:
@@ -50,6 +64,14 @@ def read(path: Path) -> str:
 
 def split_row(line: str) -> list[str]:
     return [cell.strip() for cell in line.split("|")]
+
+
+def parse_excludes(snapshot: str) -> tuple[Path, ...]:
+    """Rutas excluidas declaradas en el snapshot canónico."""
+    match = re.search(r"\bexclude=(\S+)", snapshot, re.I)
+    if not match or match.group(1).lower() == "ninguno":
+        return ()
+    return tuple(Path(item) for item in match.group(1).split(",") if item)
 
 
 def stage_index_estado(index: str, stage_name: str) -> str | None:
@@ -82,6 +104,11 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("stage", type=Path)
     parser.add_argument("--strict", action="store_true")
+    parser.add_argument(
+        "--repo",
+        type=Path,
+        help="verifica que el snapshot de la última pasada coincide con el árbol actual",
+    )
     args = parser.parse_args()
 
     stage = args.stage.resolve()
@@ -98,6 +125,14 @@ def main() -> int:
     ca_ids = CA_RE.findall(conciliation)
     result.require(bool(ca_ids), "no hay CA-NN en CONCILIACION.md")
     result.require(len(ca_ids) == len(set(ca_ids)), "hay IDs CA duplicados")
+
+    declared_risk = RISK_RE.search(conciliation)
+    if closed:
+        result.require(
+            bool(declared_risk),
+            "conciliación cerrada sin **Riesgo:** bajo|medio|alto congelado",
+            legacy=True,
+        )
 
     for ca in ca_ids:
         line = next((item for item in conciliation.splitlines() if f"**{ca}" in item), "")
@@ -137,8 +172,16 @@ def main() -> int:
                 f"{ca} no tiene tarea trazable",
             )
 
-    verdicts = re.findall(r"^\s*\*\*Veredicto:\*\*\s*(.+?)\s*$", audit, re.I | re.M)
+    verdicts = VERDICT_RE.findall(audit)
     has_coincide = any(item.strip().lower() == "coincide" for item in verdicts)
+    passes = AUDIT_PASS_RE.findall(audit) or ([audit] if audit else [])
+    coincide_passes: list[str] = []
+    last_verdict = ""
+    for body in passes:
+        found = [item.strip().lower() for item in VERDICT_RE.findall(body)]
+        last_verdict = found[-1] if found else ""
+        if last_verdict == "coincide":
+            coincide_passes.append(body)
     if audit and has_coincide:
         result.require(bool(tasks), "AUDIT coincide sin lista principal")
         for ca in ca_ids:
@@ -147,6 +190,40 @@ def main() -> int:
                 f"AUDIT coincide no demuestra {ca}=cumple",
             )
         result.require("### Ledger de evidencia" in audit, "AUDIT coincide sin ledger de evidencia", legacy=True)
+        for body in coincide_passes:
+            valid_snapshots = [
+                item.strip() for item in SNAPSHOT_RE.findall(body)
+                if SNAPSHOT_VALUE_RE.match(item.strip())
+            ]
+            result.require(
+                bool(valid_snapshots),
+                "AUDIT coincide sin **Snapshot:** head=… tree=… dirty=… exclude=…",
+            )
+            audited_risk = AUDITED_RISK_RE.findall(body)
+            result.require(bool(audited_risk), "AUDIT coincide sin **Riesgo auditado:**", legacy=True)
+            if declared_risk and audited_risk:
+                declared = declared_risk.group(1).lower()
+                audited = audited_risk[-1].lower()
+                result.require(
+                    RISK_RANK[audited] >= RISK_RANK[declared],
+                    f"AUDIT rebaja el riesgo: declarado {declared}, auditado {audited}",
+                )
+            if args.repo is not None and valid_snapshots and body is coincide_passes[-1]:
+                recorded = valid_snapshots[-1]
+                excludes = parse_excludes(recorded)
+                try:
+                    current = identity(args.repo, excludes)
+                except SnapshotError as error:
+                    result.warnings.append(f"no se pudo verificar el snapshot: {error}")
+                else:
+                    result.require(
+                        recorded.lower() == current.lower(),
+                        f"la pasada auditó {recorded} y el árbol actual es {current}; reauditar",
+                    )
+    if args.repo is not None and last_verdict and last_verdict != "coincide":
+        result.warnings.append(
+            "la última pasada no coincide: no hay snapshot que verificar contra el árbol actual"
+        )
 
     index = read(stage.parent / "README.md")
     if index:

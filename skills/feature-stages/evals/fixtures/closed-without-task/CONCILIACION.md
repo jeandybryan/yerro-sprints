@@ -1,6 +1,7 @@
 # Etapa 02 — fixture inválida
 
 **Estado:** cerrada
+**Riesgo:** bajo
 
 ## Criterios de aceptación
 

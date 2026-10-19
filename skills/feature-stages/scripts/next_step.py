@@ -34,6 +34,9 @@ STATE_RE = re.compile(r"\*\*Estado:\*\*\s*([^\n]+)", re.I)
 VERDICT_RE = re.compile(r"\*\*Veredicto:\*\*\s*(.+?)\s*$", re.I | re.M)
 CIERRA_RE = re.compile(r"\*\*Cierra:\*\*\s*([^\n]+)", re.I)
 DELTA_RE = re.compile(r"^TAREAS-delta-(\d{2,})\.md$")
+DELTA_BUDGET_RE = re.compile(r"\*\*Presupuesto de deltas:\*\*\s*(\d+)", re.I)
+DEFAULT_DELTA_BUDGET = 2
+RISK_RE = re.compile(r"\*\*Riesgo:\*\*\s*(bajo|medio|alto)\b", re.I)
 FOLDER_RE = re.compile(r"\]\(([^)/]+)/")
 
 class FeatureError(Exception):
@@ -151,6 +154,21 @@ def analyze_stage(feature_root: Path, name: str, row: dict[str, str] | None) -> 
             "audit-stage: justificar el delta con un veredicto no coincide antes de implementarlo",
         )
 
+    budget_match = DELTA_BUDGET_RE.search(conciliation)
+    budget = int(budget_match.group(1)) if budget_match else DEFAULT_DELTA_BUDGET
+    if len(deltas) > budget:
+        block(
+            "PRESUPUESTO_DE_DELTAS_AGOTADO",
+            f"{len(deltas)} delta(s) con presupuesto {budget}: la corrección dejó de estar acotada",
+            "reabrir la conciliación, aceptar el riesgo residual con owner, o detener la etapa",
+        )
+    elif verdict == "no coincide" and len(deltas) >= budget:
+        block(
+            "PRESUPUESTO_DE_DELTAS_AGOTADO",
+            f"{len(deltas)} delta(s) usados de {budget} y la auditoría sigue en no coincide",
+            "reabrir la conciliación o aceptar el riesgo residual con owner; no escribir otro delta",
+        )
+
     if stage_state == "bloqueada":
         causes = bullets(section(conciliation, "Bloqueos"))
         block(
@@ -200,6 +218,8 @@ def analyze_stage(feature_root: Path, name: str, row: dict[str, str] | None) -> 
     else:
         state, skill = VERIFICANDO, "audit-stage"
 
+    risk_match = RISK_RE.search(conciliation)
+    risk = risk_match.group(1).lower() if risk_match else "ausente"
     return {
         "etapa": name,
         "estados": {
@@ -213,6 +233,8 @@ def analyze_stage(feature_root: Path, name: str, row: dict[str, str] | None) -> 
         "blockers": blockers,
         "preguntas_abiertas": open_questions,
         "deltas": [path.name for path in deltas],
+        "presupuesto_deltas": budget,
+        "riesgo": risk,
         "depende_de": depends_on,
     }
 
@@ -298,6 +320,7 @@ def render_text(result: dict, all_stages: bool) -> str:
     if result["blockers"]:
         lines.append("Bloqueos:")
         lines.extend(f"  - [{item['codigo']}] {item['mensaje']} → {item['resolucion']}" for item in result["blockers"])
+    lines.append(f"Riesgo: {result['riesgo']} · Deltas: {len(result['deltas'])}/{result['presupuesto_deltas']}")
     if result["deltas"]:
         lines.append("Deltas: " + ", ".join(result["deltas"]))
     if all_stages:

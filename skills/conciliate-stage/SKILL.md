@@ -72,12 +72,16 @@ inicio y cierre; evita que el consumidor tenga que inferir su ciclo de vida.
    level (`estructural`, `conductual`, `sistema` or `ambiental`), and whether
    it is a condición de salida o invariante acumulado. Include a few
    representative examples for complex behaviour; do not impose Gherkin.
-6. Record important risks/regressions and how they will be observed.
+6. Record important risks/regressions and how they will be observed. Freeze
+   `**Riesgo:** bajo | medio | alto` at close; `alto` names the concrete items
+   (data, security, shared contracts, concurrency, delivery, test gaps). Change
+   `**Presupuesto de deltas:**` only with a stated reason; default is two.
 7. Move resolved questions out of **Preguntas abiertas**.
 8. Keep **No entra** honest: later stages or out of V1 stay named.
 9. Close (`cerrada`) only when the user agrees, dependencies are `cerrada`
-   or have a named justified exception, criteria are clear, and open
-   questions are empty or deferred to a named stage.
+   or have a named justified exception, criteria are clear, risk and delta
+   budget are frozen, and open questions are empty or deferred to a named
+   stage.
 10. Update the feature README: stage `lista` only after `TAREAS.md` exists;
     until then keep `conciliando` and show conciliation `cerrada`.
 
@@ -90,6 +94,10 @@ inicio y cierre; evita que el consumidor tenga que inferir su ciclo de vida.
   must be in the chat; AskQuestion does not replace them.
 - Hide a product change in a task or delta. Reopen conciliation when
   intent, scope or acceptance changes after closure.
+- Lower the frozen `**Riesgo:**` after closure (or let an audit lower it) to
+  avoid re-auditing. Raising it is a finding; lowering it reopens.
+- Extend `**Presupuesto de deltas:**` mid-flight to keep correcting without
+  telling the user.
 - Rewrite the specification to justify an implementation shortcut.
 - Import product-specific constraints into this generic workflow; apply the
   relevant domain skill or project rule separately.

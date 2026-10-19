@@ -25,7 +25,8 @@ Start only when:
   conciliation;
 - the user asked to implement this stage/list;
 - when implementing a delta: its `Cierra:` points to a `no coincide` audit pass,
-  it names the affected CA/evidence, and the feature index marks it as active work.
+  it names the affected CA/evidence, and the feature index marks it as active work;
+- writing or implementing another delta stays within `**Presupuesto de deltas:**`.
 
 Confirma con
 `python3 <skills-root>/feature-stages/scripts/next_step.py <feature-root> --stage <NN-slug>`

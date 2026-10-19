@@ -1,6 +1,7 @@
 # Etapa 04 — índice cerrado sin veredicto
 
 **Estado:** cerrada
+**Riesgo:** bajo
 
 ## Criterios de aceptación
 

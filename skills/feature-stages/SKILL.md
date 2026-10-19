@@ -33,6 +33,7 @@ implementation or verification gaps.
 Templates: [templates.md](templates.md).
 Contrato transversal: [stage-contract.md](references/stage-contract.md).
 Validador estructural: `python3 <skills-root>/feature-stages/scripts/validate_stage.py <feature-root>/<NN-slug>`.
+Identidad de auditoría: `python3 <skills-root>/feature-stages/scripts/snapshot.py <repo> --exclude <feature-root>`.
 Regresión del ciclo: [EVALUATION.md](EVALUATION.md).
 
 ## Contrato ejecutable
@@ -42,15 +43,19 @@ Antes de decidir el siguiente paso, lee el estado desde los artefactos:
 ```bash
 python3 <skills-root>/feature-stages/scripts/next_step.py <feature-root> [--stage NN-slug] [--json]
 python3 <skills-root>/feature-stages/scripts/doctor.py <feature-root>
+python3 <skills-root>/feature-stages/scripts/snapshot.py <repo> --exclude <feature-root>
+python3 <skills-root>/feature-stages/scripts/validate_stage.py <stage> --strict --repo <repo>
 ```
 
 `next_step.py` devuelve un estado público — `trabajando`, `verificando`,
 `listo` o `necesita-decision` —, la única skill siguiente y los bloqueos con su
-resolución. `doctor.py` informa incoherencias entre índice y artefactos. Ninguno
-escribe archivos ni sustituye un gate: si el script y el contrato discrepan,
-gana el gate más estricto y la discrepancia se registra como bloqueo.
-`necesita-decision` detiene el ciclo hasta que el usuario decida; no se elige
-un valor por defecto.
+resolución. `doctor.py` informa incoherencias entre índice y artefactos.
+`snapshot.py` produce la identidad que cada pasada de auditoría registra;
+`validate_stage.py --repo` comprueba que ese snapshot sigue siendo el árbol
+actual. Ninguno escribe archivos ni sustituye un gate: si el script y el
+contrato discrepan, gana el gate más estricto y la discrepancia se registra
+como bloqueo. `necesita-decision` detiene el ciclo hasta que el usuario decida;
+no se elige un valor por defecto.
 
 ## States
 
@@ -63,6 +68,11 @@ index: `lista` can mean initial principal work or a named pending delta.
 
 `TAREAS.md` is the **principal** list. Deltas do not replace it; they
 close gaps against the same acceptance baseline.
+
+A closed conciliation also freezes `**Riesgo:**` and
+`**Presupuesto de deltas:**` (two by default). The auditor records
+`**Riesgo auditado:**` and never lowers it; the budget bounds corrective work.
+Exceeding either is `necesita-decision`, not a silent extra delta.
 
 ## Gates
 

@@ -1,6 +1,7 @@
 # Etapa 06 — cerrada con veredicto
 
 **Estado:** cerrada
+**Riesgo:** medio
 
 ## Criterios de aceptación
 

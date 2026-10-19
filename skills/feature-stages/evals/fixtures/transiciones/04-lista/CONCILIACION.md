@@ -1,6 +1,7 @@
 # Etapa 04 — conciliación cerrada, etapa lista
 
 **Estado:** cerrada
+**Riesgo:** medio
 
 ## Criterios de aceptación
 

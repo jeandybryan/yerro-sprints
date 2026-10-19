@@ -36,6 +36,7 @@ los artefactos.
 ```bash
 python3 skills/feature-stages/scripts/validate_skill_evals.py
 python3 skills/feature-stages/scripts/test_next_step.py
+python3 skills/feature-stages/scripts/test_snapshot.py
 python3 skills/feature-stages/scripts/doctor.py \
   skills/feature-stages/evals/fixtures/transiciones
 python3 skills/feature-stages/scripts/validate_stage.py \
@@ -66,6 +67,28 @@ fi
 if python3 skills/feature-stages/scripts/validate_stage.py \
   skills/feature-stages/evals/fixtures/index-estado/04-etapa --strict; then
   echo 'El índice cerrado pasó sin veredicto coincide: el gate está roto' >&2
+  exit 1
+fi
+if python3 skills/feature-stages/scripts/validate_stage.py \
+  skills/feature-stages/evals/fixtures/riesgo-rebajado --strict; then
+  echo 'Una auditoría que rebaja el riesgo pasó: el gate está roto' >&2
+  exit 1
+fi
+if python3 skills/feature-stages/scripts/validate_stage.py \
+  skills/feature-stages/evals/fixtures/snapshot-de-pasada-anterior --strict; then
+  echo 'Una pasada coincide reutilizó el snapshot de otra pasada: el gate está roto' >&2
+  exit 1
+fi
+if python3 skills/feature-stages/scripts/validate_stage.py \
+  skills/feature-stages/evals/fixtures/coincide-sin-snapshot --strict; then
+  echo 'Un veredicto coincide sin Snapshot pasó: el gate está roto' >&2
+  exit 1
+fi
+python3 skills/feature-stages/scripts/validate_stage.py \
+  skills/feature-stages/evals/fixtures/riesgo-ausente
+if python3 skills/feature-stages/scripts/validate_stage.py \
+  skills/feature-stages/evals/fixtures/riesgo-ausente --strict; then
+  echo 'riesgo-ausente con --strict pasó: el gate está roto' >&2
   exit 1
 fi
 python3 skills/feature-stages/scripts/validate_stage.py \

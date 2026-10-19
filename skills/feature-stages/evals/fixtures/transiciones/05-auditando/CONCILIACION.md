@@ -1,6 +1,7 @@
 # Etapa 05 — implementada, pendiente de auditoría
 
 **Estado:** cerrada
+**Riesgo:** alto
 
 ## Criterios de aceptación
 

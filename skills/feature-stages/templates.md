@@ -49,6 +49,8 @@ Copy these files. Fill; do not invent a parallel format.
 # Etapa NN — <nombre>
 
 **Estado:** borrador-corte | abierta | cerrada
+**Riesgo:** bajo | medio | alto
+**Presupuesto de deltas:** 2
 **Spec:** [<SPEC>.md](../<SPEC>.md) §…
 
 ## Resultado observable
@@ -111,6 +113,20 @@ is a **condición de salida** or an **invariante acumulado**, and must name
 an evidence level. For complex behaviour, add a few representative examples in
 the criterion or Aclaraciones; do not create a separate specification format.
 
+`**Riesgo:**` freezes with the conciliation and does not change silently:
+
+- `bajo`: change is local, reversible and covered by existing tests.
+- `medio`: touches shared behaviour, data or contracts, but has a tested
+  rollback path.
+- `alto`: touches data migration, security/authorization, shared contracts,
+  concurrency, delivery/rollout or leaves a test gap. Name the concrete items
+  after the level, e.g. `alto — datos, contratos compartidos`.
+- The auditor may raise the level in `AUDIT.md`; lowering it reopens the
+  conciliation.
+- `**Presupuesto de deltas:**` bounds corrective work. Default `2`; higher
+  values must be justified in Aclaraciones. Without the field, the default
+  applies.
+
 ## `TAREAS.md`
 
 Generate **only** when conciliation is `cerrada`. Each item: checkbox,
@@ -162,8 +178,9 @@ Items the agent must not do even if convenient (from “No entra”).
 ## Pasada 1 — <fecha>
 
 **Contra:** TAREAS.md (principal)
-**Baseline:** conciliación cerrada <fecha>; origen de tareas <fecha>;
-commit/working tree <identificador>; entorno <entorno/configuración relevante>
+**Snapshot:** head=… tree=… dirty=… exclude=…
+**Riesgo auditado:** bajo | medio | alto
+**Baseline:** conciliación cerrada <fecha>; origen de tareas <fecha>; entorno <entorno/configuración relevante>
 
 | Criterio | Afirmaciones auditadas | Tareas | Resultado | Evidencia reproducible | Limitaciones |
 |----------|-------------------------|--------|-----------|-------------------------|--------------|
@@ -196,6 +213,18 @@ blocked, record the blocker and required evidence instead of approving by
 inference. A changed product requirement reopens conciliation; it is not a
 delta. Do not delete principal rows or failed prior passes.
 ```
+
+`**Snapshot:**` is the exact value emitted by
+`python3 <skills-root>/feature-stages/scripts/snapshot.py <repo> --exclude <feature-root>`.
+It freezes the code the pass audited: same `head`, `tree` and `dirty` mean the
+same candidate. If the tree changes after the pass, the verdict is stale and
+the stage must be audited again; never reuse it to close. The feature root is
+excluded so writing this file does not invalidate its own evidence, and
+`exclude=` travels inside the value so verification recomputes the same tree.
+
+`**Riesgo auditado:**` must be greater than or equal to the risk frozen in
+`CONCILIACION.md`. Raising it is a finding; lowering it requires reopening the
+conciliation.
 
 Scoring is strict:
 
@@ -243,6 +272,11 @@ la brecha auditada. No reemplaza la lista principal.
 
 Use IDs `D01-T1`, `D01-T2`... After implementing the delta, add **Pasada N+1**
 to `AUDIT.md`, still scored against the principal criteria.
+
+The number of deltas is bounded by `**Presupuesto de deltas:**` (default two).
+If the audit after the last allowed delta still says `no coincide`, stop and
+ask: reopen the conciliation, accept the residual risk with a named owner, or
+leave the stage blocked. Do not write another delta to avoid the decision.
 
 ## Change after closure
 

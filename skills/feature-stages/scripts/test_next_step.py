@@ -46,6 +46,10 @@ CASES = [
     ("sin-conciliacion", None, DECISION, None, ["CONCILIACION_AUSENTE"]),
     ("conciliacion-invalida", None, DECISION, None, ["CONCILIACION_INVALIDA"]),
     ("sin-principal", None, DECISION, None, ["TAREA_NO_PRINCIPAL"]),
+    ("presupuesto-agotado", None, DECISION, None, ["PRESUPUESTO_DE_DELTAS_AGOTADO"]),
+    ("presupuesto-excedido", None, DECISION, None, ["PRESUPUESTO_DE_DELTAS_AGOTADO"]),
+    ("presupuesto-excedido-coincide", None, DECISION, None, ["PRESUPUESTO_DE_DELTAS_AGOTADO"]),
+    ("presupuesto-amplio", None, VERIFICANDO, "audit-stage", []),
 ]
 
 def fail(message: str) -> None:
@@ -160,11 +164,60 @@ def check_cli() -> None:
     if "necesita-decision" not in blocked.stdout:
         fail("next_step --check: la salida legible no reporta necesita-decision")
 
+
+VALIDATE_REJECTED = [
+    ("coincide-sin-snapshot", "sin **Snapshot:**"),
+    ("snapshot-de-pasada-anterior", "sin **Snapshot:**"),
+    ("riesgo-rebajado", "rebaja el riesgo"),
+]
+
+VALIDATE_ACCEPTED = ["valid-stage", "index-estado/05-hecha"]
+
+
+def check_validate_contract() -> None:
+    """Cada regla nueva de validate_stage.py debe tener una fixture que la viole."""
+    global checked
+    for fixture in VALIDATE_ACCEPTED:
+        result = run("validate_stage.py", str(FIXTURES / fixture), "--strict")
+        checked += 1
+        if result.returncode != 0:
+            fail(f"validate/{fixture}: rechazó una etapa válida: {result.stdout}{result.stderr}")
+
+    for fixture, expected in VALIDATE_REJECTED:
+        result = run("validate_stage.py", str(FIXTURES / fixture), "--strict")
+        checked += 1
+        if result.returncode != 1:
+            fail(f"validate/{fixture}: salida {result.returncode}, se esperaba 1")
+        elif expected not in result.stdout:
+            fail(f"validate/{fixture}: no reporta {expected!r} (obtenidos {result.stdout})")
+
+    relaxed = run("validate_stage.py", str(FIXTURES / "riesgo-ausente"))
+    checked += 1
+    if relaxed.returncode != 0 or "WARN:" not in relaxed.stdout:
+        fail(f"validate/riesgo-ausente: sin --strict debía avisar, no fallar: {relaxed.stdout}")
+    strict = run("validate_stage.py", str(FIXTURES / "riesgo-ausente"), "--strict")
+    checked += 1
+    if strict.returncode != 1:
+        fail("validate/riesgo-ausente: con --strict debía fallar por el riesgo ausente")
+
+    open_pass = run(
+        "validate_stage.py",
+        str(FIXTURES / "transiciones" / "07-delta"),
+        "--repo",
+        str(HERE.parents[2]),
+    )
+    checked += 1
+    if open_pass.returncode != 0:
+        fail(f"validate --repo: una última pasada en no coincide no debe fallar: {open_pass.stdout}")
+    elif "no hay snapshot que verificar" not in open_pass.stdout:
+        fail("validate --repo: no avisa que la última pasada no tiene snapshot que verificar")
+
 def main() -> int:
     check_transitions()
     check_doctor()
     check_doctor_structural()
     check_cli()
+    check_validate_contract()
     for error in errors:
         print(f"ERROR: {error}")
     if not errors:

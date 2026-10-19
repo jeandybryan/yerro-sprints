@@ -1,6 +1,7 @@
 # Etapa 01 — fixture válida
 
 **Estado:** cerrada
+**Riesgo:** medio
 
 ## Criterios de aceptación
 

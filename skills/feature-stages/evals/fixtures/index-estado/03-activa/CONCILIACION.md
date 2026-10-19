@@ -1,6 +1,7 @@
 # Etapa 03 — conciliación cerrada, etapa en auditoría
 
 **Estado:** cerrada
+**Riesgo:** alto
 
 ## Criterios de aceptación
 

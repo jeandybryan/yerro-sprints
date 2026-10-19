@@ -1,6 +1,7 @@
 # Etapa 07 — delta pendiente
 
 **Estado:** cerrada
+**Riesgo:** medio
 
 ## Criterios de aceptación
 

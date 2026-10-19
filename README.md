@@ -164,6 +164,9 @@ Pídele: **"conciliemos la etapa NN"** (una etapa a la vez).
 - Skill: `conciliate-stage`.
 - Resultado: `CONCILIACION.md` con `Entra`/`No entra`, decisiones, criterios de
   aceptación (`CA-01`, `CA-02`…), riesgos y evidencia esperada.
+- Al cerrar se congelan `**Riesgo:**` (`bajo`/`medio`/`alto`) y
+  `**Presupuesto de deltas:**` (dos por defecto). El auditor puede subir el
+  riesgo; bajarlo reabre la conciliación.
 - Estado de la conciliación: `borrador-corte` → `abierta` → `cerrada`.
 - Solo queda `cerrada` cuando el resultado observable, las dependencias, los
   criterios y el alcance están acordados y no hay preguntas abiertas (o están
@@ -192,10 +195,15 @@ Pídele: **"implementa la etapa NN"**.
 Pídele: **"audita la etapa NN"**.
 
 - Skill: `audit-stage`. Intenta **refutar** el cumplimiento, no confirmarlo.
+- Cada pasada registra `**Snapshot:**` (identidad del código auditado, vía
+  `scripts/snapshot.py`) y `**Riesgo auditado:**`. Un `coincide` solo vale para
+  ese snapshot: si el árbol cambió, se reaudita.
 - Resultado: `AUDIT.md` con un veredicto:
   - `coincide` → la etapa se cierra (`cerrada`).
   - `no coincide` → se escribe `TAREAS-delta-NN.md` y se repiten los pasos
-    4–5 **contra el mismo baseline**.
+    4–5 **contra el mismo baseline**. Agotado el presupuesto de deltas, el
+    ciclo se detiene en `necesita-decision`: reabrir la conciliación, aceptar
+    el riesgo residual con owner o dejar la etapa bloqueada.
   - Si lo que cambió es el producto (intención, alcance o criterio) → se
     reabre la conciliación (vuelve al paso 2), **no** es un delta.
 
@@ -230,6 +238,7 @@ Desde la raíz del repositorio:
 ```bash
 python3 skills/feature-stages/scripts/validate_skill_evals.py
 python3 skills/feature-stages/scripts/test_next_step.py
+python3 skills/feature-stages/scripts/test_snapshot.py
 python3 skills/feature-stages/scripts/doctor.py \
   skills/feature-stages/evals/fixtures/transiciones
 python3 skills/feature-stages/scripts/validate_stage.py \
@@ -241,9 +250,13 @@ transiciones de `transiciones/` y la salud del árbol, además del contrato de l
 etapa válida. `test_next_step.py` también cubre los negativos `sin-tareas`,
 `abierta`, `inconsistente`, `dependencia`, `bloqueada`, `ambiguo`,
 `cierre-pendiente`, `delta-huerfano`, `sin-conciliacion`,
-`conciliacion-invalida`, `sin-principal`, `huerfana` e `indice-sin-tabla`; un
+`conciliacion-invalida`, `sin-principal`, `presupuesto-agotado`,
+`presupuesto-excedido`, `presupuesto-excedido-coincide`, `huerfana` e
+`indice-sin-tabla`; un
 cambio de `next_step.py` o `doctor.py` que altere una transición o una regla
-estructural sin actualizar su caso deja la suite roja.
+estructural sin actualizar su caso deja la suite roja. `test_snapshot.py` cubre
+la identidad de auditoría: estable, sensible al código, insensible a la ruta
+excluida y verificable con `validate_stage.py --repo`.
 
 Estas dos fixtures también deben terminar correctamente: conciliación
 `cerrada` con etapa `auditando`, y etapa `cerrada` con veredicto `coincide`.
@@ -284,6 +297,28 @@ fi
 `[invariante acumulado]`, `Salida de etapa`, `Invariante acumulada` y el
 placeholder en orden inverso). Sin `--strict` solo avisa `CA-05`, que no
 trae marcador. Con `--strict` ese aviso es error y el proceso falla.
+
+`coincide-sin-snapshot`, `snapshot-de-pasada-anterior` y `riesgo-rebajado` deben
+fallar: un veredicto `coincide` sin la identidad del código auditado, con el
+snapshot de otra pasada, o con un riesgo menor al congelado, no cierra.
+`riesgo-ausente` avisa sin `--strict` y falla con él.
+
+```bash
+for fixture in coincide-sin-snapshot snapshot-de-pasada-anterior riesgo-rebajado; do
+  if python3 skills/feature-stages/scripts/validate_stage.py \
+    "skills/feature-stages/evals/fixtures/$fixture" --strict; then
+    echo "$fixture pasó: el gate está roto" >&2
+    exit 1
+  fi
+done
+python3 skills/feature-stages/scripts/validate_stage.py \
+  skills/feature-stages/evals/fixtures/riesgo-ausente
+if python3 skills/feature-stages/scripts/validate_stage.py \
+  skills/feature-stages/evals/fixtures/riesgo-ausente --strict; then
+  echo 'riesgo-ausente con --strict pasó: el gate está roto' >&2
+  exit 1
+fi
+```
 
 ```bash
 python3 skills/feature-stages/scripts/validate_stage.py \

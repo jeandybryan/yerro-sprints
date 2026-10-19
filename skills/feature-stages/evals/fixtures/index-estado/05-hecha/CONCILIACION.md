@@ -1,6 +1,7 @@
 # Etapa 05 — índice cerrado con veredicto
 
 **Estado:** cerrada
+**Riesgo:** medio
 
 ## Criterios de aceptación
 

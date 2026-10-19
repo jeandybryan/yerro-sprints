@@ -29,6 +29,13 @@ auditoría.
   entre el índice y los artefactos.
 - Toda transición, bloqueo o estado de etapa nuevo necesita un caso en
   `skills/feature-stages/evals/fixtures/` y su fila en `test_next_step.py`.
+- La evidencia de cierre se congela: `**Snapshot:**` identifica el árbol
+  auditado y `**Riesgo:**` el nivel aceptado. No reutilices un `coincide` sobre
+  otro árbol ni rebajes el riesgo; ambos son gates del validador.
+- `**Presupuesto de deltas:**` acota la corrección. Agotarlo es
+  `necesita-decision`, no un delta más.
+- Un cambio en `snapshot.py` o en la verificación con `--repo` necesita su caso
+  en `test_snapshot.py`.
 
 ## Antes de tocar un archivo
 

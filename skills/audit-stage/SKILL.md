@@ -44,11 +44,17 @@ Keep role independence:
    list/delta marked `implementada`. An explicit user request may audit an
    `implementando` or `bloqueada` stage as an intermediate pass, but cannot
    change it to `cerrada`.
-2. Run `python3 <skills-root>/feature-stages/scripts/validate_stage.py <stage>`.
+2. Capture the candidate before judging it:
+   `python3 <skills-root>/feature-stages/scripts/snapshot.py <repo> --exclude <feature-root>`
+   and paste the exact value in the pass `**Snapshot:**`. Record
+   `**Riesgo auditado:**`, which may be raised but never lowered below the
+   frozen `**Riesgo:**`. Then run
+   `python3 <skills-root>/feature-stages/scripts/validate_stage.py <stage>`.
    Structural errors block a `coincide` verdict; legacy warnings must be recorded
-   as a limitation or normalized in the next baseline. Record the baseline: conciliation close date, task origin, current commit
-   when available, relevant working-tree state and audit environment. Set the
-   stage `auditando`.
+   as a limitation or normalized in the next baseline. Record the baseline: conciliation close date, task origin,
+   relevant working-tree state and audit environment. Set the
+   stage `auditando`. A snapshot from an earlier pass is never reused: if the
+   tree changed, audit again.
 3. Expand every `CA-NN` into its **atomic assertions**, including negative
    promises such as “does not spawn”, error behaviour, boundaries and
    compatibility constraints. Map each assertion to its task and prescribed
@@ -112,7 +118,11 @@ only a gap-finding signal, not proof that outcomes were asserted.
   unresolved blocking scope deviation.
 - Any `parcial`, `no cumple` or `no verificado` means **`no coincide`**.
 - For an implementation or verification gap against the unchanged baseline,
-  write the next `TAREAS-delta-NN.md` with only the work needed to close it.
+  check `**Presupuesto de deltas:**` (default two) before writing
+  `TAREAS-delta-NN.md`. If the stage already used its budget, stop and ask the
+  user: reopen the conciliation, accept the residual risk with a named owner,
+  or leave the stage blocked. Never write an extra delta to avoid that decision.
+  The delta must contain only the work needed to close the gap.
   Its header must identify the failed audit pass, CA and evidence/hueco; set
   `Trabajo activo` to that delta and stage to `lista`. Do not implement unless asked.
 - If required external/runtime evidence is temporarily unavailable and no
@@ -171,4 +181,6 @@ Classify each deviation:
 
 ## After a delta is implemented
 
-New audit pass vs **TAREAS.md**, not vs the delta file alone. Repeat until coincide.
+New audit pass vs **TAREAS.md**, not vs the delta file alone, with a fresh
+`**Snapshot:**` of the corrected tree. Repeat until coincide or the delta
+budget is exhausted.

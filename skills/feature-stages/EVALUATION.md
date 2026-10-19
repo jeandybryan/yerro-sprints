@@ -4,7 +4,7 @@ Mide si las skills del ciclo conservan el contrato, se activan para la petición
 
 ## Niveles
 
-1. **Estructural — CI/local, sin tokens.** Ejecutar `scripts/validate_stage.py` sobre fixtures y etapas reales. Verifica el contrato de artefactos. `scripts/test_next_step.py` verifica que cada estado de los artefactos produzca una única transición válida, y `scripts/doctor.py` que el índice y los artefactos no se contradigan.
+1. **Estructural — CI/local, sin tokens.** Ejecutar `scripts/validate_stage.py` sobre fixtures y etapas reales. Verifica el contrato de artefactos. `scripts/test_next_step.py` verifica que cada estado de los artefactos produzca una única transición válida, y `scripts/doctor.py` que el índice y los artefactos no se contradigan. `scripts/test_snapshot.py` verifica que la identidad de auditoría sea estable, sensible al código, insensible a la evidencia excluida y que `validate_stage.py --repo` rechace un snapshot obsoleto.
 2. **Activación y separación — CI/local, sin tokens.** Los casos `evals/cases/*.json` contienen peticiones positivas y negativas escritas como usuarios reales. Un cambio de descripción no puede hacer que otra skill sea la respuesta esperada.
 3. **Comportamiento — bajo demanda, consume tokens.** Ejecutar cada caso en un snapshot aislado y puntuar el transcript/diff contra `expectations`. Mantener casos retenidos que la skill no vea antes de la evaluación.
 
@@ -26,6 +26,8 @@ Al informar resultados, fijar modelo, versión de Cursor/agente, fecha, configur
 | S10 | Oráculo unidireccional | `audit-stage` | Pide afirmación negativa/inversa o reabre. |
 | S11 | Índice cerrado con audit fallido | validador | Falla el contrato, no acepta el cierre. |
 | S12 | Estado desconocido | `feature-stages` | Lee los artefactos con `next_step.py`; una sola transición; no inventa paso. |
+| S13 | Veredicto reutilizado sobre un árbol distinto | `audit-stage` | Toma un `**Snapshot:**` nuevo y reaudita; no cierra con evidencia obsoleta. |
+| S14 | Corrección sin límite / riesgo rebajado | `audit-stage` | Al agotar `**Presupuesto de deltas:**` pide decisión; nunca baja el riesgo ni escribe otro delta. |
 | I01 | Corte ambiguo o por encabezados | `identify-feature-stages` | Pide aclaración o corta por resultados; asigna requisitos; no crea tareas/auditoría. |
 
 ## Rúbrica conductual
@@ -43,9 +45,21 @@ python3 scripts/validate_stage.py evals/fixtures/closed-without-task --strict
 python3 scripts/validate_stage.py evals/fixtures/index-estado/04-etapa --strict
 python3 scripts/validate_stage.py evals/fixtures/ca-tipo
 python3 scripts/validate_stage.py evals/fixtures/ca-tipo --strict
+python3 scripts/validate_stage.py evals/fixtures/coincide-sin-snapshot --strict
+python3 scripts/validate_stage.py evals/fixtures/riesgo-rebajado --strict
+python3 scripts/validate_stage.py evals/fixtures/riesgo-ausente
+python3 scripts/validate_stage.py evals/fixtures/riesgo-ausente --strict
 python3 scripts/test_next_step.py
+python3 scripts/test_snapshot.py
 python3 scripts/doctor.py evals/fixtures/transiciones
 ```
+
+`coincide-sin-snapshot`, `snapshot-de-pasada-anterior` y `riesgo-rebajado` deben
+salir con error: un veredicto `coincide` sin identidad del código auditado, con
+el snapshot de otra pasada, o con un riesgo menor al congelado, no cierra.
+`riesgo-ausente` avisa sin `--strict` y falla con él. `test_snapshot.py`
+crea repositorios temporales: la identidad debe cambiar al cambiar el código y
+mantenerse al escribir en la ruta excluida.
 
 `closed-without-task` y `index-estado/04-etapa` deben salir con error. La
 segunda solo mira la celda **Estado**: conciliación `cerrada` con etapa
@@ -56,7 +70,9 @@ segunda solo mira la celda **Estado**: conciliación `cerrada` con etapa
 `transiciones/` recorre el ciclo completo: corte, lista, auditoría pendiente,
 cierre y delta, más los negativos `sin-tareas`, `abierta`, `inconsistente`,
 `dependencia`, `bloqueada`, `ambiguo`, `cierre-pendiente`, `delta-huerfano`,
-`sin-conciliacion`, `conciliacion-invalida` y `sin-principal`. Cada caso afirma
+`sin-conciliacion`, `conciliacion-invalida`, `sin-principal`,
+`presupuesto-agotado`, `presupuesto-excedido`, `presupuesto-excedido-coincide`
+y el positivo `presupuesto-amplio`. Cada caso afirma
 estado público, skill siguiente y código de bloqueo; un cambio en
 `next_step.py` que altere una transición sin actualizar su caso deja la suite
 roja.

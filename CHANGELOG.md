@@ -44,6 +44,30 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
   `04-etapa` debe fallar.
 - Fixture `ca-tipo`: los CA con marcador no avisan; `CA-05`, sin marcador,
   avisa y con `--strict` falla el proceso.
+- `snapshot.py`: identidad content-addressable del código auditado (`head`,
+  `tree`, `dirty` y rutas excluidas) calculada con un índice temporal, sin
+  tocar el índice real. `--exclude` permite dejar fuera el árbol de la feature
+  para que escribir la evidencia no invalide su propio snapshot.
+- `**Snapshot:**` obligatorio en cada pasada con veredicto `coincide`; sin él,
+  `validate_stage.py` falla, y el snapshot de una pasada anterior no vale.
+  `validate_stage.py --repo` recalcula la identidad con las mismas exclusiones
+  y rechaza un veredicto obsoleto.
+- `**Riesgo:** bajo | medio | alto` congelado en la conciliación cerrada y
+  `**Riesgo auditado:**` en la pasada. El auditor puede subirlo, nunca bajarlo:
+  un riesgo auditado menor es error del validador.
+- `**Presupuesto de deltas:**` (dos por defecto). `next_step.py` devuelve
+  `necesita-decision` con `PRESUPUESTO_DE_DELTAS_AGOTADO` cuando la corrección
+  supera el presupuesto o la auditoría sigue en `no coincide` tras gastarlo.
+- Fixtures `coincide-sin-snapshot`, `riesgo-rebajado`, `riesgo-ausente`,
+  `presupuesto-agotado`, `presupuesto-excedido`,
+  `presupuesto-excedido-coincide` y `presupuesto-amplio`, con
+  `test_snapshot.py` y casos nuevos en `test_next_step.py`.
+
+### Cambiado
+
+- La plantilla de `AUDIT.md` reemplaza el identificador informal de
+  «commit/working tree» por `**Snapshot:**` y añade `**Riesgo auditado:**`.
+  `CONCILIACION.md` declara `**Riesgo:**` y `**Presupuesto de deltas:**`.
 
 ## [1.0.0] - 2026-09-30
 

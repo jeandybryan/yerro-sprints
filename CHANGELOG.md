@@ -24,6 +24,8 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
   mención del nombre en **Trabajo activo** de otra fila no cuenta.
 
 ### Añadido
+- Gobernanza del paquete en `GOVERNANCE.md` y checklist reproducible de release en `RELEASE_CHECKLIST.md`. Las decisiones de licencia, distribución, tags, hosts y owner quedan explícitamente pendientes hasta ser acordadas.
+
 - Trazabilidad ejecutable con decisiones `S-NN`, `Origen: S-NN`, `Test-first:` y `Test:` en tareas, y `**Trazabilidad:**` en auditorías.
 - Nuevas fixtures negativas para decisión origen, test-first y trazabilidad de evidencia; `validate_stage.py` las rechaza en modo estricto.
 

@@ -32,6 +32,7 @@ los artefactos.
 - [ ] Cualquier cambio de descripción revisa los casos de activación positivos
       y negativos.
 - [ ] Cualquier cambio de flujo, plantilla o validador añadió una prueba de regresión.
+- [ ] Se revisaron [GOVERNANCE.md](GOVERNANCE.md) y [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md); las decisiones de licencia, distribución, tags y hosts no se inventaron.
 
 ## Validación local
 

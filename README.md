@@ -45,6 +45,13 @@ gates, plantillas y evaluación, pero **no reemplaza ninguna fase**.
 | `implement-stage`         | Ejecuta solo la lista aprobada y deja evidencia para auditoría.     |
 | `audit-stage`             | Intenta refutar el cumplimiento; cierra, bloquea o emite un delta.  |
 
+## Gobernanza y release
+
+Las reglas de mantenimiento están en [GOVERNANCE.md](GOVERNANCE.md) y la
+lista de salida en [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md). La gobernanza
+no inventa licencia, canales de distribución, política de tags ni agentes
+soportados: esas decisiones deben acordarse antes de una release.
+
 ## Requisitos
 
 - Un host compatible con Agent Skills (Cursor, Claude Code, Codex u otro).

@@ -1,6 +1,6 @@
 # Contrato de etapas
 
-Este contrato define los artefactos y transiciones compartidos por las skills del ciclo. Las plantillas de `feature-stages/templates.md` son la forma canónica de producirlos.
+Este contrato define los artefactos y transiciones compartidos por las skills del ciclo. Las plantillas modulares de `feature-stages/templates/` son la forma canónica de producirlos; `templates.md` conserva solo el índice compatible.
 
 ## Transición única
 
@@ -56,3 +56,36 @@ La prioridad es: (1) etapa nombrada por el usuario; (2) etapa comprometida en `C
 Antes de una pregunta bloqueante, la respuesta visible contiene `Contexto`, `Pregunta` y `Propuesta`. La selección en un formulario no reemplaza esos bloques.
 
 `estructural` prueba forma; `conductual`, una rama y su oráculo; `sistema`, integración; `ambiental`, el host u operación acordados. No se puede sustituir un nivel requerido por uno inferior sin que el CA deje de cumplir.
+
+## Ownership y handoff
+
+| Fase | Entrada mínima | Puede modificar | No modifica | Entrega | Siguiente |
+|---|---|---|---|---|---|
+| `identify-feature-stages` | spec y contexto de feature | `README.md`, borradores `CONCILIACION.md` | `TAREAS.md`, `AUDIT.md`, código | árbol de etapas propuesto | `conciliate-stage` |
+| `conciliate-stage` | spec y etapa seleccionada | `CONCILIACION.md`, índice operativo | `TAREAS.md`, código, `AUDIT.md` | baseline cerrado | `generate-stage-tasks` |
+| `generate-stage-tasks` | conciliación cerrada | `TAREAS.md`, índice operativo | conciliación, código, auditoría | lista principal trazada | `implement-stage` |
+| `implement-stage` | tareas o delta aprobado | código, tests, estado operativo | baseline, criterios, auditoría | implementación verificable | `audit-stage` |
+| `audit-stage` | código, tareas y evidencia | `AUDIT.md`, delta, cierre del índice | código, baseline, criterios | `coincide`, `no coincide` o bloqueo | `implement-stage` o cierre |
+| `feature-stages` | árbol completo | nada | todos los artefactos | transición calculada | skill indicada |
+
+`README.md` puede actualizarse por la fase que cambia el estado operativo, pero
+la fase no puede usar ese índice para ocultar un artefacto inválido. El handoff
+se acepta solo cuando la entrada mínima y los gates del artefacto de salida
+están satisfechos. `next_step.py` es la autoridad de transición; ninguna skill
+inventa una siguiente fase.
+
+## Política de contexto
+
+Lee primero el `SKILL.md` activo, el contrato y los artefactos de entrada. Lee
+una referencia temática o la plantilla específica solo cuando vayas a escribir
+ese artefacto o resolver el caso que cubre. No cargues `templates.md`,
+`GOVERNANCE.md` o referencias de otras fases por defecto.
+
+| Fase | Lee primero | Carga bajo demanda |
+|---|---|---|
+| Identify | su skill y este contrato | plantilla de índice/conciliación |
+| Conciliate | su skill, contrato y conciliación | decisiones/preguntas y plantilla de conciliación |
+| Generate | contrato y conciliación cerrada | plantilla de tareas |
+| Implement | contrato y `TAREAS.md` | delta, código y tests afectados |
+| Audit | contrato y procedimiento de auditoría | scoring, evidencia y deltas |
+| Router | routing y estado calculado | referencia solicitada explícitamente |

@@ -135,6 +135,19 @@ def check(root: Path, result: dict | None, errors: list[str], warnings: list[str
             errors.append(f"{name}: etapa {stage_state} sin TAREAS.md")
         if stage_state in NEEDS_AUDIT and not audit:
             errors.append(f"{name}: etapa {stage_state} sin AUDIT.md")
+        if stage_state in ("borrador", "conciliando") and tasks:
+            errors.append(f"{name}: TAREAS.md prematuro para etapa {stage_state}")
+        if tasks and re.search(r"^[-*] \[", tasks, re.M):
+            if not re.search(r"Test-first:\s*(?:sí|si|no)\b", tasks, re.I):
+                errors.append(f"{name}: TAREAS.md sin Test-first")
+            if not re.search(r"Test:\s*\S+", tasks, re.I):
+                errors.append(f"{name}: TAREAS.md sin Test")
+        if audit and stage_state in NEEDS_AUDIT:
+            for label, pattern in (("Snapshot", r"\*\*Snapshot:\*\*\s*\S+"), ("Trazabilidad", r"\*\*Trazabilidad:\*\*\s*\S+"), ("E-NN", r"\bE-\d{2}\b"), ("Veredicto", r"\*\*Veredicto:\*\*\s*\S+")):
+                if not re.search(pattern, audit, re.I):
+                    errors.append(f"{name}: AUDIT.md sin {label}")
+            if stage_state == "cerrada" and not re.search(r"\*\*Veredicto:\*\*\s*coincide\b", audit, re.I):
+                errors.append(f"{name}: cierre sin veredicto coincide")
         if tasks and tasks_state and tasks_state not in ("pendiente", "en curso", "implementada", "auditada"):
             errors.append(f"{name}: estado de tareas desconocido {tasks_state!r}")
 

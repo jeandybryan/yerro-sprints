@@ -4,13 +4,12 @@ description: >-
   Splits a product specification into an implementation-stage folder tree
   with a README index and per-stage CONCILIACION.md drafts. Use when the
   user wants implementation stages or needs to divide an existing or new
-  feature specification into stages. Do not
-  write TAREAS.md yet.
+  feature specification into stages. Do not write TAREAS.md, AUDIT.md or code.
 ---
 
 # Identify feature stages
 
-Read [feature-stages](../feature-stages/SKILL.md) and [templates.md](../feature-stages/templates.md).
+Read [feature-stages](../feature-stages/SKILL.md) and the stage contract first. Read the relevant template only when creating the index or drafts.
 
 ## Do
 

@@ -6,3 +6,7 @@
 
 - [ ] T1 — implementar el parseo (CA-01)
   Verificar: nivel `conductual`; ejecutar test focalizado; oráculo observable: exit 0 y assertion verde.
+
+
+Test-first: sí
+Test: pytest

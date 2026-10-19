@@ -1,3 +1,4 @@
+**Snapshot:** fixture tree
 # Auditoría — etapa 05
 
 ## Pasada 1
@@ -13,3 +14,6 @@
 | E-01 | CA-01 | pytest | verde | verde/0 | local; 2026-10-19 | log | cubre solo el camino feliz |
 
 **Veredicto:** no coincide
+
+
+**Trazabilidad:** S-01 → CA-01 → T1 → pytest → E-01

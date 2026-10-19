@@ -2,14 +2,14 @@
 name: feature-stages
 description: >-
   Guides the feature implementation cycle and routes requests through the
-  six-stage contract. Use when adding a feature in stages, checking the next
-  step, or when the user mentions etapas, conciliación, TAREAS.md, deltas, or
-  AUDIT.md.
+  six-stage contract. Use only for routing, unknown state, contract and gate
+  questions. Do not conciliate, generate tasks, implement code or audit. Use
+  operational skills for those actions.
 ---
 
 # Feature stages
 
-Use the complete cycle for product work with an agreed specification. Do not
+Use the complete cycle for product work with an agreed specification. Read only the contract and artifacts needed for the current transition; do not
 implement without closed conciliation and a valid principal task list. Do not
 rewrite the baseline to fit code.
 

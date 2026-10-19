@@ -4,15 +4,14 @@ description: >-
   Conciliates one implementation stage: updates CONCILIACION.md with in/out
   of scope, chat clarifications, and open questions. Use when the user is
   discussing a stage or clarifying product/feature decisions,
-  or closing conciliation. Do not generate TAREAS.md until estado is
-  cerrada. Do not implement code in this skill.
+  or closing conciliation. Do not generate TAREAS.md, implement code or audit in
+  this skill.
 ---
 
 # Conciliate stage
 
 Read [feature-stages](../feature-stages/SKILL.md),
-[stage-contract.md](../feature-stages/references/stage-contract.md),
-[templates.md](../feature-stages/templates.md) and the stage
+[stage-contract.md](../feature-stages/references/stage-contract.md) and the stage
 `CONCILIACION.md`. Spec is source of truth; chat **clarifies**, it does not
 silently override § decisiones cerradas.
 

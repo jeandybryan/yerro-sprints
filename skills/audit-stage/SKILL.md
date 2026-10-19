@@ -4,14 +4,12 @@ description: >-
   Audits an implementation stage against closed acceptance criteria and the
   principal TAREAS.md using reproducible evidence. Use when implementation is
   said to be complete, the user asks to close a stage, or requests an audit.
-  Never rewrite CONCILIACION.md to fit code.
+  Do not implement repairs or rewrite CONCILIACION.md to fit code.
 ---
 
 # Audit stage
 
-Read [feature-stages](../feature-stages/SKILL.md),
-[stage-contract.md](../feature-stages/references/stage-contract.md), and
-[templates.md](../feature-stages/templates.md). Need closed
+Read [feature-stages](../feature-stages/SKILL.md) and [stage-contract.md](../feature-stages/references/stage-contract.md). Read the audit references and template only as needed. Need closed
 `CONCILIACION.md` and principal `TAREAS.md`. Audit the same acceptance baseline
 again after every delta.
 

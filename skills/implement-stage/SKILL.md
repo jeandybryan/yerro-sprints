@@ -3,16 +3,13 @@ name: implement-stage
 description: >-
   Implements an approved implementation stage from its principal TAREAS.md or a
   TAREAS-delta-NN.md, verify the requested work, and leave evidence ready
-  for a separate audit. Use when the user asks to implement, execute, or
-  complete a conciliada/lista stage or its delta. Do not close or audit
-  the stage.
+  for a separate audit. Use when the user asks to implement or execute an
+  approved stage or delta. Do not change the baseline, close or audit the stage.
 ---
 
 # Implement stage
 
-Read [feature-stages](../feature-stages/SKILL.md),
-[stage-contract.md](../feature-stages/references/stage-contract.md),
-[templates.md](../feature-stages/templates.md), the stage `CONCILIACION.md`,
+Read [feature-stages](../feature-stages/SKILL.md) and [stage-contract.md](../feature-stages/references/stage-contract.md), then the stage `CONCILIACION.md`,
 principal `TAREAS.md`, and the requested delta if any.
 
 ## Entry gate

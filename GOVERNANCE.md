@@ -67,3 +67,11 @@ de crear una release o promesa de compatibilidad:
 
 Hasta que cada punto tenga una decisión registrada, el paquete puede validarse
 localmente, pero no debe presentarse como release gobernada.
+
+## Contexto progresivo
+
+Cada skill carga primero su contrato y los artefactos de entrada. Las plantillas
+modulares y referencias temáticas se leen bajo demanda, solo al escribir o
+resolver el artefacto correspondiente. Esta política reduce contexto repetido
+sin omitir gates: no se cargan todas las plantillas ni todo `GOVERNANCE.md` por
+defecto.

@@ -47,6 +47,7 @@ promueve a etapa.
 <feature-root>/
   <SPEC>.md                 # source of truth (what we want)
   README.md                 # stage index + status
+  EXPRES.md # optional: changes that did not open a stage
   NN-slug/
     CONCILIACION.md         # first
     TAREAS.md               # after conciliation closes

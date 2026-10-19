@@ -10,6 +10,7 @@ El estado no se recuerda ni se negocia: se lee de los artefactos.
 python3 <skills-root>/feature-stages/scripts/next_step.py <feature-root> [--stage NN-slug] [--json]
 python3 <skills-root>/feature-stages/scripts/doctor.py <feature-root>
 python3 <skills-root>/feature-stages/scripts/snapshot.py <repo> --exclude <feature-root>
+python3 <skills-root>/feature-stages/scripts/expres.py <repo> [--base REF]
 ```
 
 Estados públicos: `trabajando`, `verificando`, `listo`, `necesita-decision`. `next_step.py` devuelve uno y la skill siguiente; `doctor.py` informa incoherencias entre el índice y los artefactos. Ambos son de solo lectura y no rebajan ningún gate: ante una discrepancia gana el gate más estricto y la discrepancia se registra como bloqueo. `necesita-decision` detiene el ciclo; no se sustituye por un valor por defecto.
@@ -36,6 +37,15 @@ Un `AUDIT.md` que cierre una etapa conserva cada pasada. El veredicto `coincide`
 - Cada pasada registra `**Snapshot:**` con la salida exacta de `snapshot.py`. `exclude=` identifica el árbol de la feature para que la evidencia no invalide su propio hash: el snapshot es del código auditado, no del archivo que lo describe.
 - Un `coincide` solo vale para el snapshot que auditó. Si el árbol cambió, la pasada está obsoleta y se reaudita; no se reutiliza el veredicto para cerrar. `validate_stage.py <etapa> --repo <repo>` verifica esa coincidencia.
 - `**Presupuesto de deltas:**` (dos por defecto) acota la corrección. Agotado el presupuesto, si la auditoría sigue en `no coincide`, `next_step.py` devuelve `necesita-decision` con `PRESUPUESTO_DE_DELTAS_AGOTADO`: reabrir la conciliación, aceptar el riesgo residual con owner o detener la etapa. Escribir otro delta no es una salida.
+
+## Vía exprés
+
+- Un cambio fuera del ciclo solo puede ser una corrección pequeña: un archivo de producción y como máximo 20 líneas de producción; las pruebas no cuentan.
+- Migraciones, esquemas, seguridad/auth, contratos compartidos, interfaces públicas, dependencias nuevas y CA nuevos siempre abren etapa.
+- `expres.py` decide los límites mecánicos. La ausencia de CA nuevo y de cambio de interfaz pública se confirma en la fila correspondiente de `EXPRES.md`.
+- `EXPRES.md` es opcional y registral: `next_step.py` no lo lee, no cambia transiciones y no bloquea etapas. Cada fila conserva el cambio, la frontera y su verificación.
+- Tres o más registros sobre el mismo CA o archivo generan `WARN` en `doctor.py`; es señal de promoción a etapa, no un gate.
+- Si la comprobación mecánica dice `no cabe`, o no se pueden confirmar las dos condiciones manuales, se abre etapa sin override.
 
 ## Selección de trabajo
 

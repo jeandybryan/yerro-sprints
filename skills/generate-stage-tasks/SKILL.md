@@ -13,8 +13,11 @@ description: >-
 Read [feature-stages](../feature-stages/SKILL.md),
 [stage-contract.md](../feature-stages/references/stage-contract.md) and
 [templates.md](../feature-stages/templates.md). Refuse if `CONCILIACION.md`
-is not `cerrada`. Run `validate_stage.py <stage>` before and after writing;
-pre-existing legacy warnings may be recorded, but structural errors block the list.
+is not `cerrada`. Confirma con
+`python3 <skills-root>/feature-stages/scripts/next_step.py <feature-root> --stage <NN-slug>`
+que la transición es `generate-stage-tasks`; si devuelve otro estado o un bloqueo, no escribas la lista. Escribe `TAREAS.md` y después ejecuta
+`validate_stage.py <stage>`: las advertencias de formato legado se registran,
+los errores estructurales bloquean la entrega.
 
 ## Do
 

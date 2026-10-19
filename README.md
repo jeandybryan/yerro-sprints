@@ -132,6 +132,21 @@ en la raíz de una feature:
     TAREAS-delta-NN.md # solo si el audit encuentra un hueco
 ```
 
+### ¿En qué estado estoy?
+
+Antes de elegir un paso, léelo desde los artefactos en vez de recordarlo:
+
+```bash
+python3 <skills-root>/feature-stages/scripts/next_step.py <feature-root>
+python3 <skills-root>/feature-stages/scripts/doctor.py <feature-root>
+```
+
+`next_step.py` devuelve un estado público (`trabajando`, `verificando`,
+`listo`, `necesita-decision`), la única skill siguiente y los bloqueos con su
+resolución. `--json` para máquinas, `--stage NN-slug` para una etapa concreta y
+`--check` para CI. `doctor.py` informa incoherencias entre el índice y los
+artefactos. Ambos son de solo lectura y no sustituyen ningún gate.
+
 ### 1. Corta la especificación
 
 Pídele al agente: **"divide esta spec en etapas implementables"**.
@@ -193,7 +208,9 @@ Pídele: **"audita la etapa NN"**.
 La conciliación y el trabajo activo se anotan por separado en el índice; una
 etapa quedará `bloqueada` solo con una causa y un desbloqueador escritos. El
 validador trata la etapa como cerrada solo cuando la celda **Estado** de su
-fila lo dice.
+fila lo dice. Una etapa no se considera cerrada si la última pasada de
+auditoría no dice `coincide`; el cierre se refleja en el índice después de la
+evidencia, nunca antes.
 
 ### Reglas de oro
 
@@ -201,6 +218,8 @@ fila lo dice.
 - `generate-stage-tasks` **no** genera tareas sin conciliación `cerrada`.
 - `implement-stage` **no** ejecuta sin lista principal válida.
 - `audit-stage` **no** cierra sin evidencia suficiente y no toca el baseline.
+- El siguiente paso se lee con `next_step.py`; `necesita-decision` detiene el
+  ciclo en vez de asumir un valor por defecto.
 - Un `no coincide` se resuelve con un **delta**; un cambio de intención, alcance
   o criterio **reabre la conciliación**, no se maquilla como delta.
 
@@ -210,13 +229,24 @@ Desde la raíz del repositorio:
 
 ```bash
 python3 skills/feature-stages/scripts/validate_skill_evals.py
+python3 skills/feature-stages/scripts/test_next_step.py
+python3 skills/feature-stages/scripts/doctor.py \
+  skills/feature-stages/evals/fixtures/transiciones
 python3 skills/feature-stages/scripts/validate_stage.py \
   skills/feature-stages/evals/fixtures/valid-stage --strict
 ```
 
-El segundo comando debe terminar correctamente. Estas dos fixtures también
-deben terminar correctamente: conciliación `cerrada` con etapa `auditando`, y
-etapa `cerrada` con veredicto `coincide`.
+Todos los comandos deben terminar correctamente: el catálogo de evals, las
+transiciones de `transiciones/` y la salud del árbol, además del contrato de la
+etapa válida. `test_next_step.py` también cubre los negativos `sin-tareas`,
+`abierta`, `inconsistente`, `dependencia`, `bloqueada`, `ambiguo`,
+`cierre-pendiente`, `delta-huerfano`, `sin-conciliacion`,
+`conciliacion-invalida`, `sin-principal`, `huerfana` e `indice-sin-tabla`; un
+cambio de `next_step.py` o `doctor.py` que altere una transición o una regla
+estructural sin actualizar su caso deja la suite roja.
+
+Estas dos fixtures también deben terminar correctamente: conciliación
+`cerrada` con etapa `auditando`, y etapa `cerrada` con veredicto `coincide`.
 
 ```bash
 python3 skills/feature-stages/scripts/validate_stage.py \
@@ -236,6 +266,13 @@ if python3 skills/feature-stages/scripts/validate_stage.py \
   echo 'La fixture negativa pasó: el gate está roto' >&2
   exit 1
 fi
+for fixture in inconsistente doctor-estructural huerfana; do
+  if python3 skills/feature-stages/scripts/doctor.py \
+    "skills/feature-stages/evals/fixtures/$fixture"; then
+    echo "doctor aceptó $fixture: el gate está roto" >&2
+    exit 1
+  fi
+done
 if python3 skills/feature-stages/scripts/validate_stage.py \
   skills/feature-stages/evals/fixtures/index-estado/04-etapa --strict; then
   echo 'El índice cerrado pasó sin veredicto coincide: el gate está roto' >&2

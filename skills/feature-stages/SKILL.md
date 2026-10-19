@@ -33,7 +33,24 @@ implementation or verification gaps.
 Templates: [templates.md](templates.md).
 Contrato transversal: [stage-contract.md](references/stage-contract.md).
 Validador estructural: `python3 <skills-root>/feature-stages/scripts/validate_stage.py <feature-root>/<NN-slug>`.
-Regression rubric for changes to this cycle: [EVALUATION.md](EVALUATION.md).
+Regresión del ciclo: [EVALUATION.md](EVALUATION.md).
+
+## Contrato ejecutable
+
+Antes de decidir el siguiente paso, lee el estado desde los artefactos:
+
+```bash
+python3 <skills-root>/feature-stages/scripts/next_step.py <feature-root> [--stage NN-slug] [--json]
+python3 <skills-root>/feature-stages/scripts/doctor.py <feature-root>
+```
+
+`next_step.py` devuelve un estado público — `trabajando`, `verificando`,
+`listo` o `necesita-decision` —, la única skill siguiente y los bloqueos con su
+resolución. `doctor.py` informa incoherencias entre índice y artefactos. Ninguno
+escribe archivos ni sustituye un gate: si el script y el contrato discrepan,
+gana el gate más estricto y la discrepancia se registra como bloqueo.
+`necesita-decision` detiene el ciclo hasta que el usuario decida; no se elige
+un valor por defecto.
 
 ## States
 
@@ -79,6 +96,7 @@ Tras `audit-stage` con `coincide`, se prepara revisión/PR si aplica. `autopilot
 
 | User intent | Skill |
 |-------------|--------|
+| “What do I do now?” / unknown state | `next_step.py` (read-only) |
 | New feature / split a spec | `identify-feature-stages` |
 | Talk through a stage, decisions, out of scope | `conciliate-stage` |
 | Conciliation just closed | `generate-stage-tasks` |

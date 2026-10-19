@@ -22,6 +22,8 @@ los artefactos.
 - [ ] Las seis fases y sus límites de responsabilidad se preservan.
 - [ ] Ningún gate fue rebajado para que una fixture pase.
 - [ ] Se ejecutaron las validaciones locales (ver README, sección de validación).
+- [ ] `test_next_step.py` pasa; toda transición, bloqueo o regla estructural nueva tiene su caso en `evals/fixtures/`.
+- [ ] `doctor.py` acepta `transiciones/` y rechaza `inconsistente/`, `doctor-estructural/` y `huerfana/`.
 - [ ] La fixture negativa `closed-without-task` sigue fallando.
 - [ ] `index-estado/04-etapa` sigue fallando y `03-activa` / `05-hecha` pasan.
 - [ ] `ca-tipo` sin `--strict` solo avisa `CA-05`; con `--strict` falla.
@@ -33,6 +35,9 @@ los artefactos.
 
 ```bash
 python3 skills/feature-stages/scripts/validate_skill_evals.py
+python3 skills/feature-stages/scripts/test_next_step.py
+python3 skills/feature-stages/scripts/doctor.py \
+  skills/feature-stages/evals/fixtures/transiciones
 python3 skills/feature-stages/scripts/validate_stage.py \
   skills/feature-stages/evals/fixtures/valid-stage --strict
 python3 skills/feature-stages/scripts/validate_stage.py \
@@ -46,6 +51,13 @@ git diff --check
 Las fixtures negativas deben fallar:
 
 ```bash
+for fixture in inconsistente doctor-estructural huerfana; do
+  if python3 skills/feature-stages/scripts/doctor.py \
+    "skills/feature-stages/evals/fixtures/$fixture"; then
+    echo "doctor aceptó $fixture: el gate está roto" >&2
+    exit 1
+  fi
+done
 if python3 skills/feature-stages/scripts/validate_stage.py \
   skills/feature-stages/evals/fixtures/closed-without-task --strict; then
   echo 'La fixture negativa pasó: el gate está roto' >&2

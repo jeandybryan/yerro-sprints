@@ -35,6 +35,11 @@ Keep role independence:
 
 1. Read the feature spec, closed `CONCILIACION.md`, principal `TAREAS.md`,
    existing deltas, prior audit and the feature index.
+   Confirma con
+   `python3 <skills-root>/feature-stages/scripts/next_step.py <feature-root> --stage <NN-slug>`
+   que el estado es `verificando`. Un `necesita-decision` (índice cerrado sin
+   veredicto, delta sin auditoría, dependencia abierta o pregunta abierta)
+   bloquea el cierre y se presenta con su resolución.
    A normal close audit requires stage `auditando` and the active principal
    list/delta marked `implementada`. An explicit user request may audit an
    `implementando` or `bloqueada` stage as an intermediate pass, but cannot

@@ -1,6 +1,17 @@
 # Contrato de etapas
 
-Este contrato define los artefactos y transiciones compartidos por las skills del ciclo. Las plantillas de `sprints/feature-stages/templates.md` son la forma canónica de producirlos.
+Este contrato define los artefactos y transiciones compartidos por las skills del ciclo. Las plantillas de `feature-stages/templates.md` son la forma canónica de producirlos.
+
+## Transición única
+
+El estado no se recuerda ni se negocia: se lee de los artefactos.
+
+```bash
+python3 <skills-root>/feature-stages/scripts/next_step.py <feature-root> [--stage NN-slug] [--json]
+python3 <skills-root>/feature-stages/scripts/doctor.py <feature-root>
+```
+
+Estados públicos: `trabajando`, `verificando`, `listo`, `necesita-decision`. `next_step.py` devuelve uno y la skill siguiente; `doctor.py` informa incoherencias entre el índice y los artefactos. Ambos son de solo lectura y no rebajan ningún gate: ante una discrepancia gana el gate más estricto y la discrepancia se registra como bloqueo. `necesita-decision` detiene el ciclo; no se sustituye por un valor por defecto.
 
 ## Estados y baseline
 

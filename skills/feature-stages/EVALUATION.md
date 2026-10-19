@@ -4,7 +4,7 @@ Mide si las skills del ciclo conservan el contrato, se activan para la petición
 
 ## Niveles
 
-1. **Estructural — CI/local, sin tokens.** Ejecutar `scripts/validate_stage.py` sobre fixtures y etapas reales. Verifica el contrato de artefactos.
+1. **Estructural — CI/local, sin tokens.** Ejecutar `scripts/validate_stage.py` sobre fixtures y etapas reales. Verifica el contrato de artefactos. `scripts/test_next_step.py` verifica que cada estado de los artefactos produzca una única transición válida, y `scripts/doctor.py` que el índice y los artefactos no se contradigan.
 2. **Activación y separación — CI/local, sin tokens.** Los casos `evals/cases/*.json` contienen peticiones positivas y negativas escritas como usuarios reales. Un cambio de descripción no puede hacer que otra skill sea la respuesta esperada.
 3. **Comportamiento — bajo demanda, consume tokens.** Ejecutar cada caso en un snapshot aislado y puntuar el transcript/diff contra `expectations`. Mantener casos retenidos que la skill no vea antes de la evaluación.
 
@@ -25,6 +25,7 @@ Al informar resultados, fijar modelo, versión de Cursor/agente, fecha, configur
 | S09 | Pregunta asumida | `conciliate-stage` | `Contexto`, `Pregunta`, `Propuesta` visibles; no cierra con default. |
 | S10 | Oráculo unidireccional | `audit-stage` | Pide afirmación negativa/inversa o reabre. |
 | S11 | Índice cerrado con audit fallido | validador | Falla el contrato, no acepta el cierre. |
+| S12 | Estado desconocido | `feature-stages` | Lee los artefactos con `next_step.py`; una sola transición; no inventa paso. |
 | I01 | Corte ambiguo o por encabezados | `identify-feature-stages` | Pide aclaración o corta por resultados; asigna requisitos; no crea tareas/auditoría. |
 
 ## Rúbrica conductual
@@ -42,6 +43,8 @@ python3 scripts/validate_stage.py evals/fixtures/closed-without-task --strict
 python3 scripts/validate_stage.py evals/fixtures/index-estado/04-etapa --strict
 python3 scripts/validate_stage.py evals/fixtures/ca-tipo
 python3 scripts/validate_stage.py evals/fixtures/ca-tipo --strict
+python3 scripts/test_next_step.py
+python3 scripts/doctor.py evals/fixtures/transiciones
 ```
 
 `closed-without-task` y `index-estado/04-etapa` deben salir con error. La
@@ -49,5 +52,18 @@ segunda solo mira la celda **Estado**: conciliación `cerrada` con etapa
 `auditando` (`03-activa`) es válida; **Estado** `cerrada` sin veredicto
 `coincide` no lo es. `ca-tipo` sin `--strict` solo avisa el CA sin marcador
 (`CA-05`); con `--strict` ese aviso es error.
+
+`transiciones/` recorre el ciclo completo: corte, lista, auditoría pendiente,
+cierre y delta, más los negativos `sin-tareas`, `abierta`, `inconsistente`,
+`dependencia`, `bloqueada`, `ambiguo`, `cierre-pendiente`, `delta-huerfano`,
+`sin-conciliacion`, `conciliacion-invalida` y `sin-principal`. Cada caso afirma
+estado público, skill siguiente y código de bloqueo; un cambio en
+`next_step.py` que altere una transición sin actualizar su caso deja la suite
+roja.
+
+`doctor-estructural/`, `huerfana/` e `indice-sin-tabla/` cubren las reglas
+estructurales de `doctor.py` (etapa sin lista, sin auditoría o sin
+conciliación, delta mal nombrado o sin `Cierra:`, carpeta sin fila, índice sin
+tabla). Una regla nueva sin fixture que la viole no cuenta como cubierta.
 
 Para comportamiento, materializar la fixture indicada en un repositorio temporal, dar el `prompt` a un agente con la skill objetivo y aplicar la rúbrica a la conversación y artefactos. Los casos de activación se revisan al editar `description` de cualquier skill: al menos tres positivos, dos negativos con propietario y una evaluación conductual por skill modificada.

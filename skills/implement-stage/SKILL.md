@@ -27,6 +27,12 @@ Start only when:
 - when implementing a delta: its `Cierra:` points to a `no coincide` audit pass,
   it names the affected CA/evidence, and the feature index marks it as active work.
 
+Confirma con
+`python3 <skills-root>/feature-stages/scripts/next_step.py <feature-root> --stage <NN-slug>`
+que el estado es `trabajando` y la skill siguiente es `implement-stage`. Si
+devuelve `necesita-decision`, no implementes: presenta el bloqueo y su
+resolución.
+
 Run `python3 <skills-root>/feature-stages/scripts/validate_stage.py <stage>`
 before work; structural errors block implementation.
 

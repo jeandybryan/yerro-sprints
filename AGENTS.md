@@ -23,6 +23,12 @@ auditoría.
 - Mantén el README para humanos y los `SKILL.md` concisos para agentes.
 - Conserva la evidencia de los comandos ejecutados en la descripción del PR o
   release, no dentro de los `SKILL.md`.
+- El siguiente paso del ciclo se lee con
+  `python3 skills/feature-stages/scripts/next_step.py <feature-root>`; no lo
+  inventes ni lo deduzcas de la conversación. `doctor.py` informa incoherencias
+  entre el índice y los artefactos.
+- Toda transición, bloqueo o estado de etapa nuevo necesita un caso en
+  `skills/feature-stages/evals/fixtures/` y su fila en `test_next_step.py`.
 
 ## Antes de tocar un archivo
 
@@ -31,7 +37,9 @@ auditoría.
 3. Determina si el cambio es de comportamiento (requiere fixture/caso nuevo) o
    de documentación (requiere mantener la coherencia en README, CONTRIBUTING y
    CHANGELOG).
-4. Ejecuta las validaciones locales y confirma que la fixture negativa sigue
+4. Si toca una transición, agrega o ajusta la fixture antes de cambiar el
+   script: el caso debe fallar con el contrato viejo.
+5. Ejecuta las validaciones locales y confirma que la fixture negativa sigue
    fallando.
 
 ## Árbol que debes preservar

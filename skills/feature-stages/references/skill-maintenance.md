@@ -6,3 +6,5 @@ exige conservar este contrato y ejecutar los casos retenidos definidos en
 `../EVALUATION.md`. Mantener los procedimientos en cada skill; las reglas transversales viven en `stage-contract.md` para evitar divergencia.
 
 No añadir una skill nueva si extiende de forma natural una de las existentes. Una nueva skill necesita una petición distinta, pasos verificables y casos de activación positivos y negativos.
+
+Las skills deben mantenerse cortas y operativas; las reglas normativas detalladas viven en referencias enlazadas y no se duplican en cada `SKILL.md`.

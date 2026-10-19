@@ -48,7 +48,7 @@ gates, plantillas y evaluación, pero **no reemplaza ninguna fase**.
 ## Gobernanza y release
 
 Las reglas de mantenimiento están en [GOVERNANCE.md](GOVERNANCE.md) y la
-lista de salida en [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md). La gobernanza
+lista de salida en [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md). Las skills operativas apuntan a referencias normativas para mantener el contexto corto sin duplicar gates. La gobernanza
 no inventa licencia, canales de distribución, política de tags ni agentes
 soportados: esas decisiones deben acordarse antes de una release.
 

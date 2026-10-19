@@ -6,8 +6,19 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS = ("identify-feature-stages", "feature-stages", "conciliate-stage", "generate-stage-tasks", "implement-stage", "audit-stage")
+DOCUMENTS = (
+    ROOT / "references" / "stage-contract.md",
+    ROOT / "references" / "express-lane.md",
+    ROOT / "references" / "decision-traceability.md",
+    ROOT / "references" / "decision-and-questions.md",
+    ROOT.parent / "audit-stage" / "references" / "audit-procedure.md",
+    ROOT.parent / "audit-stage" / "references" / "scoring-and-evidence.md",
+    ROOT.parent / "audit-stage" / "references" / "deltas-and-closure.md",
+)
 def main() -> int:
     errors=[]
+    for document in DOCUMENTS:
+        if not document.exists(): errors.append(f"falta referencia normativa {document.relative_to(ROOT)}")
     for skill in SKILLS:
         path=ROOT/"evals"/"cases"/f"{skill}.json"
         if not path.exists(): errors.append(f"falta caso para {skill}"); continue

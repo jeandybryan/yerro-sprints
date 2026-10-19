@@ -1,198 +1,82 @@
 ---
 name: feature-stages
 description: >-
-  Guides the feature implementation cycle: spec folder, per-stage
-  CONCILIACION.md, principal TAREAS.md, implementation, evidence-based
-  AUDIT.md, then TAREAS-delta-NN.md until acceptance criteria and code
-  match. Use when adding a feature in stages, conciliating, implementing,
-  generating tasks, auditing, or when the user mentions etapas,
-  conciliación, TAREAS.md, deltas, or AUDIT.md.
+  Guides the feature implementation cycle and routes requests through the
+  six-stage contract. Use when adding a feature in stages, checking the next
+  step, or when the user mentions etapas, conciliación, TAREAS.md, deltas, or
+  AUDIT.md.
 ---
 
 # Feature stages
 
-Use this cycle for any product feature with an agreed specification.
+Use the complete cycle for product work with an agreed specification. Do not
+implement without closed conciliation and a valid principal task list. Do not
+rewrite the baseline to fit code.
 
-Do not implement a stage that has no **closed** conciliation and principal
-task list. Do not rewrite conciliation to match the code; deltas close
-implementation or verification gaps.
+## Choose the proportional path
 
-## Antes de abrir etapa
-
-El ciclo completo es para **producto**. No lo apliques por reflejo a un arreglo
-pequeño, ni lo esquives declarando pequeño algo que no lo es. Lee la frontera
-con
+For a small correction, run:
 
 ```bash
 python3 <skills-root>/feature-stages/scripts/expres.py <repo> [--base REF]
 ```
 
-Cabe fuera del ciclo solo si cumple **todo**: 1 archivo de producción, ≤ 20
-líneas de producción (las pruebas no cuentan), ninguna ruta excluida
-(migración, esquema, seguridad/auth, contratos compartidos, manifiesto de
-dependencias) y, a confirmación humana, sin CA nuevo y sin cambio de interfaz
-pública. Si el script dice `no cabe`, o no puedes afirmar las dos
-confirmaciones, **abre etapa**: la vía exprés no tiene override.
+The express lane permits one production file and at most 20 production lines,
+with no excluded route, new CA or public-interface change. Tests do not count.
+If the result is `no cabe`, or the two human confirmations are unavailable,
+open a normal stage. Record accepted express changes in `EXPRES.md`.
+See [express-lane.md](references/express-lane.md).
 
-Si cabe, registra una línea en `EXPRES.md` (ver
-[templates.md](templates.md)) con el **por qué** cabía y **cómo** se verificó.
-`EXPRES.md` es un registro, no un gate: `next_step.py` no lo lee, no cambia
-ninguna transición y no bloquea ninguna etapa. Si tres cambios se acumulan
-sobre el mismo CA o el mismo archivo, `doctor.py` avisa: estaba mal cortado,
-promueve a etapa.
-
-## Layout
-
-```text
-<feature-root>/
-  <SPEC>.md                 # source of truth (what we want)
-  README.md                 # stage index + status
-  EXPRES.md # optional: changes that did not open a stage
-  NN-slug/
-    CONCILIACION.md         # first
-    TAREAS.md               # after conciliation closes
-    AUDIT.md                # after implementation; one section per pass
-    TAREAS-delta-NN.md      # only if audit finds a gap
-```
-
-Templates: [templates.md](templates.md).
-Contrato transversal: [stage-contract.md](references/stage-contract.md).
-Validador estructural: `python3 <skills-root>/feature-stages/scripts/validate_stage.py <feature-root>/<NN-slug>`.
-Identidad de auditoría: `python3 <skills-root>/feature-stages/scripts/snapshot.py <repo> --exclude <feature-root>`.
-Frontera exprés: `python3 <skills-root>/feature-stages/scripts/expres.py <repo> [--base REF]`.
-Regresión del ciclo: [EVALUATION.md](EVALUATION.md).
-
-## Contrato ejecutable
-
-Antes de decidir el siguiente paso, lee el estado desde los artefactos:
+## Read the contract before acting
 
 ```bash
 python3 <skills-root>/feature-stages/scripts/next_step.py <feature-root> [--stage NN-slug] [--json]
 python3 <skills-root>/feature-stages/scripts/doctor.py <feature-root>
+```
+
+`next_step.py` is read-only and returns exactly one public state:
+`trabajando`, `verificando`, `listo` or `necesita-decision`, plus the next
+skill and blockers. `doctor.py` reports structural contradictions. Never guess
+the next skill or replace `necesita-decision` with a default.
+
+For audit work, also use:
+
+```bash
 python3 <skills-root>/feature-stages/scripts/snapshot.py <repo> --exclude <feature-root>
 python3 <skills-root>/feature-stages/scripts/validate_stage.py <stage> --strict --repo <repo>
 ```
 
-`next_step.py` devuelve un estado público — `trabajando`, `verificando`,
-`listo` o `necesita-decision` —, la única skill siguiente y los bloqueos con su
-resolución. `doctor.py` informa incoherencias entre índice y artefactos.
-`snapshot.py` produce la identidad que cada pasada de auditoría registra;
-`validate_stage.py --repo` comprueba que ese snapshot sigue siendo el árbol
-actual. Ninguno escribe archivos ni sustituye un gate: si el script y el
-contrato discrepan, gana el gate más estricto y la discrepancia se registra
-como bloqueo. `necesita-decision` detiene el ciclo hasta que el usuario decida;
-no se elige un valor por defecto.
-
-## States
-
-`CONCILIACION.md`: `borrador-corte` → `abierta` → `cerrada`.
-
-Stage (in feature README): `borrador` → `conciliando` → `lista` →
-`implementando` → `auditando` → `cerrada`. Use `bloqueada` only with a
-written blocker. Keep the conciliation state and active work separate in the
-index: `lista` can mean initial principal work or a named pending delta.
-
-`TAREAS.md` is the **principal** list. Deltas do not replace it; they
-close gaps against the same acceptance baseline.
-
-A closed conciliation also freezes `**Riesgo:**` and
-`**Presupuesto de deltas:**` (two by default). The auditor records
-`**Riesgo auditado:**` and never lowers it; the budget bounds corrective work.
-Exceeding either is `necesita-decision`, not a silent extra delta.
-
 ## Gates
 
-- **Ready to implement:** conciliation closed; acceptance criteria have
-  stable IDs (`CA-01`...); dependencies are `cerrada` or have a named,
-  justified exception in the conciliation; `TAREAS.md` traces every
-  criterion to a verification method.
-- **Done:** every principal criterion is `cumple`; relevant tests/lints pass;
-  docs/config/migrations are updated when affected; no unresolved
-  `requiere revisión` or `bloqueante` scope deviation; `AUDIT.md` contains
-  fresh reproducible evidence.
-  `Parcial`, `no cumple` or `no verificado` always means `no coincide`.
+A stage is ready to implement only with closed conciliation, stable CA IDs,
+closed or justified dependencies, a principal `TAREAS.md`, and bidirectional
+traceability. Each criterion has a decision origin; each task has `Test-first:`
+and a reproducible `Test:` command. See
+[decision-traceability.md](references/decision-traceability.md).
 
-## Ciclo activo
+A stage is done only when every principal CA is `cumple`, required evidence and
+checks pass, the audited snapshot is current, risk was not lowered, and there
+is no blocking deviation. Snapshot, risk and delta-budget rules live in
+[stage-contract.md](references/stage-contract.md).
 
-El índice puede incluir un objetivo observable, etapas comprometidas, criterio de éxito, fuera de ciclo y siguiente decisión. Es opcional y no crea un archivo por sprint.
+## Routing
 
-### Selección, WIP y bloqueos
+| Intent | Skill or command |
+|---|---|
+| New feature or split a spec | `identify-feature-stages` |
+| Decisions, scope or questions | `conciliate-stage` |
+| Closed conciliation | `generate-stage-tasks` |
+| Approved task list | `implement-stage` |
+| Implemented or close request | `audit-stage` |
+| Unknown state | `next_step.py` |
 
-Selecciona: etapa nombrada por el usuario; luego comprometida en `Ciclo activo`; luego delta que la desbloquea; luego mayor prioridad documentada; y solo al final la primera elegible. Registra `Por qué ahora`. Mantén como máximo una etapa en `implementando` y una en `auditando` por línea funcional, salvo razón anotada en `Trabajo activo`. Todo bloqueo indica causa, desbloqueador, evidencia requerida y siguiente revisión.
+Preserve the six phases and their boundaries. Domain-specific rules stay out of
+this package. Templates are in [templates.md](templates.md); maintenance rules
+are in [skill-maintenance.md](references/skill-maintenance.md).
 
-### Cambios y cierre
+## When in doubt
 
-Un defecto contra el baseline va a delta; un cambio de producto o prioridad actualiza el objetivo o se difiere, reabriendo conciliación si cambia alcance; un incidente urgente registra qué compromiso desplaza. Al cerrar, anota resultado, evidencia, desviaciones, pendientes y siguiente decisión. El aprendizaje solo se registra ante una fricción material o repetible.
-
-### Handoff a revisión
-
-Tras `audit-stage` con `coincide`, se prepara revisión/PR si aplica. `autopilot` queda limitado a conflictos, comentarios y CI; Bugbot/Security Review se usan según riesgo y petición explícita. Ninguno sustituye la auditoría o validación ambiental, y el merge queda bajo decisión del usuario.
-
-## Which skill
-
-| User intent | Skill |
-|-------------|--------|
-| “What do I do now?” / unknown state | `next_step.py` (read-only) |
-| New feature / split a spec | `identify-feature-stages` |
-| Talk through a stage, decisions, out of scope | `conciliate-stage` |
-| Conciliation just closed | `generate-stage-tasks` |
-| Execute an approved principal/delta list | `implement-stage` |
-| “already implemented” / close the stage | `audit-stage` |
-
-## Ask when in doubt
-
-Do not guess product intent, scope, evidence level or a closed decision.
-Stop and ask before writing it as agreed.
-
-**Contexto** and **Propuesta** must appear in the visible Spanish reply.
-AskQuestion is only the option picker; it does not replace those labels.
-A card that shows just the question and buttons is a failed ask.
-
-Visible reply (required before any AskQuestion call):
-
-1. **Contexto:** 1–2 sentences — why it matters and what is blocked.
-2. **Pregunta:** one explicit question.
-3. **Propuesta:** the option you recommend and one-sentence justification
-   (point at the spec when it exists).
-
-If AskQuestion is available, call it after that text: `title` = short
-topic; `prompt` = the same three labeled blocks (not the question alone);
-≥3 distinct options, recommended first with ` (Recomendado)`; `Other`
-remains available. More options when the choice is not a small set.
-
-Enough to decide; no essay. Do not batch unrelated questions unless each
-independently blocks the same step.
-
-## Rules
-
-- Stages are **implementable deliverables**, not 1:1 spec headings.
-- Each stage has one observable outcome, dependencies, acceptance
-  criteria, risks/compatibility notes, and explicit exclusions.
-- A criterion is a **condición de salida** or an **invariante acumulado** and links to its decision source through `Origen: S-NN`.
-  A condición de salida can be true at that historical point (for example
-  “does not yet start a loop”); later approved stages may supersede it. An
-  invariante acumulado must remain true and is rechecked by later audits.
-- Spec context sections bind to stages; they are not stages by themselves.
-- Tasks say **how** to satisfy criteria; they do not replace criteria. Every implementation task declares `Test-first: sí` and a reproducible `Test:` command before implementation.
-- Evidence has a declared level: **structural** (source/config), **conductual**
-  (focused test), **system** (integrated process) or **ambiental** (real
-  host/hardware/operation). Verification proves the agreed build; validation
-  proves it works in the intended environment. A validation criterion belongs
-  to a named field/overnight stage unless explicitly required earlier.
-- Audit verifies both compliance (built as specified) and acceptance
-  (the outcome works in the intended context).
-- Audit decomposes each criterion into atomic assertions and tries to refute
-  completion with negative/boundary checks proportional to risk. A passing
-  suite, source inspection or task checkbox does not replace the verification
-  method agreed in `TAREAS.md`.
-- Audit does not repair findings in the same pass. It preserves the failed
-  evidence, emits a delta against the unchanged baseline and appends a later
-  re-audit.
-- If product intent changes after closure, reopen conciliation and update
-  the baseline before coding. Deltas are not a mechanism for changing
-  requirements.
-- A recurring audit limitation is process feedback: add it to the next
-  applicable conciliation or feature index, rather than hiding it in a
-  one-off audit note.
-- Domain-specific skills and project rules stay separate from this workflow.
-  They may add constraints to a stage, but never weaken this cycle's gates.
+Do not guess product intent, scope, evidence level, risk, owner or a closed
+decision. Reply visibly with **Contexto**, **Pregunta** and **Propuesta** before
+asking for a choice. AskQuestion is only the option picker. See
+[decision-and-questions.md](references/decision-and-questions.md).

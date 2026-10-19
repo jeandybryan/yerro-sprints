@@ -62,6 +62,13 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
   `presupuesto-agotado`, `presupuesto-excedido`,
   `presupuesto-excedido-coincide` y `presupuesto-amplio`, con
   `test_snapshot.py` y casos nuevos en `test_next_step.py`.
+- Vía exprés: `expres.py` decide desde el diff si un cambio cabe fuera del
+  ciclo (1 archivo de producción, ≤ 20 líneas, sin rutas excluidas). Cuenta los
+  archivos nuevos sin trackear, no cuenta las pruebas y acepta `--json`.
+  `EXPRES.md` registra una fila por cambio con el porqué y la verificación;
+  `next_step.py` no lo lee. `doctor.py` avisa, sin bloquear, cuando 3 cambios se
+  acumulan sobre el mismo CA o el mismo archivo. Fixtures `expres-sano` y
+  `expres-acumulado`, con `test_expres.py` y casos en `test_next_step.py`.
 
 ### Cambiado
 

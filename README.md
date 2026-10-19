@@ -130,6 +130,7 @@ en la raíz de una feature:
     TAREAS.md          # lista principal (tras cerrar la conciliación)
     AUDIT.md           # veredicto por pasada, con evidencia
     TAREAS-delta-NN.md # solo si el audit encuentra un hueco
+  EXPRES.md            # registro opcional de cambios que no abren etapa
 ```
 
 ### ¿En qué estado estoy?
@@ -146,6 +147,28 @@ python3 <skills-root>/feature-stages/scripts/doctor.py <feature-root>
 resolución. `--json` para máquinas, `--stage NN-slug` para una etapa concreta y
 `--check` para CI. `doctor.py` informa incoherencias entre el índice y los
 artefactos. Ambos son de solo lectura y no sustituyen ningún gate.
+
+### ¿Esto necesita una etapa? La vía exprés
+
+No todo merece el ciclo completo. Antes de abrir etapa, comprueba la frontera:
+
+```bash
+python3 <skills-root>/feature-stages/scripts/expres.py <repo> [--base REF]
+```
+
+Un cambio cabe fuera del ciclo solo si cumple **todo**: 1 archivo de
+producción, ≤ 20 líneas de producción (las pruebas no cuentan; los archivos
+nuevos sin trackear sí cuentan), ninguna ruta excluida (migraciones, esquemas,
+auth/seguridad, contratos compartidos, manifiestos de dependencias) y, a
+confirmación humana, sin criterio de aceptación nuevo y sin cambio de interfaz
+pública. Si el script dice `no cabe`, o no puedes afirmar las dos
+confirmaciones, **abre etapa**: la vía exprés no tiene override.
+
+Si cabe, anota una línea en `EXPRES.md` con el porqué cabía y cómo se verificó.
+Es un registro, no un gate: `next_step.py` no lo lee, no cambia ninguna
+transición y no bloquea ninguna etapa. `doctor.py` avisa cuando tres cambios se
+acumulan sobre el mismo CA o el mismo archivo; esa acumulación significa que el
+corte estaba mal: promueve a etapa y marca la línea `→ NN-slug`.
 
 ### 1. Corta la especificación
 
@@ -228,6 +251,8 @@ evidencia, nunca antes.
 - `audit-stage` **no** cierra sin evidencia suficiente y no toca el baseline.
 - El siguiente paso se lee con `next_step.py`; `necesita-decision` detiene el
   ciclo en vez de asumir un valor por defecto.
+- La vía exprés no tiene override: si `expres.py` dice `no cabe`, o hay un CA
+  nuevo o un cambio de interfaz pública, se abre etapa.
 - Un `no coincide` se resuelve con un **delta**; un cambio de intención, alcance
   o criterio **reabre la conciliación**, no se maquilla como delta.
 
@@ -239,6 +264,7 @@ Desde la raíz del repositorio:
 python3 skills/feature-stages/scripts/validate_skill_evals.py
 python3 skills/feature-stages/scripts/test_next_step.py
 python3 skills/feature-stages/scripts/test_snapshot.py
+python3 skills/feature-stages/scripts/test_expres.py
 python3 skills/feature-stages/scripts/doctor.py \
   skills/feature-stages/evals/fixtures/transiciones
 python3 skills/feature-stages/scripts/validate_stage.py \
@@ -256,7 +282,10 @@ etapa válida. `test_next_step.py` también cubre los negativos `sin-tareas`,
 cambio de `next_step.py` o `doctor.py` que altere una transición o una regla
 estructural sin actualizar su caso deja la suite roja. `test_snapshot.py` cubre
 la identidad de auditoría: estable, sensible al código, insensible a la ruta
-excluida y verificable con `validate_stage.py --repo`.
+excluida y verificable con `validate_stage.py --repo`. `test_expres.py` cubre
+la frontera exprés: un cambio pequeño cabe; más archivos, más líneas, una ruta
+excluida o un archivo nuevo sin trackear no caben; las pruebas no consumen
+presupuesto.
 
 Estas dos fixtures también deben terminar correctamente: conciliación
 `cerrada` con etapa `auditando`, y etapa `cerrada` con veredicto `coincide`.

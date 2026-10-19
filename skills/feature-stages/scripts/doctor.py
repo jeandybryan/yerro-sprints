@@ -33,6 +33,62 @@ from next_step import (  # noqa: E402
 STAGE_DIR_RE = re.compile(r"^\d{2}-[a-z0-9][a-z0-9-]*$")
 NEEDS_TASKS = ("lista", "implementando", "auditando", "cerrada")
 NEEDS_AUDIT = ("auditando", "cerrada")
+AUDIT_COLUMNS = ("Carpeta", "Conciliación", "Estado", "Tareas", "Auditoría")
+EXPRES_COLUMNS = ("#", "Fecha", "Cambio", "Archivos", "CA", "Frontera", "Verificación")
+EXPRES_LIMIT = 3
+
+
+def parse_table(text: str, columns: tuple[str, ...]) -> list[dict[str, str]]:
+    """Filas de la primera tabla que tenga todas las columnas pedidas."""
+    header: list[str] | None = None
+    rows: list[dict[str, str]] = []
+    for line in text.splitlines():
+        if not line.strip().startswith("|"):
+            if header is not None and rows:
+                return rows
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if header is None:
+            if all(column in cells for column in columns):
+                header = cells
+            continue
+        if set("".join(cells)) <= set("-: "):
+            continue
+        if len(cells) < len(header):
+            cells += [""] * (len(header) - len(cells))
+        rows.append(dict(zip(header, cells)))
+    return rows
+
+
+def check_expres(root: Path, warnings: list[str]) -> None:
+    """Advierte cuando la acumulación delata que el corte estaba mal.
+
+    `EXPRES.md` es un registro, no un gate: nunca produce un error y nunca
+    cambia la transición. Solo avisa, porque tres cambios pequeños sobre el
+    mismo CA o el mismo archivo significan que eso no era pequeño.
+    """
+    path = root / "EXPRES.md"
+    if not path.is_file():
+        return
+    rows = parse_table(read(path), EXPRES_COLUMNS)
+    if not rows:
+        warnings.append("EXPRES.md: no tiene tabla de cambios con sus columnas")
+        return
+
+    for column, label in (("CA", "el mismo CA"), ("Archivos", "el mismo archivo")):
+        counts: dict[str, int] = {}
+        for row in rows:
+            for value in re.split(r"[,;]", row.get(column, "")):
+                key = value.strip().strip("`")
+                if key and key.lower() not in ("ninguno", "ninguna", "—", "-"):
+                    counts[key] = counts.get(key, 0) + 1
+        for key, count in sorted(counts.items()):
+            if count >= EXPRES_LIMIT:
+                warnings.append(
+                    f"EXPRES.md: {count} cambios sobre {label} {key!r}; "
+                    "promover a etapa en vez de seguir acumulando"
+                )
+
 
 def check(root: Path, result: dict | None, errors: list[str], warnings: list[str]) -> dict | None:
     index = read(root / "README.md")
@@ -127,6 +183,7 @@ def main(argv: list[str] | None = None) -> int:
     except FeatureError as error:
         errors.append(str(error))
     result = check(root, result, errors, warnings)
+    check_expres(root, warnings)
 
     report = {
         "feature_root": str(root),

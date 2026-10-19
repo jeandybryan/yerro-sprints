@@ -23,6 +23,8 @@ los artefactos.
 - [ ] Ningún gate fue rebajado para que una fixture pase.
 - [ ] Se ejecutaron las validaciones locales (ver README, sección de validación).
 - [ ] `test_next_step.py` pasa; toda transición, bloqueo o regla estructural nueva tiene su caso en `evals/fixtures/`.
+- [ ] `test_expres.py` pasa; todo cambio de frontera (umbral, ruta excluida, pruebas o archivos sin trackear) tiene su caso.
+- [ ] `expres-acumulado/` solo avisa y `expres-sano/` no avisa; `EXPRES.md` nunca bloquea ni cambia una transición.
 - [ ] `doctor.py` acepta `transiciones/` y rechaza `inconsistente/`, `doctor-estructural/` y `huerfana/`.
 - [ ] La fixture negativa `closed-without-task` sigue fallando.
 - [ ] `index-estado/04-etapa` sigue fallando y `03-activa` / `05-hecha` pasan.
@@ -37,6 +39,7 @@ los artefactos.
 python3 skills/feature-stages/scripts/validate_skill_evals.py
 python3 skills/feature-stages/scripts/test_next_step.py
 python3 skills/feature-stages/scripts/test_snapshot.py
+python3 skills/feature-stages/scripts/test_expres.py
 python3 skills/feature-stages/scripts/doctor.py \
   skills/feature-stages/evals/fixtures/transiciones
 python3 skills/feature-stages/scripts/validate_stage.py \

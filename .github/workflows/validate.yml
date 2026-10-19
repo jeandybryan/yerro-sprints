@@ -19,6 +19,7 @@ jobs:
         run: |
           python3 skills/feature-stages/scripts/test_next_step.py
           python3 skills/feature-stages/scripts/test_snapshot.py
+          python3 skills/feature-stages/scripts/test_expres.py
           python3 skills/feature-stages/scripts/doctor.py skills/feature-stages/evals/fixtures/transiciones
       - name: Verificar que doctor rechaza un árbol incoherente
         run: |

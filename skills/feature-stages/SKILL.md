@@ -17,6 +17,30 @@ Do not implement a stage that has no **closed** conciliation and principal
 task list. Do not rewrite conciliation to match the code; deltas close
 implementation or verification gaps.
 
+## Antes de abrir etapa
+
+El ciclo completo es para **producto**. No lo apliques por reflejo a un arreglo
+pequeño, ni lo esquives declarando pequeño algo que no lo es. Lee la frontera
+con
+
+```bash
+python3 <skills-root>/feature-stages/scripts/expres.py <repo> [--base REF]
+```
+
+Cabe fuera del ciclo solo si cumple **todo**: 1 archivo de producción, ≤ 20
+líneas de producción (las pruebas no cuentan), ninguna ruta excluida
+(migración, esquema, seguridad/auth, contratos compartidos, manifiesto de
+dependencias) y, a confirmación humana, sin CA nuevo y sin cambio de interfaz
+pública. Si el script dice `no cabe`, o no puedes afirmar las dos
+confirmaciones, **abre etapa**: la vía exprés no tiene override.
+
+Si cabe, registra una línea en `EXPRES.md` (ver
+[templates.md](templates.md)) con el **por qué** cabía y **cómo** se verificó.
+`EXPRES.md` es un registro, no un gate: `next_step.py` no lo lee, no cambia
+ninguna transición y no bloquea ninguna etapa. Si tres cambios se acumulan
+sobre el mismo CA o el mismo archivo, `doctor.py` avisa: estaba mal cortado,
+promueve a etapa.
+
 ## Layout
 
 ```text
@@ -34,6 +58,7 @@ Templates: [templates.md](templates.md).
 Contrato transversal: [stage-contract.md](references/stage-contract.md).
 Validador estructural: `python3 <skills-root>/feature-stages/scripts/validate_stage.py <feature-root>/<NN-slug>`.
 Identidad de auditoría: `python3 <skills-root>/feature-stages/scripts/snapshot.py <repo> --exclude <feature-root>`.
+Frontera exprés: `python3 <skills-root>/feature-stages/scripts/expres.py <repo> [--base REF]`.
 Regresión del ciclo: [EVALUATION.md](EVALUATION.md).
 
 ## Contrato ejecutable

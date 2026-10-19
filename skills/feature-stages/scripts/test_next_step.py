@@ -212,12 +212,54 @@ def check_validate_contract() -> None:
     elif "no hay snapshot que verificar" not in open_pass.stdout:
         fail("validate --repo: no avisa que la última pasada no tiene snapshot que verificar")
 
+EXPRES_EXPECTED = (
+    "3 cambios sobre el mismo CA 'CA-02'",
+    "3 cambios sobre el mismo archivo 'parser.py'",
+)
+
+
+def check_expres_warning() -> None:
+    """El registro exprés avisa por acumulación, pero nunca bloquea."""
+    global checked
+    acumulado = run("doctor.py", str(FIXTURES / "expres-acumulado"), "--json")
+    checked += 1
+    if acumulado.returncode != 0:
+        fail(f"doctor/expres-acumulado: salida {acumulado.returncode}, no debe bloquear")
+        return
+    report = json.loads(acumulado.stdout)
+    warnings = " ".join(report["advertencias"])
+    for expected in EXPRES_EXPECTED:
+        if expected not in warnings:
+            fail(f"doctor/expres-acumulado: no reporta {expected!r} (obtenidos {warnings})")
+    checked += 1
+    if report["errores"]:
+        fail(f"doctor/expres-acumulado: el registro no puede producir errores: {report['errores']}")
+
+    sano = run("doctor.py", str(FIXTURES / "expres-sano"), "--json")
+    checked += 1
+    if sano.returncode != 0:
+        fail(f"doctor/expres-sano: salida {sano.returncode}, se esperaba 0")
+        return
+    if json.loads(sano.stdout)["advertencias"]:
+        fail("doctor/expres-sano: avisó por debajo del umbral")
+
+    for fixture in ("expres-acumulado", "expres-sano"):
+        result = run("next_step.py", str(FIXTURES / fixture), "--json")
+        checked += 1
+        if result.returncode != 0:
+            fail(f"next_step/{fixture}: el registro exprés no debe cambiar la transición")
+            continue
+        data = json.loads(result.stdout)
+        if data["state"] != TRABAJANDO or data["siguiente"] != "implement-stage":
+            fail(f"next_step/{fixture}: transición {data['state']}/{data['siguiente']} alterada por EXPRES.md")
+
 def main() -> int:
     check_transitions()
     check_doctor()
     check_doctor_structural()
     check_cli()
     check_validate_contract()
+    check_expres_warning()
     for error in errors:
         print(f"ERROR: {error}")
     if not errors:

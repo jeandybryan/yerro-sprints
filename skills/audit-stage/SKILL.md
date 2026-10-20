@@ -9,7 +9,9 @@ description: >-
 
 # Audit stage
 
-Read [feature-stages](../feature-stages/SKILL.md) and [stage-contract.md](../feature-stages/references/stage-contract.md). Read the audit references and template only as needed. Need closed
+Read [feature-stages](../feature-stages/SKILL.md) and [stage-contract.md](../feature-stages/references/stage-contract.md). Read the audit references and template only as needed.
+
+Write `AUDIT.md`, an approved delta and the index closure. Do not change code, the baseline or acceptance criteria. Need closed
 `CONCILIACION.md` and principal `TAREAS.md`. Audit the same acceptance baseline
 again after every delta.
 

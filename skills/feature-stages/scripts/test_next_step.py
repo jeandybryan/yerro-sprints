@@ -123,6 +123,18 @@ REJECTED_FIXTURES = [
     ("indice-sin-tabla", "el índice no tiene una tabla"),
 ]
 
+HANDOFF_CASES = [
+    "01-prematuro: TAREAS.md prematuro para etapa borrador",
+    "02-sin-test: TAREAS.md sin Test-first",
+    "02-sin-test: TAREAS.md sin Test",
+    "03-audit-incompleta: AUDIT.md sin Snapshot",
+    "03-audit-incompleta: AUDIT.md sin Trazabilidad",
+    "03-audit-incompleta: AUDIT.md sin E-NN",
+    "03-audit-incompleta: AUDIT.md sin Veredicto",
+    "04-cierre-sin-coincide: cierre sin veredicto coincide",
+    "05-estado-incompatible: estado lista incompatible con conciliación abierta",
+]
+
 
 def check_doctor_structural() -> None:
     """Cada regla de doctor.py debe tener una etapa que la viole."""
@@ -145,6 +157,16 @@ def check_doctor_structural() -> None:
         errors_text = " ".join(json.loads(rejected.stdout)["errores"])
         if expected not in errors_text:
             fail(f"doctor/{fixture}: no reporta {expected!r} (obtenidos {errors_text})")
+
+    handoff = run("doctor.py", str(FIXTURES / "handoff-invalido"), "--json")
+    checked += 1
+    if handoff.returncode != 1:
+        fail(f"doctor/handoff-invalido: salida {handoff.returncode}, se esperaba 1")
+        return
+    reported = json.loads(handoff.stdout)["errores"]
+    for expected in HANDOFF_CASES:
+        if expected not in reported:
+            fail(f"doctor/handoff-invalido: no reporta {expected!r} (obtenidos {reported})")
 
 def check_cli() -> None:
     global checked

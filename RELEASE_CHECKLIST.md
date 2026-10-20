@@ -7,7 +7,7 @@ No marques una release como lista mientras exista una decisión pendiente en
 
 - [ ] Las seis skills y sus límites siguen presentes.
 - [ ] `validate_skill_evals.py` pasa.
-- [ ] `test_next_step.py`, `test_snapshot.py` y `test_expres.py` pasan.
+- [ ] `test_next_step.py`, `test_snapshot.py`, `test_expres.py` y `test_skill_evals.py` pasan.
 - [ ] `doctor.py` acepta la fixture sana y rechaza las fixtures negativas.
 - [ ] Las fixtures negativas siguen fallando por su gate específico.
 - [ ] La documentación describe los comandos realmente ejecutados.

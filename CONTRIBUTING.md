@@ -25,7 +25,8 @@ los artefactos.
 - [ ] `test_next_step.py` pasa; toda transición, bloqueo o regla estructural nueva tiene su caso en `evals/fixtures/`.
 - [ ] `test_expres.py` pasa; todo cambio de frontera (umbral, ruta excluida, pruebas o archivos sin trackear) tiene su caso.
 - [ ] `expres-acumulado/` solo avisa y `expres-sano/` no avisa; `EXPRES.md` nunca bloquea ni cambia una transición.
-- [ ] `doctor.py` acepta `transiciones/` y rechaza `inconsistente/`, `doctor-estructural/` y `huerfana/`.
+- [ ] `doctor.py` acepta `transiciones/` y rechaza `inconsistente/`, `doctor-estructural/`, `handoff-invalido/` y `huerfana/`.
+- [ ] `test_skill_evals.py` pasa; un enlace roto, un comando inexistente o una activación ambigua siguen fallando.
 - [ ] La fixture negativa `closed-without-task` sigue fallando.
 - [ ] `index-estado/04-etapa` sigue fallando y `03-activa` / `05-hecha` pasan.
 - [ ] `ca-tipo` sin `--strict` solo avisa `CA-05`; con `--strict` falla.
@@ -38,6 +39,7 @@ los artefactos.
 
 ```bash
 python3 skills/feature-stages/scripts/validate_skill_evals.py
+python3 skills/feature-stages/scripts/test_skill_evals.py
 python3 skills/feature-stages/scripts/test_next_step.py
 python3 skills/feature-stages/scripts/test_snapshot.py
 python3 skills/feature-stages/scripts/test_expres.py

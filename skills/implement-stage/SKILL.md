@@ -10,7 +10,9 @@ description: >-
 # Implement stage
 
 Read [feature-stages](../feature-stages/SKILL.md) and [stage-contract.md](../feature-stages/references/stage-contract.md), then the stage `CONCILIACION.md`,
-principal `TAREAS.md`, and the requested delta if any.
+principal `TAREAS.md`, and the requested delta if any. Load the delta template only when writing that delta.
+
+Write code, tests and operational status. Do not change the baseline, acceptance criteria or `AUDIT.md`.
 
 ## Entry gate
 

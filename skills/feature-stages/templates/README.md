@@ -1,15 +1,40 @@
-# Plantillas de artefactos
+## `README.md` (feature index, placed in `<feature-root>/`)
 
-Estas plantillas contienen formato y ejemplos mínimos. Las reglas normativas
-viven en `references/stage-contract.md`; carga solo la plantilla del artefacto
-que la fase autorizada vaya a escribir.
+```markdown
+# <Feature> — etapas de implementación
 
-- [`README.md`](README.md): índice de la feature.
-- [`CONCILIACION.md`](CONCILIACION.md): baseline, alcance, CA y riesgo.
-- [`TAREAS.md`](TAREAS.md): lista principal trazada a los CA.
-- [`AUDIT.md`](AUDIT.md): pasadas, evidencia y veredicto.
-- [`TAREAS-delta.md`](TAREAS-delta.md): corrección contra el mismo baseline.
-- [`EXPRES.md`](EXPRES.md): registro opcional de cambios fuera del ciclo.
+**Spec:** [<SPEC>.md](<SPEC>.md)
+**Código:** …
 
-Nombres técnicos y campos canónicos: `Estado`, `Riesgo`, `Snapshot`,
-`Trazabilidad`, `Test-first`, `Test`, `Verificar`, `Veredicto` y `Origen`.
+## Ciclo
+
+1. Conciliar → CONCILIACION.md
+2. Tareas → TAREAS.md
+3. Implementar
+4. Auditar → AUDIT.md; si no coincide, TAREAS-delta-NN.md y repetir 3–4
+
+## Ciclo activo
+
+> Bloque opcional del índice; no crea un archivo ni exige estimaciones.
+
+**Objetivo:** resultado observable que se quiere dejar utilizable.
+**Etapas comprometidas:** …
+**Por qué ahora:** prioridad, dependencia o desbloqueo que determina este ciclo.
+**Criterio de éxito:** evidencia mínima …
+**Fuera de este ciclo:** …
+**Siguiente decisión:** …
+
+### Cierre del ciclo
+
+**Resultado:** …
+**Evidencia:** …
+**Desviaciones:** …
+**Pendiente/bloqueado:** …
+**Siguiente decisión:** …
+
+## Estado del corte
+
+| # | Carpeta | Resultado | Depende de | Conciliación | Estado | Trabajo activo | Tareas | Auditoría |
+|---|---------|-----------|------------|--------------|--------|----------------|--------|-----------|
+| 01 | [01-…](01-…/CONCILIACION.md) | … | — | borrador-corte | borrador | — | — | — |
+```

@@ -9,6 +9,8 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Corregido
 
+- `templates/README.md` vuelve a ser la plantilla del índice de la feature. El catálogo de plantillas queda en `templates.md`.
+
 - `generate-stage-tasks` ya no pide ejecutar el validador estructural antes de
   escribir `TAREAS.md`: con la conciliación cerrada y sin lista, el contrato
   falla por diseño. Antes de escribir se confirma la transición con
@@ -24,6 +26,11 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
   mención del nombre en **Trabajo activo** de otra fila no cuenta.
 
 ### Añadido
+
+- Glosario de los campos canónicos (`Estado`, `Origen`, `Riesgo`, `Test-first`, `Test`, `Verificar`, `Snapshot`, `Trazabilidad`, `Veredicto`, `E-NN`) en el contrato transversal.
+- `doctor.py` rechaza una etapa `lista` o posterior cuya conciliación no está `cerrada`. La fixture `handoff-invalido/` cubre tareas prematuras, tareas sin prueba, auditoría incompleta, cierre sin `coincide` y ese estado incompatible.
+- `test_skill_evals.py` comprueba que un enlace roto, un comando inexistente, un gate ausente o una activación ambigua dejan el catálogo en rojo.
+
 - Refactor documental: `feature-stages/SKILL.md` y `audit-stage/SKILL.md` quedan como guías operativas; las reglas detalladas viven en referencias enlazadas y el catálogo verifica que existan.
 
 - Gobernanza del paquete en `GOVERNANCE.md` y checklist reproducible de release en `RELEASE_CHECKLIST.md`. Las decisiones de licencia, distribución, tags, hosts y owner quedan explícitamente pendientes hasta ser acordadas.

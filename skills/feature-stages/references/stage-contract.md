@@ -89,3 +89,16 @@ ese artefacto o resolver el caso que cubre. No cargues `templates.md`,
 | Implement | contrato y `TAREAS.md` | delta, código y tests afectados |
 | Audit | contrato y procedimiento de auditoría | scoring, evidencia y deltas |
 | Router | routing y estado calculado | referencia solicitada explícitamente |
+
+## Glosario
+
+- **Estado:** valor público del índice o del artefacto. Etapa: `borrador`, `conciliando`, `lista`, `implementando`, `auditando`, `cerrada`, `bloqueada`. Conciliación: `borrador-corte`, `abierta`, `cerrada`.
+- **Origen:** decisión `S-NN` que justifica un `CA-NN`.
+- **Riesgo:** nivel congelado al cerrar la conciliación: `bajo`, `medio` o `alto`.
+- **Test-first:** si la tarea nace de una prueba que falla antes del cambio (`sí` o `no`).
+- **Test:** comando reproducible que verifica la tarea.
+- **Verificar:** nivel, procedimiento y oráculo observable de una tarea.
+- **Snapshot:** identidad del árbol auditado: `head`, `tree`, `dirty` y `exclude`.
+- **Trazabilidad:** cadena `S-NN → CA-NN → T-NN → test → E-NN`.
+- **Veredicto:** resultado de una pasada: `coincide` o `no coincide`.
+- **E-NN:** evidencia reproducible registrada en el ledger de la pasada.

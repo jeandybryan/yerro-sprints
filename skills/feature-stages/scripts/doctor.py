@@ -130,6 +130,10 @@ def check(root: Path, result: dict | None, errors: list[str], warnings: list[str
             "borrador", "conciliando", "lista", "implementando", "auditando", "cerrada", "bloqueada"
         ):
             errors.append(f"{name}: estado de etapa desconocido {stage_state!r}")
+        if stage_state in ("lista", "implementando", "auditando", "cerrada") and conc_state != "cerrada":
+            errors.append(
+                f"{name}: estado {stage_state} incompatible con conciliación {conc_state or 'ausente'}"
+            )
 
         if stage_state in NEEDS_TASKS and not tasks:
             errors.append(f"{name}: etapa {stage_state} sin TAREAS.md")

@@ -9,7 +9,7 @@ description: >-
 
 # Generate stage tasks
 
-Read [feature-stages](../feature-stages/SKILL.md) and [stage-contract.md](../feature-stages/references/stage-contract.md). Read the task template only when writing `TAREAS.md`. Refuse if `CONCILIACION.md`
+Read [feature-stages](../feature-stages/SKILL.md) and [stage-contract.md](../feature-stages/references/stage-contract.md). Read the task template only when writing `TAREAS.md`. Write only `TAREAS.md` and the operational index. Do not change the conciliation, implement code or audit. Refuse if `CONCILIACION.md`
 is not `cerrada`. Confirma con
 `python3 <skills-root>/feature-stages/scripts/next_step.py <feature-root> --stage <NN-slug>`
 que la transición es `generate-stage-tasks`; si devuelve otro estado o un bloqueo, no escribas la lista. Escribe `TAREAS.md` y después ejecuta

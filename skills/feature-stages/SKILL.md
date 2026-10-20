@@ -11,7 +11,7 @@ description: >-
 
 Use the complete cycle for product work with an agreed specification. Read only the contract and artifacts needed for the current transition; do not
 implement without closed conciliation and a valid principal task list. Do not
-rewrite the baseline to fit code.
+rewrite the baseline to fit code. This skill writes no feature artifact: it only routes.
 
 ## Choose the proportional path
 

@@ -4,7 +4,7 @@ Mide si las skills del ciclo conservan el contrato, se activan para la petición
 
 ## Niveles
 
-1. **Estructural — CI/local, sin tokens.** Ejecutar `scripts/validate_stage.py` sobre fixtures y etapas reales. Verifica el contrato de artefactos. `scripts/test_next_step.py` verifica que cada estado de los artefactos produzca una única transición válida, y `scripts/doctor.py` que el índice y los artefactos no se contradigan. `scripts/test_snapshot.py` verifica que la identidad de auditoría sea estable, sensible al código, insensible a la evidencia excluida y que `validate_stage.py --repo` rechace un snapshot obsoleto. `scripts/test_expres.py` verifica la frontera exprés: cuenta archivos y líneas de producción, no las pruebas, y rechaza rutas excluidas y archivos nuevos sin trackear.
+1. **Estructural — CI/local, sin tokens.** Ejecutar `scripts/validate_stage.py` sobre fixtures y etapas reales. Verifica el contrato de artefactos. `scripts/test_next_step.py` verifica que cada estado de los artefactos produzca una única transición válida, y `scripts/doctor.py` que el índice y los artefactos no se contradigan. `scripts/test_snapshot.py` verifica que la identidad de auditoría sea estable, sensible al código, insensible a la evidencia excluida y que `validate_stage.py --repo` rechace un snapshot obsoleto. `scripts/test_expres.py` verifica la frontera exprés: cuenta archivos y líneas de producción, no las pruebas, y rechaza rutas excluidas y archivos nuevos sin trackear. `scripts/test_skill_evals.py` rechaza enlaces rotos, comandos inexistentes, gates ausentes y activación ambigua. `handoff-invalido/` hace fallar cada handoff estructural inválido.
 2. **Activación y separación — CI/local, sin tokens.** Los casos `evals/cases/*.json` contienen peticiones positivas y negativas escritas como usuarios reales. Un cambio de descripción no puede hacer que otra skill sea la respuesta esperada.
 3. **Comportamiento — bajo demanda, consume tokens.** Ejecutar cada caso en un snapshot aislado y puntuar el transcript/diff contra `expectations`. Mantener casos retenidos que la skill no vea antes de la evaluación.
 
@@ -54,6 +54,7 @@ python3 scripts/validate_stage.py evals/fixtures/riesgo-ausente --strict
 python3 scripts/test_next_step.py
 python3 scripts/test_snapshot.py
 python3 scripts/test_expres.py
+python3 scripts/test_skill_evals.py
 python3 scripts/doctor.py evals/fixtures/transiciones
 ```
 

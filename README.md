@@ -269,6 +269,7 @@ Desde la raíz del repositorio:
 
 ```bash
 python3 skills/feature-stages/scripts/validate_skill_evals.py
+python3 skills/feature-stages/scripts/test_skill_evals.py
 python3 skills/feature-stages/scripts/test_next_step.py
 python3 skills/feature-stages/scripts/test_snapshot.py
 python3 skills/feature-stages/scripts/test_expres.py

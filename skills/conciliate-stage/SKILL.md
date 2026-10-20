@@ -12,8 +12,11 @@ description: >-
 
 Read [feature-stages](../feature-stages/SKILL.md),
 [stage-contract.md](../feature-stages/references/stage-contract.md) and the stage
-`CONCILIACION.md`. Spec is source of truth; chat **clarifies**, it does not
+`CONCILIACION.md`. Read the conciliation template only when rewriting that
+artifact. Spec is source of truth; chat **clarifies**, it does not
 silently override § decisiones cerradas.
+
+Write `CONCILIACION.md` and the operational index. Do not write `TAREAS.md`, code or `AUDIT.md`.
 
 ## Ask when in doubt
 

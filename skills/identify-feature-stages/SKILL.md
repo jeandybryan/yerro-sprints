@@ -11,6 +11,8 @@ description: >-
 
 Read [feature-stages](../feature-stages/SKILL.md) and the stage contract first. Read the relevant template only when creating the index or drafts.
 
+Write only `README.md` and draft `CONCILIACION.md`. Do not write `TAREAS.md`, `AUDIT.md` or code.
+
 ## Do
 
 1. Place the specification in the project's agreed feature-artifact directory

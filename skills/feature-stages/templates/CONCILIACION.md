@@ -5,6 +5,8 @@
 
 **Estado:** borrador-corte | abierta | cerrada
 **Riesgo:** bajo | medio | alto
+**Runners:** <pytest | npm test | go test ./...> (opcional; si falta, un `Test:`
+fuera de la lista negra del validador solo avisa)
 **Presupuesto de deltas:** 2
 **Spec:** [<SPEC>.md](../<SPEC>.md) §…
 

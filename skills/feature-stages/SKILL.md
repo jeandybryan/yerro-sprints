@@ -50,13 +50,16 @@ python3 <skills-root>/feature-stages/scripts/validate_stage.py <stage> --strict 
 
 A stage is ready to implement only with closed conciliation, stable CA IDs,
 closed or justified dependencies, a principal `TAREAS.md`, and bidirectional
-traceability. Each criterion has a decision origin; each task has `Test-first:`
-and a reproducible `Test:` command. See
-[decision-traceability.md](references/decision-traceability.md).
+traceability. Each criterion has a decision origin; each task has `Test-first:`,
+a reproducible `Test:` command that invokes a runner, and a `Sensibilidad:` that
+shows the test could fail. See
+[decision-traceability.md](references/decision-traceability.md) and
+[evidence.md](references/evidence.md).
 
 A stage is done only when every principal CA is `cumple`, required evidence and
-checks pass, the audited snapshot is current, risk was not lowered, and there
-is no blocking deviation. Snapshot, risk and delta-budget rules live in
+checks pass, each `E-NN` row shows a demonstrated `Sensibilidad` (a ledger that
+only proves the test passed does not close), the audited snapshot is current,
+risk was not lowered, and there is no blocking deviation. Snapshot, risk and delta-budget rules live in
 [stage-contract.md](references/stage-contract.md).
 
 ## Routing

@@ -11,6 +11,8 @@ python3 <skills-root>/feature-stages/scripts/next_step.py <feature-root> [--stag
 python3 <skills-root>/feature-stages/scripts/doctor.py <feature-root>
 python3 <skills-root>/feature-stages/scripts/snapshot.py <repo> --exclude <feature-root>
 python3 <skills-root>/feature-stages/scripts/expres.py <repo> [--base REF]
+python3 <skills-root>/feature-stages/scripts/evidence.py run -- <comando...>
+python3 <skills-root>/feature-stages/scripts/evidence.py verify <stage>/AUDIT.md
 ```
 
 Estados públicos: `trabajando`, `verificando`, `listo`, `necesita-decision`. `next_step.py` devuelve uno y la skill siguiente; `doctor.py` informa incoherencias entre el índice y los artefactos. Ambos son de solo lectura y no rebajan ningún gate: ante una discrepancia gana el gate más estricto y la discrepancia se registra como bloqueo. `necesita-decision` detiene el ciclo; no se sustituye por un valor por defecto.
@@ -29,7 +31,7 @@ Cada `CA-NN` declara: tipo (`salida` o `invariante`), estímulo/precondición, r
 
 Cada tarea principal `Tn` enlaza al menos un CA y contiene `Verificar:` con nivel, procedimiento y oráculo observable. La cobertura es bidireccional: todo CA tiene tarea y toda tarea enlaza un CA.
 
-Un `AUDIT.md` que cierre una etapa conserva cada pasada. El veredicto `coincide` requiere todos los CA principales `cumple`, verificaciones aplicables ejecutadas, controles globales correctos y ningún desvío bloqueante. La evidencia se registra como `E-NN` con procedimiento, esperado, observado/exit, entorno/timestamp, artefacto y limitación.
+Un `AUDIT.md` que cierre una etapa conserva cada pasada. El veredicto `coincide` requiere todos los CA principales `cumple`, verificaciones aplicables ejecutadas, controles globales correctos y ningún desvío bloqueante. La evidencia se registra como `E-NN` con procedimiento, **sensibilidad demostrada**, esperado, observado/exit, entorno/timestamp, artefacto y limitación. Un `coincide` sin columna `Sensibilidad` no cierra: el ledger demuestra que el test pasó, no que pudiera fallar.
 
 ## Riesgo, snapshot y presupuesto
 
@@ -102,3 +104,13 @@ ese artefacto o resolver el caso que cubre. No cargues `templates.md`,
 - **Trazabilidad:** cadena `S-NN → CA-NN → T-NN → test → E-NN`.
 - **Veredicto:** resultado de una pasada: `coincide` o `no coincide`.
 - **E-NN:** evidencia reproducible registrada en el ledger de la pasada.
+
+## Evidencia, oráculo y sensibilidad
+
+Una afirmación de cumplimiento no se sostiene con una transcripción. Ver [evidence.md](evidence.md) para el detalle; en resumen:
+
+- `Test:` debe invocar un runner. El validador rechaza el trivio (`true`, `echo`, `sleep`, `:`, `bash -c true`, `python -c pass`) y acepta los runners que la conciliación declare en `**Runners:**`. Si no hay `**Runners:**`, un comando fuera de la lista negra solo avisa: el validador no adivina runners.
+- La sensibilidad se demuestra con `revertir → rojo → restaurar`, con un mutante que produce rojo, o con una regresión funcional contra `HEAD`. No se exige herramienta de mutación: se exige **ver el rojo**.
+- Una sensibilidad `no demostrada` deja el criterio en `no verificado`; nunca en `cumple`.
+- `evidence.py run` ejecuta y deja `exit=` y `firma=` en la fila del ledger. `evidence.py verify` reejecuta lo declarado y compara: una firma que no se reproduce es evidencia inventada.
+- La sensibilidad no se negocia por riesgo; lo que escala con el riesgo es el fondo (caso límite, mutante por CA crítico, recuperación observable).

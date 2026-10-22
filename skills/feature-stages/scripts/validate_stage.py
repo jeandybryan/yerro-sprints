@@ -51,6 +51,20 @@ AUDITED_RISK_RE = re.compile(r"^\s*\*\*Riesgo auditado:\*\*\s*(bajo|medio|alto)\
 RISK_RANK = {"bajo": 0, "medio": 1, "alto": 2}
 VERDICT_RE = re.compile(r"^\s*\*\*Veredicto:\*\*\s*(.+?)\s*$", re.I | re.M)
 AUDIT_PASS_RE = re.compile(r"^##\s+Pasada\b.*?$(.*?)(?=^##\s+Pasada\b|\Z)", re.M | re.S | re.I)
+RUNNERS_RE = re.compile(r"^\s*\*\*Runners:\*\*\s*(.+?)\s*$", re.M | re.I)
+SENSITIVITY_RE = re.compile(r"(?:\||^)\s*Sensibilidad\s*(?:\||$)", re.I | re.M)
+NO_DEMOSTRADA_RE = re.compile(r"no demostrada", re.I)
+
+# Comandos que devuelven 0 sin observar comportamiento alguno. Se comparan por
+# palabra inicial y se exige que *todas* las partes encadenadas estén aquí:
+# `pytest -q && true` no es decorativo, `true && :` sí.
+DECORATIVE = {
+    "true", "false", ":", "exit", "echo", "printf", "sleep", "cat", "ls",
+    "pwd", "cd", "test",
+}
+CHAIN_RE = re.compile(r"\s*(?:&&|\|\||;)\s*")
+WRAPPER_RE = re.compile(r"^(?:bash|sh|zsh)\s+-c\s+(.*)$", re.I | re.S)
+TRIVIAL_PY_RE = re.compile(r"^python[0-9.]*\s+-c\s+['\"]?(?:pass|exit\s*\(?\s*0?\s*\)?)['\"]?$", re.I)
 
 
 class Result:
@@ -71,13 +85,70 @@ def read(path: Path) -> str:
 def split_row(line: str) -> list[str]:
     return [cell.strip() for cell in line.split("|")]
 
-
 def parse_excludes(snapshot: str) -> tuple[Path, ...]:
     """Rutas excluidas declaradas en el snapshot canónico."""
     match = re.search(r"\bexclude=(\S+)", snapshot, re.I)
     if not match or match.group(1).lower() == "ninguno":
         return ()
     return tuple(Path(item) for item in match.group(1).split(",") if item)
+
+
+def declarative_command(command: str) -> bool:
+    """¿El comando es trivio disfrazado? Se mira cada parte encadenada."""
+    for part in CHAIN_RE.split(command.strip()):
+        part = part.strip()
+        if not part:
+            continue
+        wrapped = WRAPPER_RE.match(part)
+        if wrapped:
+            part = wrapped.group(1).strip()
+        if TRIVIAL_PY_RE.match(part):
+            continue
+        head = re.split(r"\s+", part, maxsplit=1)[0]
+        # `exit 0` devuelve verde incondicional y no observa nada. La sufijación
+        # con `test` no salva: `npm test` no está en DECORATIVE, así que nunca
+        # llega a esta rama.
+        if head in DECORATIVE:
+            continue
+        return False
+    return True
+
+
+def declared_runners(conciliation: str) -> list[str]:
+    """Runners que la conciliación declara, separados por `|` o comas."""
+    match = RUNNERS_RE.search(conciliation)
+    if not match:
+        return []
+    return [item.strip() for item in re.split(r"[|,]", match.group(1)) if item.strip()]
+
+
+def is_runner(command: str, runners: list[str]) -> bool:
+    command = command.strip()
+    return any(command.startswith(runner) for runner in runners)
+
+
+def ledger_rows(audit: str) -> list[str]:
+    """Filas de datos del ledger de evidencia (las que empiezan por `| E-NN`)."""
+    return [
+        line for line in audit.splitlines()
+        if re.match(r"^\s*\|\s*E-\d+\s*\|", line)
+    ]
+
+
+def sensitivity_cell(row: str, audit: str) -> str:
+    """Valor de la celda `Sensibilidad` de una fila del ledger, o "" si no hay."""
+    header = next(
+        (line for line in audit.splitlines() if SENSITIVITY_RE.search(line) and "|" in line),
+        "",
+    )
+    if not header:
+        return ""
+    names = [cell.strip().lower() for cell in split_row(header)]
+    if "sensibilidad" not in names:
+        return ""
+    cells = split_row(row)
+    at = names.index("sensibilidad")
+    return cells[at] if at < len(cells) else ""
 
 
 def stage_index_estado(index: str, stage_name: str) -> str | None:
@@ -158,6 +229,7 @@ def main() -> int:
         result.require(bool(EVIDENCE_RE.search(line)), f"{ca} no declara nivel de evidencia")
 
     task_bodies: dict[str, str] = {}
+    declared = declared_runners(conciliation)
     if closed:
         result.require(bool(tasks), "conciliación cerrada sin TAREAS.md")
     if tasks:
@@ -168,6 +240,15 @@ def main() -> int:
             result.require(bool(re.search(r"CA-\d+", body)), f"{task_id} no enlaza CA-NN")
             result.require(bool(TEST_FIRST_RE.search(body)), f"{task_id} no declara Test-first:", legacy=True)
             result.require(bool(TEST_COMMAND_RE.search(body)), f"{task_id} no declara Test:", legacy=True)
+            for command in TEST_COMMAND_RE.findall(body):
+                result.require(
+                    not declarative_command(command),
+                    f"{task_id} declara un Test: decorativo ({command.strip()}): no observa comportamiento",
+                )
+                if declared and not is_runner(command, declared):
+                    result.warnings.append(
+                        f"{task_id}: Test: no empieza por un runner declarado en **Runners:**"
+                    )
             verification = re.search(r"Verificar:\s*(.*)", body, re.I)
             result.require(bool(verification), f"{task_id} no contiene Verificar:")
             if verification:
@@ -206,6 +287,20 @@ def main() -> int:
                 f"AUDIT coincide no demuestra {ca}=cumple",
             )
         result.require("### Ledger de evidencia" in audit, "AUDIT coincide sin ledger de evidencia", legacy=True)
+        result.require(
+            bool(SENSITIVITY_RE.search(audit)),
+            "AUDIT coincide sin columna Sensibilidad en el ledger: no demuestra que el test pueda fallar",
+        )
+        if SENSITIVITY_RE.search(audit):
+            for row in ledger_rows(audit):
+                result.require(
+                    bool(sensitivity_cell(row, audit)),
+                    f"ledger con sensibilidad vacía: {row.strip()[:80]}",
+                )
+                result.require(
+                    not NO_DEMOSTRADA_RE.search(row),
+                    f"ledger declara sensibilidad no demostrada: {row.strip()[:80]}",
+                )
         result.require(bool(TRACE_RE.search(audit)), "AUDIT coincide sin **Trazabilidad:** CA → T → E", legacy=True)
         result.require(bool(re.search(r"\bE-\d+\b", audit)), "AUDIT coincide sin evidencia E-NN", legacy=True)
         for body in coincide_passes:

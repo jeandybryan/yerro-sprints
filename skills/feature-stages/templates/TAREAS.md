@@ -15,6 +15,7 @@ action, acceptance criterion/source pointer, and verification.
 
 - [ ] T1 — … (CA-01; Origen: S-01; spec §…)
   Test-first: sí; Test: <comando que debe fallar antes del cambio>;
+  Sensibilidad: revertir → rojo → restaurar | mutante: <qué> → rojo | regresión HEAD;
   Impacto: módulos/contratos | datos/migración | config | lifecycle/recovery |
   observabilidad | perfil/hardware | limpieza/rollback (solo lo aplicable).
   Verificar: nivel `estructural | conductual | sistema | ambiental`; procedimiento

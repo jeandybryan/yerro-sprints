@@ -188,6 +188,8 @@ def check_cli() -> None:
 
 
 VALIDATE_REJECTED = [
+    ("test-decorativo", "Test: decorativo"),
+    ("sin-sensibilidad", "sensibilidad no demostrada"),
     ("coincide-sin-snapshot", "sin **Snapshot:**"),
     ("snapshot-de-pasada-anterior", "sin **Snapshot:**"),
     ("trazabilidad-invalida", "no hay decisiones S-NN"),
@@ -278,12 +280,36 @@ def check_expres_warning() -> None:
         if data["state"] != TRABAJANDO or data["siguiente"] != "implement-stage":
             fail(f"next_step/{fixture}: transición {data['state']}/{data['siguiente']} alterada por EXPRES.md")
 
+def check_validate_no_crash() -> None:
+    """Ninguna fixture puede hacer que el validador se caiga en vez de juzgar."""
+    global checked
+    for fixture in sorted(FIXTURES.iterdir()):
+        if not fixture.is_dir():
+            continue
+        targets = [fixture] if (fixture / "CONCILIACION.md").exists() else []
+        targets += [item for item in fixture.iterdir() if item.is_dir()]
+        for target in targets:
+            if not (target / "CONCILIACION.md").exists() and not any(
+                (target / name).exists() for name in ("CONCILIACION.md", "AUDIT.md")
+            ):
+                continue
+            result = run("validate_stage.py", str(target), "--strict")
+            checked += 1
+            crashed = result.returncode not in (0, 1) or "Traceback" in result.stdout + result.stderr
+            if crashed:
+                fail(
+                    f"validate/{target.name}: se cayó en vez de juzgar "
+                    f"(salida {result.returncode}): {(result.stdout + result.stderr).strip()[:200]}"
+                )
+
+
 def main() -> int:
     check_transitions()
     check_doctor()
     check_doctor_structural()
     check_cli()
     check_validate_contract()
+    check_validate_no_crash()
     check_expres_warning()
     for error in errors:
         print(f"ERROR: {error}")

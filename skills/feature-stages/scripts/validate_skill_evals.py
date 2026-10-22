@@ -7,7 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS = ("identify-feature-stages", "feature-stages", "conciliate-stage", "generate-stage-tasks", "implement-stage", "audit-stage")
-GATE_TOKENS = ("S-NN", "Origen", "Test-first", "Snapshot", "Riesgo", "Trazabilidad", "E-NN", "Presupuesto de deltas", "Vía exprés")
+GATE_TOKENS = ("S-NN", "Origen", "Test-first", "Sensibilidad", "Snapshot", "Riesgo", "Trazabilidad", "E-NN", "Presupuesto de deltas", "Vía exprés")
 KNOWN_ROUTES = set(SKILLS) | {"express-lane"}
 DOCUMENTS = (
     ROOT / "references" / "stage-contract.md",

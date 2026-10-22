@@ -55,8 +55,10 @@ soportados: esas decisiones deben acordarse antes de una release.
 ## Requisitos
 
 - Un host compatible con Agent Skills (Cursor, Claude Code, Codex u otro).
-- **Python 3** (solo stdlib) únicamente para los validadores estructurales
-  opcionales. Las skills no exigen Python para operar.
+- **Python 3** (solo stdlib) para los validadores y para cerrar una etapa con
+  evidencia ejecutable. **Operar no requiere Python; cerrar con evidencia sí:**
+  `evidence.py` ejecuta los comandos citados y firma lo observado, y
+  `validate_stage.py` comprueba el oráculo y la sensibilidad del ledger.
 - **Node.js/npm** solo si instalas o pruebas con `npx skills`.
 
 ## Instalación
@@ -155,6 +157,17 @@ resolución. `--json` para máquinas, `--stage NN-slug` para una etapa concreta 
 `--check` para CI. `doctor.py` informa incoherencias entre el índice y los
 artefactos. Ambos son de solo lectura y no sustituyen ningún gate.
 
+### Evidencia ejecutable
+
+```bash
+python3 <skills-root>/feature-stages/scripts/evidence.py run --label E-01 -- <comando>
+python3 <skills-root>/feature-stages/scripts/evidence.py verify <stage>/AUDIT.md
+```
+
+`run` ejecuta el comando y devuelve la fila del ledger con `exit=` y `firma=` del
+output normalizado. `verify` reejecuta lo que la auditoría declaró: si la firma
+no se reproduce, la evidencia es inventada y el criterio queda `no verificado`.
+
 ### ¿Esto necesita una etapa? La vía exprés
 
 No todo merece el ciclo completo. Antes de abrir etapa, comprueba la frontera:
@@ -228,6 +241,10 @@ Pídele: **"audita la etapa NN"**.
 - Cada pasada registra `**Snapshot:**` (identidad del código auditado, vía
   `scripts/snapshot.py`) y `**Riesgo auditado:**`. Un `coincide` solo vale para
   ese snapshot: si el árbol cambió, se reaudita.
+- El ledger exige **`Sensibilidad`**: la prueba de que el test pudo fallar
+  (`revertir → rojo → restaurar`, un mutante que produce rojo o una regresión
+  contra `HEAD`). Un ledger que solo dice que el test pasó no cierra.
+  `Test:` debe invocar un runner; `true`, `echo` o `sleep` se rechazan.
 - Resultado: `AUDIT.md` con un veredicto:
   - `coincide` → la etapa se cierra (`cerrada`).
   - `no coincide` → se escribe `TAREAS-delta-NN.md` y se repiten los pasos

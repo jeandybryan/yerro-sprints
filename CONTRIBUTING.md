@@ -24,6 +24,8 @@ los artefactos.
 - [ ] Se ejecutaron las validaciones locales (ver README, sección de validación).
 - [ ] `test_next_step.py` pasa; toda transición, bloqueo o regla estructural nueva tiene su caso en `evals/fixtures/`.
 - [ ] `test_expres.py` pasa; todo cambio de frontera (umbral, ruta excluida, pruebas o archivos sin trackear) tiene su caso.
+- [ ] `test_evidence.py` pasa; la firma es estable, sensible al exit y al output, insensible a lo volátil, y `verify` rechaza una evidencia inventada.
+- [ ] `test-decorativo` y `sin-sensibilidad` siguen fallando; `valid-stage` sigue pasando con la columna `Sensibilidad`.
 - [ ] `expres-acumulado/` solo avisa y `expres-sano/` no avisa; `EXPRES.md` nunca bloquea ni cambia una transición.
 - [ ] `doctor.py` acepta `transiciones/` y rechaza `inconsistente/`, `doctor-estructural/`, `handoff-invalido/` y `huerfana/`.
 - [ ] `test_skill_evals.py` pasa; un enlace roto, un comando inexistente o una activación ambigua siguen fallando.
@@ -43,6 +45,7 @@ python3 skills/feature-stages/scripts/test_skill_evals.py
 python3 skills/feature-stages/scripts/test_next_step.py
 python3 skills/feature-stages/scripts/test_snapshot.py
 python3 skills/feature-stages/scripts/test_expres.py
+python3 skills/feature-stages/scripts/test_evidence.py
 python3 skills/feature-stages/scripts/doctor.py \
   skills/feature-stages/evals/fixtures/transiciones
 python3 skills/feature-stages/scripts/validate_stage.py \
@@ -88,6 +91,16 @@ fi
 if python3 skills/feature-stages/scripts/validate_stage.py \
   skills/feature-stages/evals/fixtures/coincide-sin-snapshot --strict; then
   echo 'Un veredicto coincide sin Snapshot pasó: el gate está roto' >&2
+  exit 1
+fi
+if python3 skills/feature-stages/scripts/validate_stage.py \
+  skills/feature-stages/evals/fixtures/test-decorativo --strict; then
+  echo 'Un Test: decorativo pasó: el gate está roto' >&2
+  exit 1
+fi
+if python3 skills/feature-stages/scripts/validate_stage.py \
+  skills/feature-stages/evals/fixtures/sin-sensibilidad --strict; then
+  echo 'Un coincide sin sensibilidad demostrada pasó: el gate está roto' >&2
   exit 1
 fi
 python3 skills/feature-stages/scripts/validate_stage.py \

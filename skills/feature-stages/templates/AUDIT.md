@@ -17,9 +17,9 @@
 
 ### Ledger de evidencia
 
-| ID | CA | Procedimiento/comando | Esperado | Observado/exit | Entorno y timestamp | Artefacto/log | Limitación |
-|----|----|------------------------|----------|----------------|---------------------|---------------|------------|
-| E-01 | CA-01 | … | … | … | entorno/configuración; AAAA-MM-DDTHH:MM | path/URL | … |
+| ID | CA | Procedimiento/comando | Sensibilidad | Esperado | Observado/exit | Entorno y timestamp | Artefacto/log | Limitación |
+|----|----|------------------------|--------------|----------|----------------|---------------------|---------------|------------|
+| E-01 | CA-01 | `evidence.py run -- <comando>` | revertir → rojo → restaurar | … | … firma=… | entorno/configuración; AAAA-MM-DDTHH:MM | path/URL | … |
 
 **Veredicto:** coincide | no coincide
 
@@ -68,6 +68,11 @@ Scoring is strict:
 
 - `cumple`: all atomic assertions and the prescribed verification method
   have sufficient evidence.
+
+`Sensibilidad` proves the test could fail: `revertir → rojo → restaurar`,
+`mutante: <qué> → rojo`, or a functional regression against `HEAD`. A cell
+that says `no demostrada` is `no verificado`, never `cumple`. See
+[evidence.md](../references/evidence.md).
 - `parcial`: only a subset or weaker substitute is proven.
 - `no cumple`: evidence contradicts the criterion or behaviour is absent.
 - `no verificado`: evidence could not be obtained; never infer `cumple`.

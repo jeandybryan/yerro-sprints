@@ -7,6 +7,36 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+### Añadido
+
+- **Oráculo mínimo en `Test:`.** `validate_stage.py` rechaza el trivio
+  (`true`, `echo`, `sleep`, `:`, `cat`, `bash -c true`, `python -c pass`) y
+  acepta los runners que la conciliación declare en `**Runners:**`. Si no hay
+  `**Runners:**`, un comando fuera de la lista negra solo avisa.
+- **`Sensibilidad` obligatoria en el ledger.** Una pasada `coincide` exige la
+  columna `Sensibilidad` con contenido; una celda `no demostrada` deja el
+  criterio en `no verificado`. Un ledger que solo prueba que el test pasó no
+  cierra.
+- `references/evidence.md`: define oráculo, los tres métodos de sensibilidad
+  (revertir → rojo → restaurar; mutante; regresión contra `HEAD`), cuándo se
+  exige y por qué no se negocia por riesgo.
+- `scripts/evidence.py` (`run`, `verify`) y `scripts/test_evidence.py`: la
+  evidencia citada para cerrar lleva `exit=` y `firma=` del output
+  normalizado; `verify` reejecuta y detecta una transcripción inventada. La
+  firma es insensible a timestamps, puertos y rutas temporales.
+- Fixtures `test-decorativo` y `sin-sensibilidad`, y casos retenidos `S19` y
+  `S20` en `EVALUATION.md`.
+- `test_next_step.py` recorre todas las fixtures y falla si el validador se cae
+  en vez de juzgar.
+
+### Cambiado
+
+- El ledger de `AUDIT.md` gana la columna `Sensibilidad`; `TAREAS.md` gana
+  `Sensibilidad:` bajo `Test:`; `CONCILIACION.md` gana `**Runners:**`
+  opcional.
+- El README declara la promesa real: **operar no requiere Python; cerrar con
+  evidencia sí**.
+
 ### Corregido
 
 - `templates/README.md` vuelve a ser la plantilla del índice de la feature. El catálogo de plantillas queda en `templates.md`.

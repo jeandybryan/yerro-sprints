@@ -146,9 +146,9 @@ AUDIT = """# Auditoría
 
 ### Ledger de evidencia
 
-| ID | CA | Procedimiento/comando | Esperado | Observado/exit | Entorno y timestamp | Artefacto/log | Limitación |
-|----|----|------------------------|----------|----------------|---------------------|---------------|------------|
-| E-01 | CA-01 | pytest | verde | verde/0 | local; 2026-10-19 | log | ninguna |
+| ID | CA | Procedimiento/comando | Sensibilidad | Esperado | Observado/exit | Entorno y timestamp | Artefacto/log | Limitación |
+|----|----|------------------------|--------------|----------|----------------|---------------------|---------------|------------|
+| E-01 | CA-01 | pytest | revertir → rojo → restaurar | verde | verde/0 | local; 2026-10-19 | log | ninguna |
 
 **Veredicto:** coincide
 """

@@ -4,7 +4,7 @@ Mide si las skills del ciclo conservan el contrato, se activan para la petición
 
 ## Niveles
 
-1. **Estructural — CI/local, sin tokens.** Ejecutar `scripts/validate_stage.py` sobre fixtures y etapas reales. Verifica el contrato de artefactos. `scripts/test_next_step.py` verifica que cada estado de los artefactos produzca una única transición válida, y `scripts/doctor.py` que el índice y los artefactos no se contradigan. `scripts/test_snapshot.py` verifica que la identidad de auditoría sea estable, sensible al código, insensible a la evidencia excluida y que `validate_stage.py --repo` rechace un snapshot obsoleto. `scripts/test_expres.py` verifica la frontera exprés: cuenta archivos y líneas de producción, no las pruebas, y rechaza rutas excluidas y archivos nuevos sin trackear. `scripts/test_skill_evals.py` rechaza enlaces rotos, comandos inexistentes, gates ausentes y activación ambigua. `handoff-invalido/` hace fallar cada handoff estructural inválido.
+1. **Estructural — CI/local, sin tokens.** Ejecutar `scripts/validate_stage.py` sobre fixtures y etapas reales. Verifica el contrato de artefactos. `scripts/test_next_step.py` verifica que cada estado de los artefactos produzca una única transición válida, y `scripts/doctor.py` que el índice y los artefactos no se contradigan. `scripts/test_snapshot.py` verifica que la identidad de auditoría sea estable, sensible al código, insensible a la evidencia excluida y que `validate_stage.py --repo` rechace un snapshot obsoleto. `scripts/test_expres.py` verifica la frontera exprés: cuenta archivos y líneas de producción, no las pruebas, y rechaza rutas excluidas y archivos nuevos sin trackear. `scripts/test_evidence.py` verifica que la firma sea estable, sensible al exit y al output, insensible a lo volátil, y que `verify` rechace una evidencia inventada. `scripts/test_skill_evals.py` rechaza enlaces rotos, comandos inexistentes, gates ausentes y activación ambigua. `handoff-invalido/` hace fallar cada handoff estructural inválido.
 2. **Activación y separación — CI/local, sin tokens.** Los casos `evals/cases/*.json` contienen peticiones positivas y negativas escritas como usuarios reales. Un cambio de descripción no puede hacer que otra skill sea la respuesta esperada.
 3. **Comportamiento — bajo demanda, consume tokens.** Ejecutar cada caso en un snapshot aislado y puntuar el transcript/diff contra `expectations`. Mantener casos retenidos que la skill no vea antes de la evaluación.
 
@@ -29,7 +29,9 @@ Al informar resultados, fijar modelo, versión de Cursor/agente, fecha, configur
 | S13 | Veredicto reutilizado sobre un árbol distinto | `audit-stage` | Toma un `**Snapshot:**` nuevo y reaudita; no cierra con evidencia obsoleta. |
 | S14 | Corrección sin límite / riesgo rebajado | `audit-stage` | Al agotar `**Presupuesto de deltas:**` pide decisión; nunca baja el riesgo ni escribe otro delta. |
 | S17 | Criterio sin decisión origen | `conciliate-stage` | Añade `S-NN` y `Origen:` o no cierra. |
-| S18 | Test decorativo o sin test-first | `implement-stage`, `audit-stage` | Exige `Test-first:` y comando reproducible; no infiere cumplimiento. |
+| S18 | Test decorativo o sin test-first | `implement-stage`, `audit-stage` | Exige `Test-first:` y comando reproducible; no infiere cumplimiento. Fixtures `test-decorativo` y `sin-sensibilidad`. |
+| S19 | Veredicto `coincide` con ledger que solo prueba que el test pasó | `audit-stage` | Exige `Sensibilidad` demostrada; sin ella el criterio es `no verificado`. |
+| S20 | Evidencia transcrita o inventada | `audit-stage` | `evidence.py verify` no reproduce la firma: evidencia `no verificado`. |
 | I01 | Corte ambiguo o por encabezados | `identify-feature-stages` | Pide aclaración o corta por resultados; asigna requisitos; no crea tareas/auditoría. |
 
 ## Rúbrica conductual
@@ -49,11 +51,14 @@ python3 scripts/validate_stage.py evals/fixtures/ca-tipo
 python3 scripts/validate_stage.py evals/fixtures/ca-tipo --strict
 python3 scripts/validate_stage.py evals/fixtures/coincide-sin-snapshot --strict
 python3 scripts/validate_stage.py evals/fixtures/riesgo-rebajado --strict
+python3 scripts/validate_stage.py evals/fixtures/test-decorativo --strict
+python3 scripts/validate_stage.py evals/fixtures/sin-sensibilidad --strict
 python3 scripts/validate_stage.py evals/fixtures/riesgo-ausente
 python3 scripts/validate_stage.py evals/fixtures/riesgo-ausente --strict
 python3 scripts/test_next_step.py
 python3 scripts/test_snapshot.py
 python3 scripts/test_expres.py
+python3 scripts/test_evidence.py
 python3 scripts/test_skill_evals.py
 python3 scripts/doctor.py evals/fixtures/transiciones
 ```

@@ -167,6 +167,26 @@ dominante. Antes de retomarla: medir cuántas veces `expres.py` devuelve
 
 ### Fase 5 — Disciplina de ejecución (P19 + P22 + P17)  ·  **Q15 resuelta: Modelo C**
 
+**Parcialmente implementada (2026-10-23): B-27, el alcance en el diff.**
+
+| Cambio | Fixture / caso |
+| --- | --- |
+| `diff_scope.py`: diff real vs. `**Archivos:**` declarado | `test_diff_scope.py` (15 comprobaciones) |
+| Cruce en `validate_stage.py --repo` | `test_snapshot.py`: `colado.py` rechaza la pasada |
+| `**Archivos:**` obligatorio en `templates/TAREAS.md` | `cambio-fuera-de-alcance` |
+
+Se hizo antes que los rulings porque B-28 ya había eliminado `--strict`: el
+contrato único quedaba **más débil** que antes, sin ningún gate que mirase el
+diff. Un alcance sin comprobar no es un cierre, es una promesa.
+
+Decisiones tomadas al implementar: `--base` por defecto `HEAD`, y la etapa se
+interpreta relativa a la raíz del repo. Una ruta declarada que no cambió **no
+bloquea**; B-27 solo veta lo que aparece sin declarar, porque juzgar si la tarea
+se cumplió es cierre y no alcance (B-29).
+
+**Lo que queda de la Fase 5:** los rulings (B-21, B-25, B-26), P22, P17, y la
+migración de las fixtures que aún no declaran `**Archivos:**`.
+
 1. **P19 / B-21 + B-25**: sección "Rulings" en `implement-stage` con las tres
    categorías; `Ruling:` de tres partes obligatorias en `TAREAS.md`;
    `validate_stage.py` rechaza un ruling incompleto.

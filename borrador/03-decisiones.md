@@ -224,6 +224,25 @@ Un `dead end` es error estructural, no un aviso.
 
 ## Decisiones derivadas de superpowers
 
+### B-40 — El alcance se comprueba por el diff real, y solo lo no declarado bloquea
+**Fecha:** 2026-10-23
+**Estado:** `acordada` ✅ (usuario, 2026-10-23: "vamos con A")
+**Origen:** B-27 al implementarse; la opción A frente a un campo `**Diff:**` escrito por el agente.
+**Motivo:** B-27 dice que el diff es comprobable. Un campo que declara el agente
+convierte el gate en la confesión que B-27 quiere evitar. Pero el diff real tiene
+dos direcciones y solo una es alcance: un archivo tocado que nadie declaró es
+superficie nueva; uno declarado que no cambió es una tarea incompleta, y juzgar
+eso es cierre, no alcance (B-29).
+**Consecuencias:**
+1. `diff_scope.py <etapa> --repo <repo> [--base REF]` compara `git diff
+   --name-only` más los archivos sin trackear contra `**Archivos:**`.
+2. `--base` por defecto es `HEAD`; la etapa se interpreta relativa a la raíz del
+   repo, para que el consumidor invoque desde cualquier directorio.
+3. Una ruta **no declarada** es error (exit 1) y `validate_stage.py --repo` la
+   rechaza al cerrar. Una ruta **declarada y no tocada** solo advierte.
+4. El árbol de la etapa y `.yerro/` se excluyen: son evidencia, no código, con
+   la misma exclusión que `snapshot.py`.
+
 ### B-21 — En ejecución se decide y se registra; no se detiene (Modelo C)
 **Fecha:** 2026-10-22
 **Estado:** `acordada` ✅ (usuario, 2026-10-22)

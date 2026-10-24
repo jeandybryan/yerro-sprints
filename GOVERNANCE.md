@@ -54,19 +54,28 @@ Un cambio de intención, alcance o criterio reabre conciliación. No se maquilla
 como delta, no se resuelve con una excepción en tareas y no se cierra con una
 pasada de auditoría antigua.
 
-## Decisiones pendientes antes de publicar
+## Decisiones de release
 
-Estas decisiones no están acordadas en el repositorio y deben resolverse antes
-de crear una release o promesa de compatibilidad:
+Acordadas el 2026-10-23. Cambiar cualquiera de ellas exige una decisión nueva
+con fecha, no una edición silenciosa.
 
-- licencia y titulares de derechos;
-- canales de distribución y repositorios canónicos;
-- política de tags y versionado publicado;
-- agentes/hosts oficialmente soportados;
-- owner de mantenimiento y mecanismo de aprobación.
+- **Licencia:** MIT. Titular de derechos: Jeandy Bryan (2026). El texto íntegro
+  está en `LICENSE`.
+- **Canal canónico:** el repositorio `github.com/jeandybryan/yerro-sprints`, con
+  sus tags. Cualquier copia fuera de ese repositorio no es canónica y no se
+  presenta como release.
+- **Tags y versionado:** SemVer con tag anotado `vX.Y.Z` por release, inmutable.
+  Mientras el contrato pueda cambiar, la serie publicada es `0.x`.
+- **Hosts soportados:** por capacidad, no por lista cerrada. El paquete requiere
+  un agente con shell y lectura/escritura de archivos. Un host nuevo se declara
+  soportado cuando ejecuta la suite local del `CONTRIBUTING.md`, no por su
+  nombre.
+- **Owner y aprobación:** Jeandy Bryan es el owner de mantenimiento y el único
+  aprobador de release. La aprobación de cierre de una etapa sigue viviendo en
+  `.yerro/approvals.yml`, que edita la persona.
 
-Hasta que cada punto tenga una decisión registrada, el paquete puede validarse
-localmente, pero no debe presentarse como release gobernada.
+Una release que no respete estos puntos no es una release gobernada, aunque
+pase las validaciones.
 
 ## Contexto progresivo
 

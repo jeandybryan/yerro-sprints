@@ -48,9 +48,12 @@ gates, plantillas y evaluación, pero **no reemplaza ninguna fase**.
 ## Gobernanza y release
 
 Las reglas de mantenimiento están en [GOVERNANCE.md](GOVERNANCE.md) y la
-lista de salida en [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md). Las skills operativas apuntan a referencias normativas para mantener el contexto corto sin duplicar gates. La gobernanza
-no inventa licencia, canales de distribución, política de tags ni agentes
-soportados: esas decisiones deben acordarse antes de una release.
+lista de salida en [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md). Las skills
+operativas apuntan a referencias normativas para mantener el contexto corto
+sin duplicar gates. Las decisiones de release están acordadas: licencia MIT
+(ver [LICENSE](LICENSE)), canal canónico en este repositorio, tags
+`vX.Y.Z`, hosts por capacidad (agente con shell y lectura/escritura de
+archivos) y un owner único de mantenimiento y aprobación.
 
 ## Requisitos
 

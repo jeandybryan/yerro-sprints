@@ -46,6 +46,9 @@ los artefactos.
       con entrada fuera de alcance o con el archivo ausente, la etapa no cierra.
 - [ ] `doctor.py` avisa con cuatro rulings en una tarea y calla con tres; toda
       etapa no cerrada sin `**Archivos:**` aparece como pendiente de migrar.
+- [ ] `ruling-sin-coste` y `ruling-categoria-2-sin-revision` siguen fallando;
+      `ruling-categoria-1` y `ruling-categoria-2-revisado` siguen pasando: un
+      `Ruling:` sin coste y un sujeto a revisión sin resolver no cierran.
 - [ ] Cualquier cambio de descripción revisa los casos de activación positivos
       y negativos.
 - [ ] Cualquier cambio de flujo, plantilla o validador añadió una prueba de regresión.

@@ -61,6 +61,15 @@ VERDICT_RE = re.compile(r"^\s*\*\*Veredicto:\*\*\s*(.+?)\s*$", re.I | re.M)
 AUDIT_PASS_RE = re.compile(r"^##\s+Pasada\b.*?$(.*?)(?=^##\s+Pasada\b|\Z)", re.M | re.S | re.I)
 RUNNERS_RE = re.compile(r"^\s*\*\*Runners:\*\*\s*(.+?)\s*$", re.M | re.I)
 SENSITIVITY_RE = re.compile(r"(?:\||^)\s*Sensibilidad\s*(?:\||$)", re.I | re.M)
+# B-25: `Ruling: <qué> — <por qué> — <qué cuesta>`. Las tres partes son
+# obligatorias; dos guiones largos separan tres tramos no vacíos. Se acepta
+# también `--` porque un agente puede escribir ASCII en un archivo markdown.
+RULING_RE = re.compile(r"^\s*Ruling:\s*(.+?)\s*$", re.I | re.M)
+RULING_SEPARATOR_RE = re.compile(r"\s+(?:—|--|–)\s+")
+# B-26: la marca de categoría 2 en la tarea, y su resolución en la auditoría.
+SUBJECT_RE = re.compile(r"\*\*Sujeto a revisión:\*\*\s*(.+?)\s*$", re.I | re.M)
+SUBJECT_REVIEW_SECTION = "### Rulings revisados"
+SUBJECT_RESOLVED_RE = re.compile(r"^\s*-\s*(?:aceptad[oa]|hallazgo)\b", re.I | re.M)
 NO_DEMOSTRADA_RE = re.compile(r"no demostrada", re.I)
 
 # Presupuesto de deltas por riesgo. El default no se inventa: está calibrado
@@ -370,6 +379,15 @@ def main() -> int:
         for task_id, body in TASK_RE.findall(tasks):
             task_bodies[task_id] = body
             result.require(bool(re.search(r"CA-\d+", body)), f"{task_id} no enlaza CA-NN")
+            # B-25: un ruling sin coste oculta la decisión. Las tres partes se
+            # exigen por separado para que el error diga cuál falta.
+            for ruling in RULING_RE.findall(body):
+                parts = [item for item in RULING_SEPARATOR_RE.split(ruling) if item.strip()]
+                result.require(
+                    len(parts) >= 3,
+                    f"{task_id} tiene un `Ruling:` sin las tres partes "
+                    "(<qué> — <por qué> — <qué cuesta>); un ruling sin coste es una decisión oculta",
+                )
             result.require(bool(TEST_FIRST_RE.search(body)), f"{task_id} no declara Test-first:")
             result.require(bool(TEST_COMMAND_RE.search(body)), f"{task_id} no declara Test:")
             for command in TEST_COMMAND_RE.findall(body):
@@ -389,6 +407,28 @@ def main() -> int:
                 result.require(
                     ";" in value or "oráculo" in value.lower(),
                     f"{task_id} no separa procedimiento y oráculo",
+                )
+        # B-26: un ruling de categoría 2 cambia algo observable. El auditor lo
+        # revisa con artefactos, no con memoria (B-32), y mientras no lo acepte
+        # o lo convierta en hallazgo, el cierre no pasa.
+        subjects = [
+            (task_id, match.group(1))
+            for task_id, body in task_bodies.items()
+            for match in SUBJECT_RE.finditer(body)
+        ]
+        if subjects:
+            reviewed = audit.split(SUBJECT_REVIEW_SECTION, 1)
+            result.require(
+                len(reviewed) > 1,
+                f"AUDIT.md no tiene «{SUBJECT_REVIEW_SECTION}» y hay {len(subjects)} "
+                "ruling(s) de categoría 2 (`**Sujeto a revisión:**`) sin revisar",
+            )
+            if len(reviewed) > 1:
+                resolutions = len(SUBJECT_RESOLVED_RE.findall(reviewed[1]))
+                result.require(
+                    resolutions >= len(subjects),
+                    f"«{SUBJECT_REVIEW_SECTION}» resuelve {resolutions} de {len(subjects)} "
+                    "rulings de categoría 2: cada uno se acepta o se convierte en hallazgo",
                 )
         result.require(bool(task_bodies), "TAREAS.md no contiene tareas implementables")
         result.require(

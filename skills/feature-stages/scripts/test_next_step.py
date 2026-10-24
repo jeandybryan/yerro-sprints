@@ -204,9 +204,19 @@ VALIDATE_REJECTED = [
     ("test-first-invalido", "no declara Test-first"),
     ("audit-trazabilidad-invalida", "sin **Trazabilidad:**"),
     ("riesgo-rebajado", "rebaja el riesgo"),
+    # B-25: un ruling sin coste oculta la decisión.
+    ("ruling-sin-coste", "sin las tres partes"),
+    # B-26: un ruling de categoría 2 sin revisar impide el cierre.
+    ("ruling-categoria-2-sin-revision", "Rulings revisados"),
 ]
 
-VALIDATE_ACCEPTED = ["valid-stage", "index-estado/05-hecha", "riesgo-cruzado-con-motivo"]
+VALIDATE_ACCEPTED = [
+    "valid-stage",
+    "index-estado/05-hecha",
+    "riesgo-cruzado-con-motivo",
+    "ruling-categoria-1",
+    "ruling-categoria-2-revisado",
+]
 
 
 def check_validate_contract() -> None:
@@ -264,6 +274,21 @@ for mut_detalle, expected in (
     got = validate_stage.mutation_verdicts(mut_detalle)
     if got != expected:
         fail(f"mutation_verdicts: {mut_ledger!r} dio {got}, se esperaba {expected}")
+
+# B-25 se cumple por estructura, no por longitud. Los tres separadores que un
+# agente puede escribir cuentan; dos partes nunca.
+for ruling, valido in (
+    ("separador `;` — locales europeos — una línea y su test", True),
+    ("separador `;` -- locales europeos -- una línea y su test", True),
+    ("separador `;` – locales europeos – una línea y su test", True),
+    ("separador `;` — locales europeos", False),
+    ("separador `;` — locales europeos — ", False),
+    ("separador `;`", False),
+):
+    checked += 1
+    partes = [x for x in validate_stage.RULING_SEPARATOR_RE.split(ruling) if x.strip()]
+    if (len(partes) >= 3) != valido:
+        fail(f"ruling {ruling!r}: tres partes = {len(partes) >= 3}, se esperaba {valido}")
 
 # Un mutante rojo en un CA y otro verde en otro no se compensan: basta uno que
 # sobreviva para que el ledger no demuestre sensibilidad.

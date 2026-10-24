@@ -38,11 +38,47 @@ resolución.
 Run `python3 <skills-root>/feature-stages/scripts/validate_stage.py <stage>`
 before work; structural errors block implementation.
 
-If product intent, scope or acceptance must change to proceed, or a task
-is ambiguous, stop and ask
-([feature-stages](../feature-stages/SKILL.md) **Ask when in doubt**).
-Return to `conciliate-stage` when the answer changes the baseline. Do not
-hide the change in code or a delta.
+If product intent, scope or acceptance must change to proceed, stop and reopen
+`conciliate-stage` ([feature-stages](../feature-stages/SKILL.md) **Ask when in
+doubt** applies to the baseline). For an ambiguity *inside* the approved plan,
+see **Rulings** below: decide and record, do not stop. Do not hide a scope
+change in code or a delta.
+
+## Rulings — decide and record
+
+A running plan does not wait on the human for detail. Classify the decision by
+what it changes, not by how doubtful it feels:
+
+| Category | What it is | What you do |
+| --- | --- | --- |
+| 1. Implementation detail | The user receives the same thing | Decide and record `Ruling:` with its cost |
+| 2. Observable, reversible effect | Visible but trivial to undo, scope unchanged | Decide, record and mark `**Sujeto a revisión:**` |
+| 3. Intent, scope or criterion | Changes what was asked or accepted | **Stop and reopen `conciliate-stage`** |
+
+The format is closed and all three parts are required:
+
+```text
+Ruling: <what I decided> — <why> — <what it costs if I am wrong>
+```
+
+A ruling without a cost hides the decision instead of exposing it, and the
+validator rejects it. Write the cost concretely: how much code, what reverts, or
+what cannot be recovered. If the third part would be "the deleted records do
+not come back", that is not a ruling — it is one of the stops below.
+
+Record the ruling next to the task that produced it in `TAREAS.md`. There is no
+separate register: the task list is the register.
+
+Beyond the categories, these always stop, without a ruling:
+
+1. an irreversible or destructive operation;
+2. anything touching credentials, permissions or cryptography;
+3. an effect outside the worktree (merge, push, publish);
+4. a plan so broken that every path is guessing;
+5. category 3 — a change of intent, scope or acceptance criterion.
+
+A "drive-by" refactor is category 3 even when it is reversible: it changes what
+gets reviewed. It goes to the next task or to conciliation.
 
 ## Do
 

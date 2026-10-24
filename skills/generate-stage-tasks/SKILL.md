@@ -25,6 +25,9 @@ los errores estructurales bloquean la entrega.
    - stable id (`T1`, `T2`, …)
    - one implementable action
    - pointer to one or more `CA-NN` and spec/conciliation source
+   - **Archivos:** the paths this task will produce, derived from its CA and
+     never from a diff already written (B-28). Without it the stage cannot
+     prove its scope and the close cross-check has nothing to compare.
    - compact applicable impact: modules/contracts, data/migration, config,
      lifecycle/recovery, observability, profile/hardware, cleanup/rollback
    - **Verificar:** evidence level plus procedure and observable oracle

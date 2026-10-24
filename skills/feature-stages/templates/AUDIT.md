@@ -24,6 +24,16 @@
 **Deltas:** D1, D2 | `ninguno`
 **Cruza riesgo:** no | sí — <qué criterio se bajó y por qué>
 **Motivo del presupuesto:** <obligatorio si `Cruza riesgo: sí` o si los deltas superan el presupuesto vigente>
+
+### Rulings revisados
+
+Cada `**Sujeto a revisión:**` de `TAREAS.md` se resuelve aquí, leyendo los
+artefactos y el diff, nunca la conversación de implementación (B-32). Una marca
+sin resolución impide el cierre (B-26).
+
+- aceptado — <qué se decidió>: <por qué es correcto con el CA y el diff>
+- hallazgo — <qué se decidió>: <qué contradice el baseline o la evidencia>
+
 **Veredicto:** coincide | no coincide
 
 ### Verificación global

@@ -42,6 +42,20 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
   direcciones del cruce, archivos sin trackear, `--base` inexistente y una
   tarea sin migrar. Fixture `cambio-fuera-de-alcance`.
 
+- **Rulings registrados con coste (B-25).** Un `Ruling:` en `TAREAS.md` exige
+  las tres partes (`<qué> — <por qué> — <qué cuesta>`); el validador rechaza
+  un registro de dos partes. Antes, `implement-stage` decía «si es ambiguo,
+  para y pregunta»: el Modelo C sustituye esa parada por decidir, registrar y
+  seguir, y el coste es lo que permite al auditor evaluar la decisión. Se
+  aceptan `—`, `--` y `–` como separador.
+- **Sujetos a revisión resueltos (B-26).** Un `**Sujeto a revisión:**` (ruling
+  de categoría 2: observable, reversible, sin cambio de alcance) obliga a
+  `AUDIT.md` a traer `### Rulings revisados` con una resolución `aceptado` o
+  `hallazgo` por cada marca. Antes, la marca se escribía y nadie la leía.
+- Fixtures `ruling-sin-coste` y `ruling-categoria-2-sin-revision` (negativas),
+  `ruling-categoria-1` y `ruling-categoria-2-revisado` (positivas), y casos
+  retenidos `S24` y `S25` en `EVALUATION.md`.
+
 - **Aprobación humana fuera del artefacto.** `scripts/approvals.py` lee
 `.yerro/approvals.yml` (archivo versionado que edita la persona);
 `validate_stage.py <etapa> --repo <repo>` exige una entrada que cubra la etapa
@@ -75,6 +89,12 @@ avisa, sin bloquear, de una etapa no cerrada cuyas tareas no declaran
 
 - `templates/TAREAS.md` exige `**Archivos:**` bajo cada tarea, derivado del CA y
   nunca del diff ya producido (B-28).
+- `implement-stage` gana la sección **Rulings — decide and record**: la
+  categoría se decide por lo que cambia, no por la duda; solo la categoría 3 y
+  las paradas incondicionales reabren la conciliación.
+- `templates/AUDIT.md` gana `### Rulings revisados`; `audit-stage` no cierra con
+  una marca sin resolver, y `references/decision-and-questions.md` separa la
+  decisión de baseline (`S-NN`) del ruling de ejecución.
 - El ledger de `AUDIT.md` gana la columna `Sensibilidad`; `TAREAS.md` gana
   `Sensibilidad:` bajo `Test:`; `CONCILIACION.md` gana `**Runners:**`
   opcional.

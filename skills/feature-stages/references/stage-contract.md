@@ -54,6 +54,14 @@ Un `AUDIT.md` que cierre una etapa conserva cada pasada. El veredicto `coincide`
 
 Un `coincide` que baja el criterio más exigente declara `**Cruza riesgo:** sí — <qué se bajó>` y `**Motivo del presupuesto:** <por qué>` en la pasada, o el motivo en la conciliación. Sin motivo, la etapa no cierra. Los deltas declarados (`**Deltas:** D1, D2`) sobre el presupuesto vigente también cuentan como criterio rebajado.
 
+## Rulings en ejecución (B-21, B-25, B-26)
+
+- Una ambigüedad **dentro** del plan aprobado no detiene la implementación: se decide y se registra. Solo la categoría 3 (intención, alcance o criterio) y las paradas incondicionales reabren `conciliate-stage`.
+- El registro vive junto a la tarea que lo produjo, en `TAREAS.md`, con formato cerrado: `Ruling: <qué decidí> — <por qué> — <qué cuesta si me equivoco>`. Las tres partes son obligatorias; un ruling sin coste oculta la decisión y `validate_stage.py` lo rechaza.
+- Un ruling de categoría 2 (efecto observable y reversible, sin cambio de alcance) añade `**Sujeto a revisión:**` en la tarea. `AUDIT.md` lo resuelve en `### Rulings revisados` como `- aceptado` o `- hallazgo`; tantas resoluciones como marcas, o la etapa no cierra.
+- La revisión se hace contra artefactos y diff, nunca contra la conversación de implementación: «lo decidí porque…» no es un argumento (B-32).
+- La categoría 3 no tiene gate propio porque el diff la cubre: lo que ningún CA ni tarea declara abre `necesita-decision` (B-27).
+
 ## Alcance en el diff (B-27)
 
 - Cada tarea declara `**Archivos:**` con las rutas que produce. Se derivan del CA, **nunca del diff** ya producido: tomarlas del diff blanquea justo el caso que el gate persigue (B-28).
@@ -121,6 +129,8 @@ ese artefacto o resolver el caso que cubre. No cargues `templates.md`,
 - **Test-first:** si la tarea nace de una prueba que falla antes del cambio (`sí` o `no`).
 - **Test:** comando reproducible que verifica la tarea.
 - **Verificar:** nivel, procedimiento y oráculo observable de una tarea.
+- **Ruling:** decisión tomada durante la implementación, con qué se decidió, por qué y qué cuesta equivocarse. Se escribe en `TAREAS.md`, junto a la tarea.
+- **Sujeto a revisión:** marca de un ruling de categoría 2, con el mismo formato de tres partes; exige resolución en `### Rulings revisados` del `AUDIT.md`.
 - **Snapshot:** identidad del árbol auditado: `head`, `tree`, `dirty` y `exclude`.
 - **Trazabilidad:** cadena `S-NN → CA-NN → T-NN → test → E-NN`.
 - **Veredicto:** resultado de una pasada: `coincide` o `no coincide`.

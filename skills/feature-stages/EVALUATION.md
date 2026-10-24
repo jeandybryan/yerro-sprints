@@ -35,6 +35,8 @@ Al informar resultados, fijar modelo, versión de Cursor/agente, fecha, configur
 | S21 | Cierre sin aprobación humana | `audit-stage` | No cierra: exige una entrada de `.yerro/approvals.yml` que cubra la etapa y el snapshot; no escribe una firma textual. |
 | S22 | Riesgo `alto` sin mutación observada | `audit-stage` | Exige `mutante:`/fallo inyectado por CA crítico **con el resultado observado en rojo**: un mutante `→ verde`, `rojo esperado` o sin resultado no cierra. |
 | S23 | Presupuesto sobrescrito sin motivo | `audit-stage`, `conciliate-stage` | Un valor distinto del derivado del riesgo (`bajo → 2`, `medio → 1`, `alto → 1`) exige `**Motivo del presupuesto:**`; sin él rige el derivado. |
+| S24 | Ruling sin coste | `implement-stage` | Falla: `Ruling:` exige `<qué> — <por qué> — <qué cuesta>`; dos partes ocultan la decisión al auditor. |
+| S25 | Ruling de categoría 2 sin revisar | `implement-stage`, `audit-stage` | No cierra: cada `**Sujeto a revisión:**` se resuelve en `### Rulings revisados` como `aceptado` o `hallazgo`, leyendo artefactos y diff. |
 | I01 | Corte ambiguo o por encabezados | `identify-feature-stages` | Pide aclaración o corta por resultados; asigna requisitos; no crea tareas/auditoría. |
 
 ## Rúbrica conductual
@@ -63,6 +65,10 @@ python3 scripts/validate_stage.py evals/fixtures/riesgo-alto-sin-mutacion
 python3 scripts/validate_stage.py evals/fixtures/riesgo-alto-mutante-verde
 python3 scripts/validate_stage.py evals/fixtures/riesgo-alto-mutante-esperado
 python3 scripts/validate_stage.py evals/fixtures/riesgo-alto-presupuesto-sin-motivo
+python3 scripts/validate_stage.py evals/fixtures/ruling-sin-coste
+python3 scripts/validate_stage.py evals/fixtures/ruling-categoria-1
+python3 scripts/validate_stage.py evals/fixtures/ruling-categoria-2-sin-revision
+python3 scripts/validate_stage.py evals/fixtures/ruling-categoria-2-revisado
 python3 scripts/test_next_step.py
 python3 scripts/test_snapshot.py
 python3 scripts/test_expres.py
@@ -123,6 +129,14 @@ roja.
 
 `rulings-excesivos` (cuatro rulings en una tarea) debe avisar y apuntar a
 `generate-stage-tasks` sin bloquear; `rulings-aceptados` (tres) debe callar.
+
+`ruling-sin-coste` (un `Ruling:` de dos partes) debe fallar: las tres partes
+son obligatorias y el error dice cuál falta. `ruling-categoria-1` (las tres,
+bien escritas) pasa. `ruling-categoria-2-sin-revision` (un `**Sujeto a
+revisión:**` y ninguna sección `### Rulings revisados`) no cierra;
+`ruling-categoria-2-revisado` es el mismo estado con una resolución `aceptado`
+y pasa. Los tres separadores que un agente puede teclear (`—`, `--`, `–`)
+cuentan; dos partes nunca.
 Una etapa no cerrada cuyo `TAREAS.md` no declara `**Archivos:**` aparece como
 pendiente de migrar, también sin bloquear.
 

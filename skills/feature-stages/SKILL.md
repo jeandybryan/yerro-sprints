@@ -43,7 +43,7 @@ For audit work, also use:
 
 ```bash
 python3 <skills-root>/feature-stages/scripts/snapshot.py <repo> --exclude <feature-root>
-python3 <skills-root>/feature-stages/scripts/validate_stage.py <stage> --strict --repo <repo>
+python3 <skills-root>/feature-stages/scripts/validate_stage.py <stage> --repo <repo>
 ```
 
 ## Gates

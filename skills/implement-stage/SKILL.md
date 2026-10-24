@@ -25,7 +25,9 @@ Start only when:
 - the user asked to implement this stage/list;
 - when implementing a delta: its `Cierra:` points to a `no coincide` audit pass,
   it names the affected CA/evidence, and the feature index marks it as active work;
-- writing or implementing another delta stays within `**Presupuesto de deltas:**`.
+- writing or implementing another delta stays within `**Presupuesto de deltas:**`,
+  which is derived from the risk (`bajo → 2`, `medio → 1`, `alto → 1`) unless the
+  conciliation wrote `**Motivo del presupuesto:**`.
 
 Confirma con
 `python3 <skills-root>/feature-stages/scripts/next_step.py <feature-root> --stage <NN-slug>`
@@ -71,6 +73,8 @@ README or task list. Do not mark incomplete work done.
 
 ## Do not
 
+- Write `.yerro/approvals.yml` or any approval mark. The approval is the
+  person's file; if you write it, it stops proving anything.
 - Expand scope with cleanup or “nice to have” work.
 - Modify acceptance criteria to match implementation.
 - Create `AUDIT.md` or close the stage.

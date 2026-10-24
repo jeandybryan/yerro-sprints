@@ -21,6 +21,7 @@ FIXTURES = HERE.parent / "evals" / "fixtures"
 sys.path.insert(0, str(HERE))
 
 from next_step import DECISION, LISTO, TRABAJANDO, VERIFICANDO, FeatureError, analyze  # noqa: E402
+import validate_stage  # noqa: E402
 
 errors: list[str] = []
 checked = 0
@@ -188,6 +189,13 @@ def check_cli() -> None:
 
 
 VALIDATE_REJECTED = [
+    ("cierre-sin-aprobacion", "sin **Motivo del presupuesto:**"),
+    ("riesgo-alto-sin-mutacion", "ningún CA crítico registra `mutante:`"),
+    # B-35 exige ver el rojo, no nombrar el mutante: un mutante que el test
+    # no detectó (`→ verde`) no prueba sensibilidad.
+    ("riesgo-alto-mutante-verde", "declara el resultado `verde`"),
+    ("riesgo-alto-mutante-esperado", "rojo esperado` es una predicción"),
+    ("riesgo-alto-presupuesto-sin-motivo", "supera el derivado"),
     ("test-decorativo", "Test: decorativo"),
     ("sin-sensibilidad", "sensibilidad no demostrada"),
     ("coincide-sin-snapshot", "sin **Snapshot:**"),
@@ -198,34 +206,94 @@ VALIDATE_REJECTED = [
     ("riesgo-rebajado", "rebaja el riesgo"),
 ]
 
-VALIDATE_ACCEPTED = ["valid-stage", "index-estado/05-hecha"]
+VALIDATE_ACCEPTED = ["valid-stage", "index-estado/05-hecha", "riesgo-cruzado-con-motivo"]
 
 
 def check_validate_contract() -> None:
     """Cada regla nueva de validate_stage.py debe tener una fixture que la viole."""
     global checked
     for fixture in VALIDATE_ACCEPTED:
-        result = run("validate_stage.py", str(FIXTURES / fixture), "--strict")
+        result = run("validate_stage.py", str(FIXTURES / fixture))
         checked += 1
         if result.returncode != 0:
             fail(f"validate/{fixture}: rechazó una etapa válida: {result.stdout}{result.stderr}")
 
     for fixture, expected in VALIDATE_REJECTED:
-        result = run("validate_stage.py", str(FIXTURES / fixture), "--strict")
+        result = run("validate_stage.py", str(FIXTURES / fixture))
         checked += 1
         if result.returncode != 1:
             fail(f"validate/{fixture}: salida {result.returncode}, se esperaba 1")
         elif expected not in result.stdout:
             fail(f"validate/{fixture}: no reporta {expected!r} (obtenidos {result.stdout})")
 
-    relaxed = run("validate_stage.py", str(FIXTURES / "riesgo-ausente"))
+    # B-28: hay un solo contrato. Las fixtures que vivían de la dualidad
+    # `--strict` / aviso ahora describen estados que el contrato rechaza.
+    for fixture in ("riesgo-ausente", "ca-tipo"):
+        result = run("validate_stage.py", str(FIXTURES / fixture))
+        checked += 1
+        if result.returncode != 1:
+            fail(f"validate/{fixture}: salida {result.returncode}, se esperaba 1 sin modo legado")
+
+    # El presupuesto derivado del riesgo: escribir un número mayor en la
+    # conciliación no amplía el margen mientras falte `**Motivo del presupuesto:**`.
+    amplio = run("next_step.py", str(FIXTURES / "presupuesto-amplio"), "--json")
     checked += 1
-    if relaxed.returncode != 0 or "WARN:" not in relaxed.stdout:
-        fail(f"validate/riesgo-ausente: sin --strict debía avisar, no fallar: {relaxed.stdout}")
-    strict = run("validate_stage.py", str(FIXTURES / "riesgo-ausente"), "--strict")
+    payload = json.loads(amplio.stdout) if amplio.stdout.strip() else {}
+    if payload.get("presupuesto_deltas") != 3:
+        fail(
+            "next_step/presupuesto-amplio: el motivo escrito no habilitó el presupuesto "
+            f"(obtenido {payload.get('presupuesto_deltas')}, esperado 3)"
+        )
+
+    # Sin motivo, el mismo 3 no amplía nada: rige el derivado del riesgo.
+    sin_motivo = run("validate_stage.py", str(FIXTURES / "riesgo-alto-presupuesto-sin-motivo"))
     checked += 1
-    if strict.returncode != 1:
-        fail("validate/riesgo-ausente: con --strict debía fallar por el riesgo ausente")
+    if sin_motivo.returncode != 1 or "supera el derivado" not in sin_motivo.stdout:
+        fail(f"validate/riesgo-alto-presupuesto-sin-motivo: {sin_motivo.stdout}")
+
+# B-35 se cumple por el resultado observado, no por la palabra. Se prueban los
+# cuatro veredictos del parser directamente: una fixture sola no distingue un
+# mutante rojo de uno verde cuando ambos son texto válido.
+for mut_detalle, expected in (
+    ("mutante: invertir separador → rojo", ["rojo"]),
+    ("mutante: invertir separador → verde", ["verde"]),
+    ("mutante: invertir separador → rojo esperado", ["esperado"]),
+    ("mutante: invertir separador", ["sin resultado"]),
+):
+    checked += 1
+    got = validate_stage.mutation_verdicts(mut_detalle)
+    if got != expected:
+        fail(f"mutation_verdicts: {mut_ledger!r} dio {got}, se esperaba {expected}")
+
+# Un mutante rojo en un CA y otro verde en otro no se compensan: basta uno que
+# sobreviva para que el ledger no demuestre sensibilidad.
+mixto = (
+    "| E-01 | CA-01 | pytest | mutante: A → rojo |\n"
+    "| E-02 | CA-02 | pytest | mutante: B → verde |\n"
+    "| E-03 | CA-01 | pytest | caso límite: entrada vacía |"
+)
+checked += 1
+gaps = validate_stage.risk_evidence_gaps("alto", mixto)
+if not any("verde" in gap.lower() for gap in gaps):
+    fail(f"risk_evidence_gaps: un mutante verde pasó desapercibido (obtenido {gaps})")
+
+# `rojo esperado` es una predicción, no una observación (evidence.md §2).
+checked += 1
+prediccion = (
+    "| E-01 | CA-01 | pytest | mutante: A → rojo esperado |\n"
+    "| E-02 | CA-01 | pytest | caso límite: entrada vacía |"
+)
+if not validate_stage.risk_evidence_gaps("alto", prediccion):
+    fail("risk_evidence_gaps: aceptó `rojo esperado` como observación")
+
+# El mismo ledger sin mutante rojo sigue cerrando: el gate no veta el caso sano.
+checked += 1
+sano = (
+    "| E-01 | CA-01 | pytest | mutante: A → rojo |\n"
+    "| E-02 | CA-01 | pytest | caso límite: entrada vacía |"
+)
+if validate_stage.risk_evidence_gaps("alto", sano):
+    fail(f"risk_evidence_gaps: rechazó un ledger alto correcto ({validate_stage.risk_evidence_gaps('alto', sano)})")
 
     open_pass = run(
         "validate_stage.py",
@@ -238,6 +306,26 @@ def check_validate_contract() -> None:
         fail(f"validate --repo: una última pasada en no coincide no debe fallar: {open_pass.stdout}")
     elif "no hay snapshot que verificar" not in open_pass.stdout:
         fail("validate --repo: no avisa que la última pasada no tiene snapshot que verificar")
+
+def check_rulings_warning() -> None:
+    """B-33: más de tres rulings por tarea avisa y apunta a generate-stage-tasks."""
+    global checked
+    excesivo = run("doctor.py", str(FIXTURES / "rulings-excesivos"), "--json")
+    checked += 1
+    if excesivo.returncode != 0:
+        fail("doctor/rulings-excesivos: el aviso de rulings no debe bloquear")
+        return
+    warnings = " ".join(json.loads(excesivo.stdout)["advertencias"])
+    for expected in ("4 rulings en una tarea", "generate-stage-tasks"):
+        if expected not in warnings:
+            fail(f"doctor/rulings-excesivos: no reporta {expected!r} (obtenidos {warnings})")
+
+    aceptado = run("doctor.py", str(FIXTURES / "rulings-aceptados"), "--json")
+    checked += 1
+    warnings = " ".join(json.loads(aceptado.stdout)["advertencias"])
+    if "rulings en una tarea" in warnings:
+        fail(f"doctor/rulings-aceptados: avisó con tres rulings (obtenidos {warnings})")
+
 
 EXPRES_EXPECTED = (
     "3 cambios sobre el mismo CA 'CA-02'",
@@ -293,7 +381,7 @@ def check_validate_no_crash() -> None:
                 (target / name).exists() for name in ("CONCILIACION.md", "AUDIT.md")
             ):
                 continue
-            result = run("validate_stage.py", str(target), "--strict")
+            result = run("validate_stage.py", str(target))
             checked += 1
             crashed = result.returncode not in (0, 1) or "Traceback" in result.stdout + result.stderr
             if crashed:
@@ -311,6 +399,7 @@ def main() -> int:
     check_validate_contract()
     check_validate_no_crash()
     check_expres_warning()
+    check_rulings_warning()
     for error in errors:
         print(f"ERROR: {error}")
     if not errors:

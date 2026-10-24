@@ -5,7 +5,8 @@
 ## Aclaraciones
 
 - **S-01 — Decisión de baseline:** se acepta el resultado observable del criterio y su verificación focalizada.
-**Riesgo:** alto
+**Riesgo:** bajo
+
 
 ## Criterios de aceptación
 

@@ -29,6 +29,35 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - `test_next_step.py` recorre todas las fixtures y falla si el validador se cae
   en vez de juzgar.
 
+- **Aprobación humana fuera del artefacto.** `scripts/approvals.py` lee
+`.yerro/approvals.yml` (archivo versionado que edita la persona);
+`validate_stage.py <etapa> --repo <repo>` exige una entrada que cubra la etapa
+y el snapshot para cerrar. `AUDIT.md` no lleva `**Aprobado por:**`. `.yerro/`
+se excluye del snapshot para que firmar no invalide la pasada que firma.
+- **El riesgo fija el fondo de la evidencia.** La sensibilidad se exige
+siempre; por encima de `bajo` el ledger declara un caso límite o un negativo
+demostrado, y en `alto` cada CA crítico registra `mutante:` (o fallo inyectado)
+con resultado rojo (B-35: se exige ver el rojo, no una herramienta).
+- **El mutante se juzga por su resultado, no por la palabra.** `mutante: X →
+verde` (el mutante sobrevivió), `→ rojo esperado` (una predicción) y `mutante:
+X` sin resultado no cumplen; un verde en un CA crítico no lo compensa un rojo
+en otro. Antes, escribir la palabra `mutante` satisfacía el gate aunque el
+resultado declarado fuera `verde`.
+- Fixtures `riesgo-alto-mutante-verde` y `riesgo-alto-mutante-esperado`, ambas
+negativas, más README para las seis fixtures de roles y riesgo.
+- **Presupuesto de deltas derivado del riesgo** (`bajo → 2`, `medio → 1`,
+`alto → 1`) en `validate_stage.py` y `next_step.py`. Un valor distinto exige
+`**Motivo del presupuesto:**`; sin él rige el derivado. `**Cruza riesgo:** sí`
+en una pasada `coincide` también exige el motivo, o la etapa no cierra.
+- **Aviso de rulings (B-33).** `doctor.py` advierte cuando una tarea acumula
+más de tres `Ruling:` y apunta a `generate-stage-tasks`, sin bloquear. También
+avisa, sin bloquear, de una etapa no cerrada cuyas tareas no declaran
+`**Archivos:**` (migración pendiente).
+- Fixtures `cierre-sin-aprobacion`, `riesgo-alto-sin-mutacion`,
+`riesgo-alto-presupuesto-sin-motivo`, el positivo `riesgo-cruzado-con-motivo`,
+`rulings-excesivos` y `rulings-aceptados`; casos retenidos `S21`–`S23` en
+`EVALUATION.md`.
+
 ### Cambiado
 
 - El ledger de `AUDIT.md` gana la columna `Sensibilidad`; `TAREAS.md` gana
@@ -36,6 +65,11 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
   opcional.
 - El README declara la promesa real: **operar no requiere Python; cerrar con
   evidencia sí**.
+- El ledger de `AUDIT.md` gana `**Deltas:**` y `**Cruza riesgo:**`;
+  `CONCILIACION.md` gana `**Motivo del presupuesto:**`.
+- `test_snapshot.py` comprueba el gate de aprobación: sin
+  `.yerro/approvals.yml`, con una entrada fuera de alcance o con el archivo mal
+  formado, la etapa no cierra.
 
 ### Corregido
 
@@ -66,7 +100,7 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - Gobernanza del paquete en `GOVERNANCE.md` y checklist reproducible de release en `RELEASE_CHECKLIST.md`. Las decisiones de licencia, distribución, tags, hosts y owner quedan explícitamente pendientes hasta ser acordadas.
 
 - Trazabilidad ejecutable con decisiones `S-NN`, `Origen: S-NN`, `Test-first:` y `Test:` en tareas, y `**Trazabilidad:**` en auditorías.
-- Nuevas fixtures negativas para decisión origen, test-first y trazabilidad de evidencia; `validate_stage.py` las rechaza en modo estricto.
+- Nuevas fixtures negativas para decisión origen, test-first y trazabilidad de evidencia; `validate_stage.py` las rechaza.
 
 
 - Contrato ejecutable de solo lectura: `next_step.py` lee los artefactos y
@@ -87,7 +121,7 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - Fixture `index-estado`: `03-activa` y `05-hecha` deben pasar;
   `04-etapa` debe fallar.
 - Fixture `ca-tipo`: los CA con marcador no avisan; `CA-05`, sin marcador,
-  avisa y con `--strict` falla el proceso.
+  es error.
 - `snapshot.py`: identidad content-addressable del código auditado (`head`,
   `tree`, `dirty` y rutas excluidas) calculada con un índice temporal, sin
   tocar el índice real. `--exclude` permite dejar fuera el árbol de la feature
@@ -99,7 +133,7 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - `**Riesgo:** bajo | medio | alto` congelado en la conciliación cerrada y
   `**Riesgo auditado:**` en la pasada. El auditor puede subirlo, nunca bajarlo:
   un riesgo auditado menor es error del validador.
-- `**Presupuesto de deltas:**` (dos por defecto). `next_step.py` devuelve
+- `**Presupuesto de deltas:**` derivado del riesgo. `next_step.py` devuelve
   `necesita-decision` con `PRESUPUESTO_DE_DELTAS_AGOTADO` cuando la corrección
   supera el presupuesto o la auditoría sigue en `no coincide` tras gastarlo.
 - Fixtures `coincide-sin-snapshot`, `riesgo-rebajado`, `riesgo-ausente`,
@@ -119,6 +153,14 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - La plantilla de `AUDIT.md` reemplaza el identificador informal de
   «commit/working tree» por `**Snapshot:**` y añade `**Riesgo auditado:**`.
   `CONCILIACION.md` declara `**Riesgo:**` y `**Presupuesto de deltas:**`.
+
+### Eliminado
+
+- **Modo legado del validador.** Se retiran `--strict` y `legacy=`. Hay **un**
+contrato y **un** modo de validación: `riesgo-ausente` y `ca-tipo` fallan
+siempre, porque describen estados que el contrato rechaza. Las fixtures que
+dependían del modo permisivo pasan a negativas o se retiran.
+
 
 ## [1.0.0] - 2026-09-30
 

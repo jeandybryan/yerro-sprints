@@ -72,12 +72,18 @@ test fail, you don't know if it tests the right thing."*
 
 ```text
 mutante: <qué se cambió en el código>
-resultado: rojo esperado | rojo obtenido
+resultado: rojo obtenido | verde (el mutante sobrevivió) — no se admite «esperado»
 ```
 
 Cualquier método cuenta — herramienta de mutación, edición manual, fallo
 inyectado. **No se exige herramienta** (B-35): lo que se exige es **ver el rojo**,
 no instalar mutmut.
+
+El resultado que cuenta es el **observado**, no el esperado. En el ledger se
+escribe `mutante: <qué> → rojo` solo si el test falló de verdad. `→ verde` es un
+mutante que sobrevivió: dice que el test no cubre ese comportamiento. `→ rojo
+esperado` es la predicción de antes de ejecutar, y una predicción no es
+evidencia (ver §qué no cuenta).
 
 ### c) Regresión funcional contra `HEAD`
 

@@ -7,7 +7,9 @@
 **Riesgo:** bajo | medio | alto
 **Runners:** <pytest | npm test | go test ./...> (opcional; si falta, un `Test:`
 fuera de la lista negra del validador solo avisa)
-**Presupuesto de deltas:** 2
+**Presupuesto de deltas:** <derivado del riesgo: bajo 2 | medio 1 | alto 1; otro
+valor exige **Motivo del presupuesto:** aquí>
+**Motivo del presupuesto:** <solo si el valor escrito no es el derivado>
 **Spec:** [<SPEC>.md](../<SPEC>.md) §…
 
 ## Resultado observable
@@ -82,7 +84,8 @@ the criterion or Aclaraciones; do not create a separate specification format.
   after the level, e.g. `alto — datos, contratos compartidos`.
 - The auditor may raise the level in `AUDIT.md`; lowering it reopens the
   conciliation.
-- `**Presupuesto de deltas:**` bounds corrective work. Default `2`; higher
-  values must be justified in Aclaraciones. Without the field, the default
-  applies.
+- `**Presupuesto de deltas:**` bounds corrective work and is **derived from the
+  risk**: `bajo → 2`, `medio → 1`, `alto → 1`. A different value applies only
+  with `**Motivo del presupuesto:**`; without the motive the derived value
+  wins, so writing a bigger number does not widen the gate.
 

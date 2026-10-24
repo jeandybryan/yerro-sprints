@@ -35,8 +35,15 @@ VERDICT_RE = re.compile(r"\*\*Veredicto:\*\*\s*(.+?)\s*$", re.I | re.M)
 CIERRA_RE = re.compile(r"\*\*Cierra:\*\*\s*([^\n]+)", re.I)
 DELTA_RE = re.compile(r"^TAREAS-delta-(\d{2,})\.md$")
 DELTA_BUDGET_RE = re.compile(r"\*\*Presupuesto de deltas:\*\*\s*(\d+)", re.I)
-DEFAULT_DELTA_BUDGET = 2
 RISK_RE = re.compile(r"\*\*Riesgo:\*\*\s*(bajo|medio|alto)\b", re.I)
+# El presupuesto se deriva del riesgo. Un valor distinto escrito en la
+# conciliación solo vale con `**Motivo del presupuesto:**`: si el motivo falta,
+# gana el derivado y por eso el script calcula el mismo número que el validador.
+DELTA_BUDGET_BY_RISK = {"bajo": 2, "medio": 1, "alto": 1}
+# Sin riesgo declarado no se inventa uno: se conserva el presupuesto histórico.
+# La derivación solo aplica cuando la conciliación fija el riesgo.
+DEFAULT_DELTA_BUDGET = 2
+BUDGET_REASON_RE = re.compile(r"\*\*Motivo del presupuesto:\*\*\s*\S", re.I)
 FOLDER_RE = re.compile(r"\]\(([^)/]+)/")
 
 class FeatureError(Exception):
@@ -155,7 +162,13 @@ def analyze_stage(feature_root: Path, name: str, row: dict[str, str] | None) -> 
         )
 
     budget_match = DELTA_BUDGET_RE.search(conciliation)
-    budget = int(budget_match.group(1)) if budget_match else DEFAULT_DELTA_BUDGET
+    risk = RISK_RE.search(conciliation)
+    derived = DELTA_BUDGET_BY_RISK[risk.group(1).lower()] if risk else DEFAULT_DELTA_BUDGET
+    declared = int(budget_match.group(1)) if budget_match else derived
+    # Sobrescribir el derivado no amplía nada por sí solo: sin el motivo escrito,
+    # gana el valor derivado del riesgo.
+    justified = BUDGET_REASON_RE.search(conciliation) is not None
+    budget = declared if declared <= derived or justified else derived
     if len(deltas) > budget:
         block(
             "PRESUPUESTO_DE_DELTAS_AGOTADO",

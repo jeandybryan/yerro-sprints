@@ -34,6 +34,18 @@ auditoría.
   otro árbol ni rebajes el riesgo; ambos son gates del validador.
 - `**Presupuesto de deltas:**` acota la corrección. Agotarlo es
   `necesita-decision`, no un delta más.
+- Un gate nuevo no deja modo legado. Hay **un** contrato y **un** modo de
+  validación: si un cambio necesita convivencia, se implementa como feature de
+  una versión con fecha de retirada, nunca como parámetro eterno (`--strict`,
+  `--compat`, `legacy=`). Las fixtures que dependían del modo antiguo pasan a
+  positivas o se retiran.
+- La aprobación humana vive en `.yerro/approvals.yml`, fuera del árbol de la
+  etapa, y **solo la edita la persona**. No escribas ese archivo, no añadas un
+  campo `**Aprobado por:**` en los artefactos y no presentes una firma que
+  escribiste como aprobación.
+- El presupuesto de deltas se deriva del riesgo (`bajo → 2`, `medio → 1`,
+  `alto → 1`); un valor distinto necesita `**Motivo del presupuesto:**`. No lo
+  amplíes para que una etapa cierre.
 - Un cambio en `snapshot.py` o en la verificación con `--repo` necesita su caso
   en `test_snapshot.py`.
 

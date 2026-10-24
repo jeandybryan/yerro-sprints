@@ -77,7 +77,10 @@ inicio y cierre; evita que el consumidor tenga que inferir su ciclo de vida.
 6. Record important risks/regressions and how they will be observed. Freeze
    `**Riesgo:** bajo | medio | alto` at close; `alto` names the concrete items
    (data, security, shared contracts, concurrency, delivery, test gaps). Change
-   `**Presupuesto de deltas:**` only with a stated reason; default is two.
+   `**Presupuesto de deltas:**` is derived from that risk (`bajo → 2`,
+   `medio → 1`, `alto → 1`); write a different value only with
+   `**Motivo del presupuesto:**`, because without the motive the derived value
+   wins.
 7. Move resolved questions out of **Preguntas abiertas**.
 8. Keep **No entra** honest: later stages or out of V1 stay named.
 9. Close (`cerrada`) only when the user agrees, dependencies are `cerrada`
@@ -99,7 +102,9 @@ inicio y cierre; evita que el consumidor tenga que inferir su ciclo de vida.
 - Lower the frozen `**Riesgo:**` after closure (or let an audit lower it) to
   avoid re-auditing. Raising it is a finding; lowering it reopens.
 - Extend `**Presupuesto de deltas:**` mid-flight to keep correcting without
-  telling the user.
+  telling the user, or without the stated motive that makes the value stick.
+- Write `.yerro/approvals.yml`: the human approval of a stage is theirs, not
+  a field you fill in.
 - Rewrite the specification to justify an implementation shortcut.
 - Import product-specific constraints into this generic workflow; apply the
   relevant domain skill or project rule separately.

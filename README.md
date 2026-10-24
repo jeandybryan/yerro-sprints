@@ -208,8 +208,10 @@ Pídele: **"conciliemos la etapa NN"** (una etapa a la vez).
 - Resultado: `CONCILIACION.md` con `Entra`/`No entra`, decisiones, criterios de
   aceptación (`CA-01`, `CA-02`…), riesgos y evidencia esperada.
 - Al cerrar se congelan `**Riesgo:**` (`bajo`/`medio`/`alto`) y
-  `**Presupuesto de deltas:**` (dos por defecto). El auditor puede subir el
-  riesgo; bajarlo reabre la conciliación.
+  `**Presupuesto de deltas:**`, que se **deriva del riesgo** (`bajo → 2`,
+  `medio → 1`, `alto → 1`). Un valor distinto exige
+  `**Motivo del presupuesto:**`; sin motivo rige el derivado. El auditor puede
+  subir el riesgo; bajarlo reabre la conciliación.
 - Estado de la conciliación: `borrador-corte` → `abierta` → `cerrada`.
 - Solo queda `cerrada` cuando el resultado observable, las dependencias, los
   criterios y el alcance están acordados y no hay preguntas abiertas (o están
@@ -242,9 +244,17 @@ Pídele: **"audita la etapa NN"**.
   `scripts/snapshot.py`) y `**Riesgo auditado:**`. Un `coincide` solo vale para
   ese snapshot: si el árbol cambió, se reaudita.
 - El ledger exige **`Sensibilidad`**: la prueba de que el test pudo fallar
-  (`revertir → rojo → restaurar`, un mutante que produce rojo o una regresión
-  contra `HEAD`). Un ledger que solo dice que el test pasó no cierra.
-  `Test:` debe invocar un runner; `true`, `echo` o `sleep` se rechazan.
+ (`revertir → rojo → restaurar`, un mutante que produce rojo o una regresión
+ contra `HEAD`). Un ledger que solo dice que el test pasó no cierra.
+ `Test:` debe invocar un runner; `true`, `echo` o `sleep` se rechazan.
+- El **riesgo fija el fondo de la evidencia**: por encima de `bajo` el ledger
+ declara un caso límite o un negativo demostrado; en `alto`, cada CA crítico
+ registra un `mutante:` (o fallo inyectado) con resultado rojo. Un `coincide`
+ que baja el criterio más exigente declara `**Cruza riesgo:** sí — …` y
+ `**Motivo del presupuesto:** …`, o no cierra.
+- El cierre requiere una **aprobación humana** en `.yerro/approvals.yml`, un
+ archivo versionado que edita la persona: sin entrada que cubra la etapa y el
+ snapshot, la etapa no cierra. El agente nunca escribe ese archivo.
 - Resultado: `AUDIT.md` con un veredicto:
   - `coincide` → la etapa se cierra (`cerrada`).
   - `no coincide` → se escribe `TAREAS-delta-NN.md` y se repiten los pasos
@@ -289,11 +299,12 @@ python3 skills/feature-stages/scripts/validate_skill_evals.py
 python3 skills/feature-stages/scripts/test_skill_evals.py
 python3 skills/feature-stages/scripts/test_next_step.py
 python3 skills/feature-stages/scripts/test_snapshot.py
+python3 skills/feature-stages/scripts/test_evidence.py
 python3 skills/feature-stages/scripts/test_expres.py
 python3 skills/feature-stages/scripts/doctor.py \
   skills/feature-stages/evals/fixtures/transiciones
 python3 skills/feature-stages/scripts/validate_stage.py \
-  skills/feature-stages/evals/fixtures/valid-stage --strict
+  skills/feature-stages/evals/fixtures/valid-stage
 ```
 
 Todos los comandos deben terminar correctamente: el catálogo de evals, las
@@ -317,9 +328,9 @@ Estas dos fixtures también deben terminar correctamente: conciliación
 
 ```bash
 python3 skills/feature-stages/scripts/validate_stage.py \
-  skills/feature-stages/evals/fixtures/index-estado/03-activa --strict
+  skills/feature-stages/evals/fixtures/index-estado/03-activa
 python3 skills/feature-stages/scripts/validate_stage.py \
-  skills/feature-stages/evals/fixtures/index-estado/05-hecha --strict
+  skills/feature-stages/evals/fixtures/index-estado/05-hecha
 ```
 
 La fixture negativa `closed-without-task` debe fallar: prueba que el gate
@@ -329,7 +340,7 @@ también debe fallar: el índice marca **Estado** `cerrada` sin veredicto
 
 ```bash
 if python3 skills/feature-stages/scripts/validate_stage.py \
-  skills/feature-stages/evals/fixtures/closed-without-task --strict; then
+  skills/feature-stages/evals/fixtures/closed-without-task ; then
   echo 'La fixture negativa pasó: el gate está roto' >&2
   exit 1
 fi
@@ -341,7 +352,7 @@ for fixture in inconsistente doctor-estructural huerfana; do
   fi
 done
 if python3 skills/feature-stages/scripts/validate_stage.py \
-  skills/feature-stages/evals/fixtures/index-estado/04-etapa --strict; then
+  skills/feature-stages/evals/fixtures/index-estado/04-etapa ; then
   echo 'El índice cerrado pasó sin veredicto coincide: el gate está roto' >&2
   exit 1
 fi
@@ -349,40 +360,45 @@ fi
 
 `ca-tipo` declara el tipo elegido (`[condición de salida]`,
 `[invariante acumulado]`, `Salida de etapa`, `Invariante acumulada` y el
-placeholder en orden inverso). Sin `--strict` solo avisa `CA-05`, que no
-trae marcador. Con `--strict` ese aviso es error y el proceso falla.
+placeholder en orden inverso). El CA sin marcador (`CA-05`) es error: hay **un**
+contrato y **un** modo, y no existe `--strict`. Por lo mismo, `riesgo-ausente`
+falla siempre.
 
 `coincide-sin-snapshot`, `snapshot-de-pasada-anterior` y `riesgo-rebajado` deben
 fallar: un veredicto `coincide` sin la identidad del código auditado, con el
 snapshot de otra pasada, o con un riesgo menor al congelado, no cierra.
-`riesgo-ausente` avisa sin `--strict` y falla con él.
+`cierre-sin-aprobacion` (criterio rebajado sin motivo), `riesgo-alto-sin-mutacion`
+(riesgo alto sin fallo inyectado) y `riesgo-alto-presupuesto-sin-motivo`
+(presupuesto sobrescrito sin causa) también deben fallar; su contrario
+`riesgo-cruzado-con-motivo` debe pasar.
 
 ```bash
-for fixture in coincide-sin-snapshot snapshot-de-pasada-anterior riesgo-rebajado; do
+for fixture in coincide-sin-snapshot snapshot-de-pasada-anterior riesgo-rebajado \
+  cierre-sin-aprobacion riesgo-alto-sin-mutacion \
+  riesgo-alto-presupuesto-sin-motivo ; do
   if python3 skills/feature-stages/scripts/validate_stage.py \
-    "skills/feature-stages/evals/fixtures/$fixture" --strict; then
+    "skills/feature-stages/evals/fixtures/$fixture" ; then
     echo "$fixture pasó: el gate está roto" >&2
     exit 1
   fi
 done
-python3 skills/feature-stages/scripts/validate_stage.py \
-  skills/feature-stages/evals/fixtures/riesgo-ausente
 if python3 skills/feature-stages/scripts/validate_stage.py \
-  skills/feature-stages/evals/fixtures/riesgo-ausente --strict; then
-  echo 'riesgo-ausente con --strict pasó: el gate está roto' >&2
+  skills/feature-stages/evals/fixtures/riesgo-ausente ; then
+  echo 'riesgo-ausente pasó sin modo legado: el gate está roto' >&2
   exit 1
 fi
+if python3 skills/feature-stages/scripts/validate_stage.py \
+  skills/feature-stages/evals/fixtures/ca-tipo ; then
+  echo 'ca-tipo pasó sin modo legado: el gate está roto' >&2
+  exit 1
+fi
+python3 skills/feature-stages/scripts/validate_stage.py \
+  skills/feature-stages/evals/fixtures/riesgo-cruzado-con-motivo
 ```
 
-```bash
-python3 skills/feature-stages/scripts/validate_stage.py \
-  skills/feature-stages/evals/fixtures/ca-tipo
-if python3 skills/feature-stages/scripts/validate_stage.py \
-  skills/feature-stages/evals/fixtures/ca-tipo --strict; then
-  echo 'ca-tipo con --strict pasó: el gate está roto' >&2
-  exit 1
-fi
-```
+`test_snapshot.py` comprueba además el gate de aprobación: sin
+`.yerro/approvals.yml`, con una entrada fuera de alcance o con el archivo
+mal formado, la etapa no cierra.
 
 También:
 

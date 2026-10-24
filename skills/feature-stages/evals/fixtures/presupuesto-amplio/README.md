@@ -1,7 +1,9 @@
 # Fixture — presupuesto de deltas ampliado
 
 La misma etapa que `presupuesto-agotado`, pero la conciliación fijó un
-presupuesto de tres deltas: dos usados todavía dejan corregir.
+presupuesto de tres deltas **con motivo escrito**: dos usados todavía dejan
+corregir. Sin el `**Motivo del presupuesto:**` el valor escrito no amplía nada
+y rige el derivado del riesgo (B-10).
 
 ## Estado del corte
 

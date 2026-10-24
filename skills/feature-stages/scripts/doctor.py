@@ -36,6 +36,18 @@ NEEDS_AUDIT = ("auditando", "cerrada")
 AUDIT_COLUMNS = ("Carpeta", "Conciliación", "Estado", "Tareas", "Auditoría")
 EXPRES_COLUMNS = ("#", "Fecha", "Cambio", "Archivos", "CA", "Frontera", "Verificación")
 EXPRES_LIMIT = 3
+RULINGS_PER_TASK = 3
+RULING_RE = re.compile(r"^\s*Ruling:", re.M)
+ARCHIVOS_RE = re.compile(r"^\s*\*{0,2}Archivos:\*{0,2}\s*\S", re.M)
+TASK_BLOCK_RE = re.compile(
+    r"^\s*-\s*\[[ xX]\]\s*((?:D\d+-)?T\d+)\b(.*?)(?=^\s*-\s*\[[ xX]\]|\Z)",
+    re.M | re.S,
+)
+
+
+def split_tasks(tasks: str) -> list[tuple[str, str]]:
+    """Pares (id, cuerpo) de cada tarea del listado."""
+    return TASK_BLOCK_RE.findall(tasks)
 
 
 def parse_table(text: str, columns: tuple[str, ...]) -> list[dict[str, str]]:
@@ -152,6 +164,17 @@ def check(root: Path, result: dict | None, errors: list[str], warnings: list[str
                     errors.append(f"{name}: AUDIT.md sin {label}")
             if stage_state == "cerrada" and not re.search(r"\*\*Veredicto:\*\*\s*coincide\b", audit, re.I):
                 errors.append(f"{name}: cierre sin veredicto coincide")
+        # B-28: la migración la hace el humano, pero saber a quién le toca sí se
+        # puede automatizar. Una etapa no cerrada cuyo TAREAS.md no declara los
+        # archivos de cada tarea todavía no cumple el contrato de alcance.
+        if stage_state != "cerrada" and tasks and split_tasks(tasks):
+            missing = [task_id for task_id, body in split_tasks(tasks) if not ARCHIVOS_RE.search(body)]
+            if missing:
+                warnings.append(
+                    f"{name}: etapa sin migrar, {', '.join(missing)} sin **Archivos:**; "
+                    "migrar re-conciliando el alcance (nunca desde el diff) o cerrarla "
+                    "con la versión anterior"
+                )
         if tasks and tasks_state and tasks_state not in ("pendiente", "en curso", "implementada", "auditada"):
             errors.append(f"{name}: estado de tareas desconocido {tasks_state!r}")
 
@@ -164,6 +187,18 @@ def check(root: Path, result: dict | None, errors: list[str], warnings: list[str
         for path in stage.glob("TAREAS-delta-*.md"):
             if not DELTA_RE.match(path.name):
                 errors.append(f"{path.name}: nombre de delta fuera de NN")
+
+        # B-33: los rulings resuelven ambigüedad residual. Cuatro en la misma
+        # tarea no son ambigüedad, son una tarea sin especificar. Avisa, no
+        # bloquea: una tarea de migración puede producir varios legítimos.
+        for task_id, body in split_tasks(tasks):
+            count = len(RULING_RE.findall(body))
+            if count > RULINGS_PER_TASK:
+                warnings.append(
+                    f"{name}/{task_id}: {count} rulings en una tarea "
+                    f"(máximo {RULINGS_PER_TASK}); generate-stage-tasks: partir la tarea "
+                    "o cerrar la ambigüedad en la conciliación"
+                )
 
     folders = sorted(
         path.name for path in root.iterdir() if path.is_dir() and STAGE_DIR_RE.match(path.name)

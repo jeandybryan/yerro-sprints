@@ -14,6 +14,6 @@
 
 | ID | CA | Procedimiento/comando | Sensibilidad | Esperado | Observado/exit | Entorno y timestamp | Artefacto/log | Limitación |
 |----|----|------------------------|--------------|----------|----------------|---------------------|---------------|------------|
-| E-01 | CA-01 | pytest | revertir → rojo → restaurar | verde | verde/0 | local; 2026-09-30 | log | ninguna |
+| E-01 | CA-01 | pytest | revertir → rojo → restaurar; caso límite: entrada vacía → rechazo | verde | verde/0 | local; 2026-09-30 | log | ninguna |
 
 **Veredicto:** coincide

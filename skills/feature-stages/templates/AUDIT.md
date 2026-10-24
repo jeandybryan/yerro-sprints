@@ -21,6 +21,9 @@
 |----|----|------------------------|--------------|----------|----------------|---------------------|---------------|------------|
 | E-01 | CA-01 | `evidence.py run -- <comando>` | revertir → rojo → restaurar | … | … firma=… | entorno/configuración; AAAA-MM-DDTHH:MM | path/URL | … |
 
+**Deltas:** D1, D2 | `ninguno`
+**Cruza riesgo:** no | sí — <qué criterio se bajó y por qué>
+**Motivo del presupuesto:** <obligatorio si `Cruza riesgo: sí` o si los deltas superan el presupuesto vigente>
 **Veredicto:** coincide | no coincide
 
 ### Verificación global
@@ -71,8 +74,20 @@ Scoring is strict:
 
 `Sensibilidad` proves the test could fail: `revertir → rojo → restaurar`,
 `mutante: <qué> → rojo`, or a functional regression against `HEAD`. A cell
-that says `no demostrada` is `no verificado`, never `cumple`. See
+that says `no demostrada` is `no verificado`, never `cumple`. The result after
+the arrow is the observation: `→ verde` (the mutant survived) and `→ rojo
+esperado` (a prediction) are not sensitivity, and one surviving mutant is
+enough to invalidate an `alto` stage. See
 [evidence.md](../references/evidence.md).
+
+The ledger also carries the **background the risk level demands**: above `bajo`,
+a demonstrated limit or negative case; at `alto`, a `mutante:` (or injected
+failure) with a red result per critical CA. Write the result you observed:
+`→ verde` (the mutant survived) and `→ rojo esperado` (a prediction) are not
+sensitivity. A `coincide` that lowers the
+strictest criterion writes `**Cruza riesgo:** sí — …` and
+`**Motivo del presupuesto:** …`, or it does not close. No `**Aprobado por:**`
+line exists: the human approval lives in `.yerro/approvals.yml`.
 - `parcial`: only a subset or weaker substitute is proven.
 - `no cumple`: evidence contradicts the criterion or behaviour is absent.
 - `no verificado`: evidence could not be obtained; never infer `cumple`.

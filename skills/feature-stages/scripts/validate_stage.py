@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Valida de forma estática artefactos de una etapa de implementación.
 
-Uso: validate_stage.py <stage-directory> [--strict]
-Sin --strict, formatos legados se informan como advertencias; con --strict,
-incumplen el contrato actual y devuelven salida no nula.
+Uso: validate_stage.py <stage-directory>
+
+Hay **un** contrato y **un** modo: cualquier incumplimiento es un error. No hay
+modo de advertencias: convivir con dos formatos obliga a probar cada fixture dos
+veces y deja vivo un formato que el contrato ya no sostiene.
 """
 from __future__ import annotations
 
@@ -13,6 +15,11 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from approvals import (  # noqa: E402
+    DEFAULT_PATH as DEFAULT_APPROVALS,
+    ApprovalError,
+    load as load_approvals,
+)
 from snapshot import SnapshotError, identity  # noqa: E402
 
 CA_RE = re.compile(r"^\s*-\s*\*\*(CA-\d+)\b", re.M)
@@ -55,6 +62,27 @@ RUNNERS_RE = re.compile(r"^\s*\*\*Runners:\*\*\s*(.+?)\s*$", re.M | re.I)
 SENSITIVITY_RE = re.compile(r"(?:\||^)\s*Sensibilidad\s*(?:\||$)", re.I | re.M)
 NO_DEMOSTRADA_RE = re.compile(r"no demostrada", re.I)
 
+# Presupuesto de deltas por riesgo. El default no se inventa: está calibrado
+# con lo medido hasta hoy y **solo** se sobrescribe con motivo escrito.
+DELTA_BUDGET_BY_RISK = {"bajo": 2, "medio": 1, "alto": 1}
+BUDGET_RE = re.compile(r"^\s*\*\*Presupuesto de deltas:\*\*\s*(\d+)", re.M | re.I)
+BUDGET_REASON_RE = re.compile(
+    r"^\s*\*\*Motivo del presupuesto:\*\*\s*(\S.*)$", re.M | re.I
+)
+CROSSES_RE = re.compile(
+    r"^\s*\*\*Cruza riesgo:\*\*\s*(s[íi]|no)\b(?:\s*[—-]\s*(.*))?$", re.M | re.I
+)
+# B-35 exige **ver el rojo**, no nombrar la palabra «mutante». Por eso se lee
+# el resultado declarado: `mutante: X → verde` es un mutante que el test no
+# detectó, y es exactamente el falso cierre que este gate persigue.
+MUTANT_RE = re.compile(r"\bmutante\s*:([^;|]*)", re.I)
+INJECTED_RE = re.compile(
+ r"\b(?:fallo inyectado|oráculo alterado|inyectar(?:lo)?)\s*:?([^;|]*)", re.I
+)
+MUTATION_OBSERVED_RE = re.compile(r"\brojo\b", re.I)
+MUTATION_SURVIVED_RE = re.compile(r"\b(?:verde|verdes)\b", re.I)
+DELTA_IDS_RE = re.compile(r"^\s*\*\*Deltas:\*\*\s*(.+?)\s*$", re.M | re.I)
+
 # Comandos que devuelven 0 sin observar comportamiento alguno. Se comparan por
 # palabra inicial y se exige que *todas* las partes encadenadas estén aquí:
 # `pytest -q && true` no es decorativo, `true && :` sí.
@@ -68,14 +96,13 @@ TRIVIAL_PY_RE = re.compile(r"^python[0-9.]*\s+-c\s+['\"]?(?:pass|exit\s*\(?\s*0?
 
 
 class Result:
-    def __init__(self, strict: bool) -> None:
-        self.strict = strict
+    def __init__(self) -> None:
         self.errors: list[str] = []
         self.warnings: list[str] = []
 
-    def require(self, ok: bool, text: str, legacy: bool = False) -> None:
+    def require(self, ok: bool, text: str) -> None:
         if not ok:
-            (self.warnings if legacy and not self.strict else self.errors).append(text)
+            self.errors.append(text)
 
 
 def read(path: Path) -> str:
@@ -125,6 +152,114 @@ def declared_runners(conciliation: str) -> list[str]:
 def is_runner(command: str, runners: list[str]) -> bool:
     command = command.strip()
     return any(command.startswith(runner) for runner in runners)
+
+
+def checkpoint_approval(repo: Path, stage: Path, snapshot: str) -> bool:
+    """¿Hay una aprobación humana de esta etapa para este snapshot?
+
+    Se lee del archivo versionado, nunca de `AUDIT.md`: una marca que el agente
+    puede escribir no distingue una firma de una invención.
+    """
+    try:
+        approvals = load_approvals(repo)
+    except ApprovalError as error:
+        raise SystemExit(f"ERROR: {error}") from None
+    return any(
+        item.stage == stage.name and item.covers(snapshot) for item in approvals
+    )
+
+
+def delta_ids(audit: str) -> list[str]:
+    """IDs de delta declarados por la pasada (`**Deltas:** D1, D2`).
+
+    No se cuentan las apariciones de la palabra en prosa: un texto puede
+    explicar la diferencia entre un delta y una reapertura sin declarar deltas.
+    """
+    match = DELTA_IDS_RE.search(audit)
+    if not match:
+        return []
+    return [item for item in re.split(r"[,\s]+", match.group(1)) if item]
+
+
+def mutation_verdicts(ledger: str) -> list[str]:
+    """Qué declaró cada prueba de mutación del ledger: `rojo` o `verde`.
+
+    Una prueba de mutación sirve si el código mutado **rompió** el test. Se
+    devuelve el veredicto por prueba, no un booleano, para que el mensaje diga
+    cuál sobrevivió.
+    """
+    declared = [
+        MUTANT_RE.findall(ledger),
+        INJECTED_RE.findall(ledger),
+    ]
+    verdicts: list[str] = []
+    for matches in declared:
+        for text in matches:
+            # `mutante: X → rojo esperado` no es una observación.
+            if re.search(r"\besperad[oa]\b", text, re.I):
+                verdicts.append("esperado")
+            elif MUTATION_OBSERVED_RE.search(text):
+                verdicts.append("rojo")
+            elif MUTATION_SURVIVED_RE.search(text):
+                verdicts.append("verde")
+            else:
+                verdicts.append("sin resultado")
+    return verdicts
+
+
+def risk_evidence_gaps(risk: str, audit: str) -> list[str]:
+    """Lo que el nivel de riesgo exige en el ledger y todavía no está.
+
+    La sensibilidad se exige siempre (B-23); el riesgo solo añade fondo:
+    un caso límite declarado por encima de `bajo` y una prueba de mutación
+    observada en rojo por encima de `alto` (B-35, sin herramienta obligatoria).
+    """
+    if not risk:
+        return []
+    gaps: list[str] = []
+    ledger = "\n".join(ledger_rows(audit))
+    text = ledger.lower()
+    if risk in ("medio", "alto") and not (
+        "límite" in text or "limite" in text or "negativo" in text
+    ):
+        gaps.append(
+            f"riesgo {risk}: el ledger no declara un caso límite ni un negativo demostrado"
+        )
+    if risk == "alto":
+        verdicts = mutation_verdicts(ledger)
+        # Un mutante verde en cualquier CA crítico invalida el fondo aunque otro
+        # CA tenga mutante rojo: los rojos no compensan los supervivientes.
+        if not verdicts:
+            gaps.append(
+                "riesgo alto: ningún CA crítico registra `mutante:` (o fallo inyectado) con resultado rojo"
+            )
+        elif "verde" in verdicts:
+            gaps.append(
+                "riesgo alto: una prueba de mutación declara el resultado `verde` "
+                "(el mutante sobrevivió); cada CA crítico exige ver el rojo"
+            )
+        elif "esperado" in verdicts or "sin resultado" in verdicts:
+            gaps.append(
+                "riesgo alto: una prueba de mutación no declara el resultado observado; "
+                "`rojo esperado` es una predicción, no una observación (B-35)"
+            )
+        elif "rojo" not in verdicts:
+            detalle = ", ".join(sorted(set(verdicts)))
+            gaps.append(
+                f"riesgo alto: la prueba de mutación no observó el rojo ({detalle}); "
+                "un mutante que sobrevive dice que el test no prueba el comportamiento"
+            )
+    return gaps
+
+
+def crosses_risk_gate(audit: str, deltas: int, budget: int) -> bool:
+    """¿La pasada declaró explícitamente que baja el criterio más exigente?"""
+    match = CROSSES_RE.search(audit)
+    if match and match.group(1).lower().startswith("s"):
+        return True
+    # Sin la marca, un delta por encima del presupuesto es una bajada implícita:
+    # el delta es la corrección acotada, no un permiso para ignorar el nivel.
+    return deltas > budget
 
 
 def ledger_rows(audit: str) -> list[str]:
@@ -180,7 +315,6 @@ def stage_index_estado(index: str, stage_name: str) -> str | None:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("stage", type=Path)
-    parser.add_argument("--strict", action="store_true")
     parser.add_argument(
         "--repo",
         type=Path,
@@ -189,7 +323,7 @@ def main() -> int:
     args = parser.parse_args()
 
     stage = args.stage.resolve()
-    result = Result(args.strict)
+    result = Result()
     conciliation, tasks, audit = (
         read(stage / name) for name in ("CONCILIACION.md", "TAREAS.md", "AUDIT.md")
     )
@@ -202,7 +336,7 @@ def main() -> int:
     ca_ids = CA_RE.findall(conciliation)
     result.require(bool(ca_ids), "no hay CA-NN en CONCILIACION.md")
     decision_ids = DECISION_RE.findall(conciliation)
-    result.require(bool(decision_ids), "no hay decisiones S-NN en CONCILIACION.md", legacy=True)
+    result.require(bool(decision_ids), "no hay decisiones S-NN en CONCILIACION.md")
     result.require(len(decision_ids) == len(set(decision_ids)), "hay IDs S-NN duplicados")
     result.require(len(ca_ids) == len(set(ca_ids)), "hay IDs CA duplicados")
 
@@ -211,7 +345,6 @@ def main() -> int:
         result.require(
             bool(declared_risk),
             "conciliación cerrada sin **Riesgo:** bajo|medio|alto congelado",
-            legacy=True,
         )
 
     for ca in ca_ids:
@@ -219,12 +352,10 @@ def main() -> int:
         result.require(
             bool(CA_TYPE_RE.search(line)),
             f"{ca} no declara tipo condición de salida/invariante acumulado",
-            legacy=True,
         )
         result.require(
             bool(CA_ORIGIN_RE.search(line)),
             f"{ca} no enlaza una decisión S-NN mediante Origen:",
-            legacy=True,
         )
         result.require(bool(EVIDENCE_RE.search(line)), f"{ca} no declara nivel de evidencia")
 
@@ -238,8 +369,8 @@ def main() -> int:
         for task_id, body in TASK_RE.findall(tasks):
             task_bodies[task_id] = body
             result.require(bool(re.search(r"CA-\d+", body)), f"{task_id} no enlaza CA-NN")
-            result.require(bool(TEST_FIRST_RE.search(body)), f"{task_id} no declara Test-first:", legacy=True)
-            result.require(bool(TEST_COMMAND_RE.search(body)), f"{task_id} no declara Test:", legacy=True)
+            result.require(bool(TEST_FIRST_RE.search(body)), f"{task_id} no declara Test-first:")
+            result.require(bool(TEST_COMMAND_RE.search(body)), f"{task_id} no declara Test:")
             for command in TEST_COMMAND_RE.findall(body):
                 result.require(
                     not declarative_command(command),
@@ -257,7 +388,6 @@ def main() -> int:
                 result.require(
                     ";" in value or "oráculo" in value.lower(),
                     f"{task_id} no separa procedimiento y oráculo",
-                    legacy=True,
                 )
         result.require(bool(task_bodies), "TAREAS.md no contiene tareas implementables")
         result.require(
@@ -286,7 +416,7 @@ def main() -> int:
                 bool(re.search(rf"\|\s*{re.escape(ca)}\s*\|.*?\|\s*cumple\s*\|", audit, re.I)),
                 f"AUDIT coincide no demuestra {ca}=cumple",
             )
-        result.require("### Ledger de evidencia" in audit, "AUDIT coincide sin ledger de evidencia", legacy=True)
+        result.require("### Ledger de evidencia" in audit, "AUDIT coincide sin ledger de evidencia")
         result.require(
             bool(SENSITIVITY_RE.search(audit)),
             "AUDIT coincide sin columna Sensibilidad en el ledger: no demuestra que el test pueda fallar",
@@ -301,38 +431,78 @@ def main() -> int:
                     not NO_DEMOSTRADA_RE.search(row),
                     f"ledger declara sensibilidad no demostrada: {row.strip()[:80]}",
                 )
-        result.require(bool(TRACE_RE.search(audit)), "AUDIT coincide sin **Trazabilidad:** CA → T → E", legacy=True)
-        result.require(bool(re.search(r"\bE-\d+\b", audit)), "AUDIT coincide sin evidencia E-NN", legacy=True)
-        for body in coincide_passes:
-            valid_snapshots = [
-                item.strip() for item in SNAPSHOT_RE.findall(body)
-                if SNAPSHOT_VALUE_RE.match(item.strip())
-            ]
+        result.require(bool(TRACE_RE.search(audit)), "AUDIT coincide sin **Trazabilidad:** CA → T → E")
+        result.require(bool(re.search(r"\bE-\d+\b", audit)), "AUDIT coincide sin evidencia E-NN")
+
+    # Riesgo → evidencia y presupuesto → deltas. Son gates cruzados: el riesgo
+    # declarado en la conciliación decide qué fondo exige el ledger, y el delta
+    # permitido decide cuándo el cierre está bajando el criterio.
+    budget_match = BUDGET_RE.search(conciliation)
+    measured_budget = (
+        int(budget_match.group(1)) if budget_match
+        else DELTA_BUDGET_BY_RISK[declared_risk.group(1).lower()]
+        if declared_risk
+        else 2
+    )
+    deltas = len(delta_ids(audit))
+    risk = declared_risk.group(1).lower() if declared_risk else ""
+    if budget_match and risk:
+        derived = DELTA_BUDGET_BY_RISK[risk]
+        result.require(
+            int(budget_match.group(1)) <= derived
+            or BUDGET_REASON_RE.search(conciliation) is not None,
+            f"**Presupuesto de deltas:** {budget_match.group(1)} con riesgo {risk} "
+            f"supera el derivado ({derived}) sin **Motivo del presupuesto:**",
+        )
+    for gap in risk_evidence_gaps(risk, audit):
+        result.require(False, gap)
+    if crosses_risk_gate(audit, deltas, measured_budget):
+        result.require(
+            (BUDGET_REASON_RE.search(conciliation) or BUDGET_REASON_RE.search(audit))
+            is not None,
+            f"cierre con el criterio rebajado (Cruza riesgo / {deltas} delta(s) "
+            f"con presupuesto {measured_budget}) sin **Motivo del presupuesto:** escrito "
+            "en la conciliación o la pasada",
+        )
+
+    for body in coincide_passes:
+        valid_snapshots = [
+            item.strip() for item in SNAPSHOT_RE.findall(body)
+            if SNAPSHOT_VALUE_RE.match(item.strip())
+        ]
+        result.require(
+            bool(valid_snapshots),
+            "AUDIT coincide sin **Snapshot:** head=… tree=… dirty=… exclude=…",
+        )
+        audited_risk = AUDITED_RISK_RE.findall(body)
+        result.require(bool(audited_risk), "AUDIT coincide sin **Riesgo auditado:**")
+        if declared_risk and audited_risk:
+            declared = declared_risk.group(1).lower()
+            audited = audited_risk[-1].lower()
             result.require(
-                bool(valid_snapshots),
-                "AUDIT coincide sin **Snapshot:** head=… tree=… dirty=… exclude=…",
+                RISK_RANK[audited] >= RISK_RANK[declared],
+                f"AUDIT rebaja el riesgo: declarado {declared}, auditado {audited}",
             )
-            audited_risk = AUDITED_RISK_RE.findall(body)
-            result.require(bool(audited_risk), "AUDIT coincide sin **Riesgo auditado:**", legacy=True)
-            if declared_risk and audited_risk:
-                declared = declared_risk.group(1).lower()
-                audited = audited_risk[-1].lower()
+        if args.repo is not None and valid_snapshots and body is coincide_passes[-1]:
+            recorded = valid_snapshots[-1]
+            # La aprobación es un archivo humano del repositorio, no código: se
+            # excluye del snapshot para que firmar no invalide la pasada que firma.
+            excludes = parse_excludes(recorded) + (DEFAULT_APPROVALS,)
+            try:
+                current = identity(args.repo, excludes)
+            except SnapshotError as error:
+                result.warnings.append(f"no se pudo verificar el snapshot: {error}")
+            else:
                 result.require(
-                    RISK_RANK[audited] >= RISK_RANK[declared],
-                    f"AUDIT rebaja el riesgo: declarado {declared}, auditado {audited}",
+                    recorded.lower() == current.lower(),
+                    f"la pasada auditó {recorded} y el árbol actual es {current}; reauditar",
                 )
-            if args.repo is not None and valid_snapshots and body is coincide_passes[-1]:
-                recorded = valid_snapshots[-1]
-                excludes = parse_excludes(recorded)
-                try:
-                    current = identity(args.repo, excludes)
-                except SnapshotError as error:
-                    result.warnings.append(f"no se pudo verificar el snapshot: {error}")
-                else:
-                    result.require(
-                        recorded.lower() == current.lower(),
-                        f"la pasada auditó {recorded} y el árbol actual es {current}; reauditar",
-                    )
+                result.require(
+                    checkpoint_approval(args.repo, stage, recorded),
+                    f"ninguna aprobación humana en {DEFAULT_APPROVALS} cubre la etapa "
+                    f"{stage.name} en el snapshot auditado: una firma textual la escribe "
+                    "el agente; ese archivo lo edita la persona",
+                )
     if args.repo is not None and last_verdict and last_verdict != "coincide":
         result.warnings.append(
             "la última pasada no coincide: no hay snapshot que verificar contra el árbol actual"

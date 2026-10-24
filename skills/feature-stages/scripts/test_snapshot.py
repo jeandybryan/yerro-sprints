@@ -20,6 +20,8 @@ HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[2]
 sys.path.insert(0, str(HERE))
 
+APPROVALS = Path(".yerro") / "approvals.yml"
+
 from snapshot import SnapshotError, identity  # noqa: E402
 
 errors: list[str] = []
@@ -148,7 +150,7 @@ AUDIT = """# Auditoría
 
 | ID | CA | Procedimiento/comando | Sensibilidad | Esperado | Observado/exit | Entorno y timestamp | Artefacto/log | Limitación |
 |----|----|------------------------|--------------|----------|----------------|---------------------|---------------|------------|
-| E-01 | CA-01 | pytest | revertir → rojo → restaurar | verde | verde/0 | local; 2026-10-19 | log | ninguna |
+| E-01 | CA-01 | pytest | revertir → rojo → restaurar; caso límite: entrada vacía → rechazo | verde | verde/0 | local; 2026-10-19 | log | ninguna |
 
 **Veredicto:** coincide
 """
@@ -156,7 +158,7 @@ AUDIT = """# Auditoría
 
 def validate(stage: Path, repo: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, str(HERE / "validate_stage.py"), str(stage), "--strict", "--repo", str(repo)],
+        [sys.executable, str(HERE / "validate_stage.py"), str(stage), "--repo", str(repo)],
         capture_output=True,
         text=True,
     )
@@ -171,13 +173,44 @@ def check_validate(repo: Path) -> None:
     audit = stage / "AUDIT.md"
     audit.write_text(AUDIT.format(snapshot="pendiente"), encoding="utf-8")
 
-    snapshot = identity(repo, (Path("feature"),))
+    # La aprobación existe antes de auditar y queda fuera del snapshot.
+    approvals = repo / APPROVALS
+    approvals.parent.mkdir(parents=True, exist_ok=True)
+    approvals.write_text(
+        f"- etapa: 01-snapshot\n  aprobado-por: Ana\n  fecha: 2026-10-23\n", encoding="utf-8"
+    )
+    snapshot = identity(repo, (Path("feature"), APPROVALS))
     audit.write_text(AUDIT.format(snapshot=snapshot), encoding="utf-8")
 
     checked += 1
     fresh = validate(stage, repo)
     if fresh.returncode != 0:
         fail(f"validate --repo: rechazó una pasada fresca: {fresh.stdout}{fresh.stderr}")
+
+    # Sin aprobación humana la etapa no cierra, aunque el snapshot sea correcto.
+    approvals.write_text("", encoding="utf-8")
+    checked += 1
+    unsigned = validate(stage, repo)
+    if unsigned.returncode == 0:
+        fail("validate --repo: aceptó el cierre sin aprobación humana")
+    elif "ninguna aprobación humana" not in unsigned.stdout:
+        fail(f"validate --repo: rechazó por otro motivo: {unsigned.stdout}")
+    approvals.write_text(
+        f"- etapa: 01-snapshot\n  aprobado-por: Ana\n  fecha: 2026-10-23\n", encoding="utf-8"
+    )
+
+    # Una aprobación con alcance que no cubre el snapshot no sirve.
+    approvals.write_text(
+        f"- etapa: 01-snapshot\n  aprobado-por: Ana\n  fecha: 2026-10-23\n  alcance: ffff\n",
+        encoding="utf-8",
+    )
+    checked += 1
+    out_of_scope = validate(stage, repo)
+    if out_of_scope.returncode == 0:
+        fail("validate --repo: una aprobación fuera de alcance cerró la etapa")
+    approvals.write_text(
+        f"- etapa: 01-snapshot\n  aprobado-por: Ana\n  fecha: 2026-10-23\n", encoding="utf-8"
+    )
 
     (repo / "src.txt").write_text("tres\n", encoding="utf-8")
     checked += 1
@@ -187,7 +220,7 @@ def check_validate(repo: Path) -> None:
     elif "la pasada auditó" not in stale.stdout or "reauditar" not in stale.stdout:
         fail(f"validate --repo: falló por otro motivo: {stale.stdout}{stale.stderr}")
 
-    current = identity(repo, (Path("feature"),))
+    current = identity(repo, (Path("feature"), APPROVALS))
     audit.write_text(AUDIT.format(snapshot=current), encoding="utf-8")
     checked += 1
     refreshed = validate(stage, repo)

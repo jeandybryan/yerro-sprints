@@ -13,6 +13,7 @@ python3 <skills-root>/feature-stages/scripts/snapshot.py <repo> --exclude <featu
 python3 <skills-root>/feature-stages/scripts/expres.py <repo> [--base REF]
 python3 <skills-root>/feature-stages/scripts/evidence.py run -- <comando...>
 python3 <skills-root>/feature-stages/scripts/evidence.py verify <stage>/AUDIT.md
+python3 <skills-root>/feature-stages/scripts/approvals.py <repo> --stage NN-slug
 ```
 
 Estados públicos: `trabajando`, `verificando`, `listo`, `necesita-decision`. `next_step.py` devuelve uno y la skill siguiente; `doctor.py` informa incoherencias entre el índice y los artefactos. Ambos son de solo lectura y no rebajan ningún gate: ante una discrepancia gana el gate más estricto y la discrepancia se registra como bloqueo. `necesita-decision` detiene el ciclo; no se sustituye por un valor por defecto.
@@ -38,7 +39,19 @@ Un `AUDIT.md` que cierre una etapa conserva cada pasada. El veredicto `coincide`
 - `**Riesgo:** bajo | medio | alto` se congela al cerrar la conciliación. `alto` nombra los ítems concretos: datos, seguridad, contratos compartidos, concurrencia, entrega o huecos de prueba. El auditor puede subirlo en `AUDIT.md`; bajarlo reabre la conciliación.
 - Cada pasada registra `**Snapshot:**` con la salida exacta de `snapshot.py`. `exclude=` identifica el árbol de la feature para que la evidencia no invalide su propio hash: el snapshot es del código auditado, no del archivo que lo describe.
 - Un `coincide` solo vale para el snapshot que auditó. Si el árbol cambió, la pasada está obsoleta y se reaudita; no se reutiliza el veredicto para cerrar. `validate_stage.py <etapa> --repo <repo>` verifica esa coincidencia.
-- `**Presupuesto de deltas:**` (dos por defecto) acota la corrección. Agotado el presupuesto, si la auditoría sigue en `no coincide`, `next_step.py` devuelve `necesita-decision` con `PRESUPUESTO_DE_DELTAS_AGOTADO`: reabrir la conciliación, aceptar el riesgo residual con owner o detener la etapa. Escribir otro delta no es una salida.
+- `**Presupuesto de deltas:**` se **deriva del riesgo**: `bajo → 2`, `medio → 1`, `alto → 1`. Un valor escrito distinto solo vale con `**Motivo del presupuesto:**`; sin motivo gana el derivado, tanto en `validate_stage.py` como en `next_step.py`. Agotado el presupuesto, si la auditoría sigue en `no coincide`, `next_step.py` devuelve `necesita-decision` con `PRESUPUESTO_DE_DELTAS_AGOTADO`: reabrir la conciliación, aceptar el riesgo residual con owner o detener la etapa. Escribir otro delta no es una salida.
+- El riesgo decide el **fondo** de la evidencia, no si hay que demostrarla. La sensibilidad se exige siempre; por encima de `bajo` el ledger declara un caso límite o un negativo demostrado; en `alto`, cada CA crítico registra `mutante:` (o fallo inyectado) con resultado rojo (B-35: se exige ver el rojo, no una herramienta). El resultado se comprueba: `→ verde` (el mutante sobrevivió), `→ rojo esperado` (una predicción) o sin resultado no cumplen, y un rojo en un CA no compensa un verde en otro.
+
+## Aprobación humana
+
+- La firma vive en **`.yerro/approvals.yml`**, un archivo versionado del repositorio consumidor que **edita la persona**. `AUDIT.md` no lleva `**Aprobado por:**`: una marca que el agente puede escribir no distingue una firma de una invención.
+- Cada entrada declara `etapa`, `aprobado-por`, `fecha` y, opcionalmente, `alcance` (prefijo del snapshot aprobado).
+- Sin entrada para la etapa, el cierre no se sostiene: `validate_stage.py <etapa> --repo <repo>` lo comprueba y falla. La aprobación se escribe **antes** de auditar; el validador excluye `.yerro/` del snapshot para que firmar no invalide la pasada.
+- Riesgo explícito y aceptado: un archivo del repositorio lo puede editar cualquier proceso con acceso, agente incluido, salvo que el host lo impida. La garantía es social —se revisa el diff—, no criptográfica. Un commit firmado es una extensión opcional.
+
+## Cierre cruzado
+
+Un `coincide` que baja el criterio más exigente declara `**Cruza riesgo:** sí — <qué se bajó>` y `**Motivo del presupuesto:** <por qué>` en la pasada, o el motivo en la conciliación. Sin motivo, la etapa no cierra. Los deltas declarados (`**Deltas:** D1, D2`) sobre el presupuesto vigente también cuentan como criterio rebajado.
 
 ## Vía exprés
 

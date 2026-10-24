@@ -24,7 +24,9 @@ la brecha auditada. No reemplaza la lista principal.
 Use IDs `D01-T1`, `D01-T2`... After implementing the delta, add **Pasada N+1**
 to `AUDIT.md`, still scored against the principal criteria.
 
-The number of deltas is bounded by `**Presupuesto de deltas:**` (default two).
+The number of deltas is bounded by `**Presupuesto de deltas:**`, derived from
+risk (`bajo → 2`, `medio → 1`, `alto → 1`) unless `**Motivo del presupuesto:**`
+justifies another value.
 If the audit after the last allowed delta still says `no coincide`, stop and
 ask: reopen the conciliation, accept the residual risk with a named owner, or
 leave the stage blocked. Do not write another delta to avoid the decision.

@@ -31,7 +31,19 @@ los artefactos.
 - [ ] `test_skill_evals.py` pasa; un enlace roto, un comando inexistente o una activación ambigua siguen fallando.
 - [ ] La fixture negativa `closed-without-task` sigue fallando.
 - [ ] `index-estado/04-etapa` sigue fallando y `03-activa` / `05-hecha` pasan.
-- [ ] `ca-tipo` sin `--strict` solo avisa `CA-05`; con `--strict` falla.
+- [ ] Hay un solo modo de validación: `--strict` no existe. `riesgo-ausente` y
+      `ca-tipo` ahora fallan siempre, porque describen estados que el contrato
+      rechaza.
+- [ ] `cierre-sin-aprobacion`, `riesgo-alto-sin-mutacion` y
+      `riesgo-alto-presupuesto-sin-motivo` siguen fallando y
+      `riesgo-cruzado-con-motivo` sigue pasando.
+- [ ] `riesgo-alto-mutante-verde` y `riesgo-alto-mutante-esperado` siguen
+      fallando: el mutante se juzga por el resultado observado (`rojo`), no
+      por la palabra, y un mutante que sobrevive no cierra.
+- [ ] `test_snapshot.py` sigue comprobando aprobación: sin `.yerro/approvals.yml`,
+      con entrada fuera de alcance o con el archivo ausente, la etapa no cierra.
+- [ ] `doctor.py` avisa con cuatro rulings en una tarea y calla con tres; toda
+      etapa no cerrada sin `**Archivos:**` aparece como pendiente de migrar.
 - [ ] Cualquier cambio de descripción revisa los casos de activación positivos
       y negativos.
 - [ ] Cualquier cambio de flujo, plantilla o validador añadió una prueba de regresión.
@@ -49,11 +61,11 @@ python3 skills/feature-stages/scripts/test_evidence.py
 python3 skills/feature-stages/scripts/doctor.py \
   skills/feature-stages/evals/fixtures/transiciones
 python3 skills/feature-stages/scripts/validate_stage.py \
-  skills/feature-stages/evals/fixtures/valid-stage --strict
+  skills/feature-stages/evals/fixtures/valid-stage
 python3 skills/feature-stages/scripts/validate_stage.py \
-  skills/feature-stages/evals/fixtures/index-estado/03-activa --strict
+  skills/feature-stages/evals/fixtures/index-estado/03-activa
 python3 skills/feature-stages/scripts/validate_stage.py \
-  skills/feature-stages/evals/fixtures/index-estado/05-hecha --strict
+  skills/feature-stages/evals/fixtures/index-estado/05-hecha
 python3 -m py_compile skills/feature-stages/scripts/*.py
 git diff --check
 ```
@@ -69,52 +81,48 @@ for fixture in inconsistente doctor-estructural huerfana; do
   fi
 done
 if python3 skills/feature-stages/scripts/validate_stage.py \
-  skills/feature-stages/evals/fixtures/closed-without-task --strict; then
+  skills/feature-stages/evals/fixtures/closed-without-task ; then
   echo 'La fixture negativa pasó: el gate está roto' >&2
   exit 1
 fi
 if python3 skills/feature-stages/scripts/validate_stage.py \
-  skills/feature-stages/evals/fixtures/index-estado/04-etapa --strict; then
+  skills/feature-stages/evals/fixtures/index-estado/04-etapa ; then
   echo 'El índice cerrado pasó sin veredicto coincide: el gate está roto' >&2
   exit 1
 fi
 if python3 skills/feature-stages/scripts/validate_stage.py \
-  skills/feature-stages/evals/fixtures/riesgo-rebajado --strict; then
+  skills/feature-stages/evals/fixtures/riesgo-rebajado ; then
   echo 'Una auditoría que rebaja el riesgo pasó: el gate está roto' >&2
   exit 1
 fi
 if python3 skills/feature-stages/scripts/validate_stage.py \
-  skills/feature-stages/evals/fixtures/snapshot-de-pasada-anterior --strict; then
+  skills/feature-stages/evals/fixtures/snapshot-de-pasada-anterior ; then
   echo 'Una pasada coincide reutilizó el snapshot de otra pasada: el gate está roto' >&2
   exit 1
 fi
 if python3 skills/feature-stages/scripts/validate_stage.py \
-  skills/feature-stages/evals/fixtures/coincide-sin-snapshot --strict; then
+  skills/feature-stages/evals/fixtures/coincide-sin-snapshot ; then
   echo 'Un veredicto coincide sin Snapshot pasó: el gate está roto' >&2
   exit 1
 fi
 if python3 skills/feature-stages/scripts/validate_stage.py \
-  skills/feature-stages/evals/fixtures/test-decorativo --strict; then
+  skills/feature-stages/evals/fixtures/test-decorativo ; then
   echo 'Un Test: decorativo pasó: el gate está roto' >&2
   exit 1
 fi
 if python3 skills/feature-stages/scripts/validate_stage.py \
-  skills/feature-stages/evals/fixtures/sin-sensibilidad --strict; then
+  skills/feature-stages/evals/fixtures/sin-sensibilidad ; then
   echo 'Un coincide sin sensibilidad demostrada pasó: el gate está roto' >&2
   exit 1
 fi
-python3 skills/feature-stages/scripts/validate_stage.py \
-  skills/feature-stages/evals/fixtures/riesgo-ausente
 if python3 skills/feature-stages/scripts/validate_stage.py \
-  skills/feature-stages/evals/fixtures/riesgo-ausente --strict; then
-  echo 'riesgo-ausente con --strict pasó: el gate está roto' >&2
+  skills/feature-stages/evals/fixtures/riesgo-ausente; then
+  echo 'riesgo-ausente pasó sin modo legado: el gate está roto' >&2
   exit 1
 fi
-python3 skills/feature-stages/scripts/validate_stage.py \
-  skills/feature-stages/evals/fixtures/ca-tipo
 if python3 skills/feature-stages/scripts/validate_stage.py \
-  skills/feature-stages/evals/fixtures/ca-tipo --strict; then
-  echo 'ca-tipo con --strict pasó: el gate está roto' >&2
+  skills/feature-stages/evals/fixtures/ca-tipo; then
+  echo 'ca-tipo pasó sin modo legado: el gate está roto' >&2
   exit 1
 fi
 ```

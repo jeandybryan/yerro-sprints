@@ -48,6 +48,10 @@ auditoría.
   amplíes para que una etapa cierre.
 - Un cambio en `snapshot.py` o en la verificación con `--repo` necesita su caso
   en `test_snapshot.py`.
+- `**Archivos:**` de una tarea se deriva de su CA y **nunca** del diff ya
+  producido: derivarlo del diff blanquea el caso que B-27 detecta. Un cambio en
+  `diff_scope.py` o en el cruce de alcance necesita su caso en
+  `test_diff_scope.py`.
 
 ## Antes de tocar un archivo
 

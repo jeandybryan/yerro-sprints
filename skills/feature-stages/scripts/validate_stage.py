@@ -20,7 +20,8 @@ from approvals import (  # noqa: E402
     ApprovalError,
     load as load_approvals,
 )
-from snapshot import SnapshotError, identity  # noqa: E402
+from snapshot import SnapshotError, identity, repo_root  # noqa: E402
+from diff_scope import ScopeError, compare, declared_files, touched_files  # noqa: E402
 
 CA_RE = re.compile(r"^\s*-\s*\*\*(CA-\d+)\b", re.M)
 DECISION_RE = re.compile(r"^\s*-\s*\*\*(S-\d+)\s+—", re.M)
@@ -503,6 +504,20 @@ def main() -> int:
                     f"{stage.name} en el snapshot auditado: una firma textual la escribe "
                     "el agente; ese archivo lo edita la persona",
                 )
+            # B-27: el alcance se comprueba en el diff. Un archivo que ninguna tarea
+            # declara es superficie nueva y abre necesita-decision.
+            try:
+                declared = declared_files(tasks)
+                touched = touched_files(repo_root(args.repo.resolve()), "HEAD", (stage, DEFAULT_APPROVALS))
+            except (ScopeError, SnapshotError) as error:
+                result.warnings.append(f"no se pudo comprobar el alcance del diff: {error}")
+            else:
+                for path in compare(declared, touched)["undeclared"]:
+                    result.require(
+                        False,
+                        f"{path} cambió y ninguna tarea declara `**Archivos:**` con esa ruta: "
+                        "es alcance nuevo, reabre la conciliación (B-27)",
+                    )
     if args.repo is not None and last_verdict and last_verdict != "coincide":
         result.warnings.append(
             "la última pasada no coincide: no hay snapshot que verificar contra el árbol actual"

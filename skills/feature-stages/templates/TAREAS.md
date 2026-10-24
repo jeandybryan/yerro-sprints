@@ -14,6 +14,9 @@ action, acceptance criterion/source pointer, and verification.
 ## Listado
 
 - [ ] T1 — … (CA-01; Origen: S-01; spec §…)
+  **Archivos:** `src/modulo.py`, `tests/test_modulo.py` — las rutas que esta tarea
+  produce. Se derivan del CA, **nunca del diff** ya producido (B-28). Sin este
+  campo la etapa no está migrada y el alcance no se puede comprobar.
   Test-first: sí; Test: <comando que debe fallar antes del cambio>;
   Sensibilidad: revertir → rojo → restaurar | mutante: <qué> → rojo | regresión HEAD;
   Impacto: módulos/contratos | datos/migración | config | lifecycle/recovery |

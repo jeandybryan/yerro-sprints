@@ -299,6 +299,7 @@ python3 skills/feature-stages/scripts/validate_skill_evals.py
 python3 skills/feature-stages/scripts/test_skill_evals.py
 python3 skills/feature-stages/scripts/test_next_step.py
 python3 skills/feature-stages/scripts/test_snapshot.py
+python3 skills/feature-stages/scripts/test_diff_scope.py
 python3 skills/feature-stages/scripts/test_evidence.py
 python3 skills/feature-stages/scripts/test_expres.py
 python3 skills/feature-stages/scripts/doctor.py \

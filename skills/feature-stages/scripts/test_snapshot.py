@@ -130,6 +130,7 @@ TASKS = """# Tareas
 ## Listado
 
 - [ ] T1 — implementar salida (CA-01)
+  **Archivos:** `src.txt`
   Test-first: sí; Test: pytest -q test_focal.py;
   Verificar: nivel `conductual`; ejecutar test focalizado; oráculo observable: exit 0.
 """
@@ -226,6 +227,19 @@ def check_validate(repo: Path) -> None:
     refreshed = validate(stage, repo)
     if refreshed.returncode != 0:
         fail(f"validate --repo: rechazó la pasada reauditada: {refreshed.stdout}{refreshed.stderr}")
+
+    # B-27: un archivo que ninguna tarea declara es alcance nuevo, y el gate
+    # vive en el validador, no solo en `diff_scope.py`.
+    (repo / "colado.py").write_text("alcance nuevo\n", encoding="utf-8")
+    current = identity(repo, (Path("feature"), APPROVALS))
+    audit.write_text(AUDIT.format(snapshot=current), encoding="utf-8")
+    checked += 1
+    out_of_scope = validate(stage, repo)
+    if out_of_scope.returncode == 0:
+        fail("validate --repo: aceptó un archivo que ninguna tarea declara")
+    elif "alcance nuevo" not in out_of_scope.stdout:
+        fail(f"validate --repo: rechazó por otro motivo: {out_of_scope.stdout}")
+    (repo / "colado.py").unlink()
 
 
 def main() -> int:

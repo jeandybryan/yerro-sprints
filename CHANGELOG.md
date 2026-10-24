@@ -29,6 +29,19 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - `test_next_step.py` recorre todas las fixtures y falla si el validador se cae
   en vez de juzgar.
 
+- **Alcance comprobado en el diff (B-27).** Cada tarea declara `**Archivos:**`
+  con las rutas que produce; `scripts/diff_scope.py <etapa> --repo <repo>`
+  compara lo que git ve cambiado contra lo declarado y `validate_stage.py
+  <etapa> --repo` aplica el mismo cruce al cerrar. Un archivo que ninguna tarea
+  declara es **alcance nuevo** y abre `necesita-decision`, aunque sea
+  reversible: un refactor «de paso» también es alcance. Una ruta declarada que
+  no cambió solo avisa, porque juzgar si la tarea se cumplió es cierre, no
+  alcance (B-29). La evidencia de la etapa y `.yerro/` nunca cuentan como
+  código, con la misma exclusión que el snapshot.
+- `scripts/test_diff_scope.py`: repositorios git temporales para las dos
+  direcciones del cruce, archivos sin trackear, `--base` inexistente y una
+  tarea sin migrar. Fixture `cambio-fuera-de-alcance`.
+
 - **Aprobación humana fuera del artefacto.** `scripts/approvals.py` lee
 `.yerro/approvals.yml` (archivo versionado que edita la persona);
 `validate_stage.py <etapa> --repo <repo>` exige una entrada que cubra la etapa
@@ -60,6 +73,8 @@ avisa, sin bloquear, de una etapa no cerrada cuyas tareas no declaran
 
 ### Cambiado
 
+- `templates/TAREAS.md` exige `**Archivos:**` bajo cada tarea, derivado del CA y
+  nunca del diff ya producido (B-28).
 - El ledger de `AUDIT.md` gana la columna `Sensibilidad`; `TAREAS.md` gana
   `Sensibilidad:` bajo `Test:`; `CONCILIACION.md` gana `**Runners:**`
   opcional.

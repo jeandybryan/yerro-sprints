@@ -112,6 +112,15 @@ estado público, skill siguiente y código de bloqueo; un cambio en
 `next_step.py` que altere una transición sin actualizar su caso deja la suite
 roja.
 
+- Fixture `cambio-fuera-de-alcance`: una etapa cuyo `**Archivos:**` no cubre una
+  ruta tocada. `diff_scope.py` debe salir con error (alcance nuevo, B-27);
+  `test_diff_scope.py` construye repositorios git temporales para probar las dos
+  direcciones (no declarado bloquea; declarado sin tocar solo avisa), los
+  archivos sin trackear y que la evidencia de la etapa no cuente como código.
+- `validate_stage.py <etapa> --repo` aplica ese cruce en el cierre: un archivo
+  que ninguna tarea declara rechaza la pasada. `test_snapshot.py` lo comprueba
+  creando `colado.py` y reauditando.
+
 `rulings-excesivos` (cuatro rulings en una tarea) debe avisar y apuntar a
 `generate-stage-tasks` sin bloquear; `rulings-aceptados` (tres) debe callar.
 Una etapa no cerrada cuyo `TAREAS.md` no declara `**Archivos:**` aparece como

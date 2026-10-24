@@ -40,6 +40,8 @@ los artefactos.
 - [ ] `riesgo-alto-mutante-verde` y `riesgo-alto-mutante-esperado` siguen
       fallando: el mutante se juzga por el resultado observado (`rojo`), no
       por la palabra, y un mutante que sobrevive no cierra.
+- [ ] `test_diff_scope.py` pasa; un archivo no declarado sigue siendo alcance
+      nuevo (error) y uno declarado sin tocar sigue siendo advertencia.
 - [ ] `test_snapshot.py` sigue comprobando aprobación: sin `.yerro/approvals.yml`,
       con entrada fuera de alcance o con el archivo ausente, la etapa no cierra.
 - [ ] `doctor.py` avisa con cuatro rulings en una tarea y calla con tres; toda
@@ -56,6 +58,7 @@ python3 skills/feature-stages/scripts/validate_skill_evals.py
 python3 skills/feature-stages/scripts/test_skill_evals.py
 python3 skills/feature-stages/scripts/test_next_step.py
 python3 skills/feature-stages/scripts/test_snapshot.py
+python3 skills/feature-stages/scripts/test_diff_scope.py
 python3 skills/feature-stages/scripts/test_expres.py
 python3 skills/feature-stages/scripts/test_evidence.py
 python3 skills/feature-stages/scripts/doctor.py \

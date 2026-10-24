@@ -134,7 +134,7 @@ convierte el paquete de "protocolo" en "herramienta".
 
 ## P3 — Aprobación humana y separación de roles
 
-**Estado:** `abierta`
+**Estado:** `acordada` ✅ (aprobación implementada en Fase 2; roles diferidos a Fase 5)
 **Diagnóstico:** D3
 **Impacto:** alto
 
@@ -183,7 +183,7 @@ implícito.
 
 ## P4 — Riesgo que define el mínimo de evidencia
 
-**Estado:** `abierta`
+**Estado:** `acordada` ✅ (implementada en Fase 2)
 **Diagnóstico:** D4
 **Impacto:** alto
 
@@ -197,8 +197,9 @@ implícito.
 
 `**Presupuesto de deltas:**` deja de tener default silencioso:
 
-- `bajo` → 2; `medio` → 1; `alto` → 0 (cualquier `no coincide` vuelve a
-  conciliación).
+- `bajo` → 2; `medio` → 1; `alto` → 1 (cualquier `no coincide` vuelve a
+  conciliación). El `alto → 0` original se descartó al implementar: con 0 un
+  simple `no coincide` reabriría la conciliación, que es más fricción que gate.
 - Se puede sobrescribir en la conciliación, pero con **motivo escrito**.
 
 El validador cruza: riesgo congelado ↔ nivel de evidencia en el ledger ↔

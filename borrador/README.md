@@ -83,7 +83,14 @@ Resumen y razonamiento en [11-resolucion-abiertas.md](11-resolucion-abiertas.md)
 **Fase 1 implementada (2026-10-22):** oráculo mínimo, `Sensibilidad` obligatoria
 en el ledger y evidencia firmada con `evidence.py`. Las fixtures
 `test-decorativo` y `sin-sensibilidad` **pasaban** con el contrato viejo y hoy
-fallan. Lo siguiente es la Fase 2 (roles, riesgo y aprobación).
+fallan.
+
+**Fase 2 implementada (2026-10-23):** aprobación humana en
+`.yerro/approvals.yml`, riesgo que fija el fondo de la evidencia, presupuesto de
+deltas derivado del riesgo y cierre bloqueado si el criterio se rebaja sin
+motivo. El gate de mutación ahora juzga el **resultado observado**: un mutante
+`→ verde` ya no cierra. Lo siguiente es la Fase 5 (Modelo C: rulings), que
+además arrastra los campos de rol de P3.
 
 ## Reglas de esta carpeta
 

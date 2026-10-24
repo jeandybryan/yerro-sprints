@@ -76,7 +76,34 @@ Después devuelve `ERROR: T1 declara un Test: decorativo (true)`.
 `valid-stage` pasa con el formato nuevo; la suite completa sigue verde
 (97 + 8 + 8 + 17 + 16 comprobaciones).
 
-### Fase 2 — Roles y riesgo (P3 + P4)
+### Fase 2 — Roles y riesgo (P3 + P4) ✅ **IMPLEMENTADA** (2026-10-23)
+
+Lo que se hizo, con su prueba:
+
+| Cambio | Fixture / caso |
+| --- | --- |
+| Aprobación humana en `.yerro/approvals.yml` (B-37) | `test_snapshot.py`: sin archivo, fuera de alcance, mal formado |
+| Riesgo → fondo de la evidencia (B-12, B-35) | `riesgo-alto-sin-mutacion`, `riesgo-alto-mutante-verde`, `riesgo-alto-mutante-esperado` |
+| Presupuesto derivado del riesgo (B-10) | `riesgo-alto-presupuesto-sin-motivo`, `presupuesto-amplio`, `riesgo-cruzado-con-motivo` |
+| Criterio rebajado sin motivo | `cierre-sin-aprobacion` |
+| Casos retenidos | S21–S23 en `EVALUATION.md` |
+
+**Desfase corregido al implementar:** el gate de mutación aceptaba la palabra
+`mutante` aunque el resultado declarado fuera `verde`. Un mutante que sobrevive
+decía que el oráculo no cubre el comportamiento y la etapa cerraba igual. Ahora
+se juzga el resultado observado (`rojo`); `verde`, `rojo esperado` y sin
+resultado no cumplen, y un verde no lo compensa un rojo en otro CA.
+
+**Diferido a la Fase 5:** los campos `**Implementado por:**` y `**Auditado
+por:**` (B-08 seguirá `propuesta`). La aprobación humana ya es obligatoria para
+cerrar, que es lo que B-08 protegería; registrar los roles sirve para decidir
+*cuándo* basta la firma, y eso depende de B-26, que vive en la Fase 5.
+
+**Criterio de salida cumplido:** sin aprobación humana la etapa no cierra; sin
+la evidencia que el nivel exige, tampoco; la suite completa sigue verde (121
+comprobaciones).
+
+### Fase 2 — Plan original (P3 + P4)
 
 Dependencia: Q1 y Q3 resueltas.
 

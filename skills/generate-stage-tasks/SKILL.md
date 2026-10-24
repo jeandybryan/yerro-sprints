@@ -28,6 +28,8 @@ los errores estructurales bloquean la entrega.
    - **Archivos:** the paths this task will produce, derived from its CA and
      never from a diff already written (B-28). Without it the stage cannot
      prove its scope and the close cross-check has nothing to compare.
+   - `Interfaces:` with `Consume:` and `Produce:` when the stage has more than
+     one task (`Consume: ninguna` when nothing is received)
    - compact applicable impact: modules/contracts, data/migration, config,
      lifecycle/recovery, observability, profile/hardware, cleanup/rollback
    - **Verificar:** evidence level plus procedure and observable oracle

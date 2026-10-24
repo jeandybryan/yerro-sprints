@@ -27,12 +27,13 @@
 
 ### Rulings revisados
 
-Cada `**Sujeto a revisión:**` de `TAREAS.md` se resuelve aquí, leyendo los
-artefactos y el diff, nunca la conversación de implementación (B-32). Una marca
-sin resolución impide el cierre (B-26).
+Cada `**Sujeto a revisión R-NN:**` de `TAREAS.md` se resuelve aquí con su mismo
+identificador, leyendo los artefactos y el diff, nunca la conversación de
+implementación (B-32). Una marca sin resolución, o una resolución que apunta a
+otro ID, impide el cierre (B-26).
 
-- aceptado — <qué se decidió>: <por qué es correcto con el CA y el diff>
-- hallazgo — <qué se decidió>: <qué contradice el baseline o la evidencia>
+- aceptado R1 — <qué se decidió>: <por qué es correcto con el CA y el diff>
+- hallazgo R2 — <qué se decidió>: <qué contradice el baseline o la evidencia>
 
 **Veredicto:** coincide | no coincide
 

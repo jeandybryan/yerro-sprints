@@ -49,6 +49,13 @@ los artefactos.
 - [ ] `ruling-sin-coste` y `ruling-categoria-2-sin-revision` siguen fallando;
       `ruling-categoria-1` y `ruling-categoria-2-revisado` siguen pasando: un
       `Ruling:` sin coste y un sujeto a revisión sin resolver no cierran.
+- [ ] `ruling-sujeto-sin-id` y `ruling-sujeto-id-cruzado` siguen fallando: el
+      sujeto a revisión se cruza por `R-NN`, no por número de resoluciones.
+- [ ] `interfaces-ausentes` falla y `interfaces-presentes` pasa; una etapa de
+      una sola tarea no exige `Interfaces:`.
+- [ ] `riesgo-bajo-sin-test-first` falla y
+      `riesgo-bajo-con-test-first-sin-revision-independiente` pasa: el riesgo
+      no compra menos prueba.
 - [ ] Cualquier cambio de descripción revisa los casos de activación positivos
       y negativos.
 - [ ] Cualquier cambio de flujo, plantilla o validador añadió una prueba de regresión.

@@ -41,6 +41,7 @@ Un `AUDIT.md` que cierre una etapa conserva cada pasada. El veredicto `coincide`
 - Cada pasada registra `**Snapshot:**` con la salida exacta de `snapshot.py`. `exclude=` identifica el árbol de la feature para que la evidencia no invalide su propio hash: el snapshot es del código auditado, no del archivo que lo describe.
 - Un `coincide` solo vale para el snapshot que auditó. Si el árbol cambió, la pasada está obsoleta y se reaudita; no se reutiliza el veredicto para cerrar. `validate_stage.py <etapa> --repo <repo>` verifica esa coincidencia.
 - `**Presupuesto de deltas:**` se **deriva del riesgo**: `bajo → 2`, `medio → 1`, `alto → 1`. Un valor escrito distinto solo vale con `**Motivo del presupuesto:**`; sin motivo gana el derivado, tanto en `validate_stage.py` como en `next_step.py`. Agotado el presupuesto, si la auditoría sigue en `no coincide`, `next_step.py` devuelve `necesita-decision` con `PRESUPUESTO_DE_DELTAS_AGOTADO`: reabrir la conciliación, aceptar el riesgo residual con owner o detener la etapa. Escribir otro delta no es una salida.
+- **Prueba y revisión son dos ejes (P22).** Test-first, sensibilidad demostrada y suite de referencia se exigen siempre; el riesgo solo cambia la profundidad de la revisión. «Revisión independiente» es un auditor distinto del implementador cuando el host lo permite; si no, la aprobación humana en `.yerro/approvals.yml`. Riesgo `bajo` no compra menos prueba.
 - El riesgo decide el **fondo** de la evidencia, no si hay que demostrarla. La sensibilidad se exige siempre; por encima de `bajo` el ledger declara un caso límite o un negativo demostrado; en `alto`, cada CA crítico registra `mutante:` (o fallo inyectado) con resultado rojo (B-35: se exige ver el rojo, no una herramienta). El resultado se comprueba: `→ verde` (el mutante sobrevivió), `→ rojo esperado` (una predicción) o sin resultado no cumplen, y un rojo en un CA no compensa un verde en otro.
 
 ## Aprobación humana
@@ -56,11 +57,16 @@ Un `coincide` que baja el criterio más exigente declara `**Cruza riesgo:** sí 
 
 ## Rulings en ejecución (B-21, B-25, B-26)
 
-- Una ambigüedad **dentro** del plan aprobado no detiene la implementación: se decide y se registra. Solo la categoría 3 (intención, alcance o criterio) y las paradas incondicionales reabren `conciliate-stage`.
+- Una ambigüedad **dentro** del plan aprobado no detiene la implementación: se decide y se registra. Solo la categoría 3 (intención, alcance o criterio) y las paradas incondicionales (operación irreversible, seguridad, efecto fuera del worktree, dependencia externa nueva, plan roto) reabren `conciliate-stage`.
 - El registro vive junto a la tarea que lo produjo, en `TAREAS.md`, con formato cerrado: `Ruling: <qué decidí> — <por qué> — <qué cuesta si me equivoco>`. Las tres partes son obligatorias; un ruling sin coste oculta la decisión y `validate_stage.py` lo rechaza.
-- Un ruling de categoría 2 (efecto observable y reversible, sin cambio de alcance) añade `**Sujeto a revisión:**` en la tarea. `AUDIT.md` lo resuelve en `### Rulings revisados` como `- aceptado` o `- hallazgo`; tantas resoluciones como marcas, o la etapa no cierra.
+- Un ruling de categoría 2 (efecto observable y reversible, sin cambio de alcance) añade `**Sujeto a revisión R1:**` en la tarea, numerado. `AUDIT.md` lo resuelve en `### Rulings revisados` como `- aceptado R1` o `- hallazgo R1`: el cruce es por identificador, así que una marca sin resolución o una resolución de otro ID impide el cierre.
 - La revisión se hace contra artefactos y diff, nunca contra la conversación de implementación: «lo decidí porque…» no es un argumento (B-32).
 - La categoría 3 no tiene gate propio porque el diff la cubre: lo que ningún CA ni tarea declara abre `necesita-decision` (B-27).
+
+## Interfaces entre tareas (P17)
+
+- En una etapa con más de una tarea, cada tarea declara `Interfaces:` con `Consume:` (la firma exacta que recibe de una tarea anterior, o `ninguna`) y `Produce:` (nombres y tipos que las posteriores dan por hechos). Sin eso, quien ejecuta la siguiente tarea inventa nombres.
+- Una etapa de una sola tarea no necesita declararlo: no hay interfaz que cruzar.
 
 ## Alcance en el diff (B-27)
 
@@ -130,7 +136,7 @@ ese artefacto o resolver el caso que cubre. No cargues `templates.md`,
 - **Test:** comando reproducible que verifica la tarea.
 - **Verificar:** nivel, procedimiento y oráculo observable de una tarea.
 - **Ruling:** decisión tomada durante la implementación, con qué se decidió, por qué y qué cuesta equivocarse. Se escribe en `TAREAS.md`, junto a la tarea.
-- **Sujeto a revisión:** marca de un ruling de categoría 2, con el mismo formato de tres partes; exige resolución en `### Rulings revisados` del `AUDIT.md`.
+- **Sujeto a revisión R-NN:** marca numerada de un ruling de categoría 2; exige una resolución con el mismo ID en `### Rulings revisados` del `AUDIT.md`.
 - **Snapshot:** identidad del árbol auditado: `head`, `tree`, `dirty` y `exclude`.
 - **Trazabilidad:** cadena `S-NN → CA-NN → T-NN → test → E-NN`.
 - **Veredicto:** resultado de una pasada: `coincide` o `no coincide`.

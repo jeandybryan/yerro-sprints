@@ -1,7 +1,10 @@
 ## `TAREAS.md`
 
 Generate **only** when conciliation is `cerrada`. Each item: checkbox,
-action, acceptance criterion/source pointer, and verification.
+action, acceptance criterion/source pointer, and verification. `Ruling:`
+is repeatable; each category 2 mark is numbered `R1`, `R2`… so the audit
+can resolve it by ID. `Interfaces:` is required only when the stage has
+more than one task, and `Consume: ninguna` is a valid answer.
 
 ```markdown
 # Tareas — etapa NN <nombre>
@@ -18,7 +21,10 @@ action, acceptance criterion/source pointer, and verification.
   produce. Se derivan del CA, **nunca del diff** ya producido (B-28). Sin este
   campo la etapa no está migrada y el alcance no se puede comprobar.
   Ruling: <qué decido> — <por qué> — <qué cuesta si me equivoco>
-  **Sujeto a revisión:** <cambio observable y reversible> — <por qué> — <coste>
+  Interfaces:
+    Consume: <firma exacta de una tarea anterior> | ninguna
+    Produce: <nombres y tipos que las tareas posteriores dan por hechos>
+  **Sujeto a revisión R1:** <cambio observable y reversible> — <por qué> — <coste>
   Test-first: sí; Test: <comando que debe fallar antes del cambio>;
   Sensibilidad: revertir → rojo → restaurar | mutante: <qué> → rojo | regresión HEAD;
   Impacto: módulos/contratos | datos/migración | config | lifecycle/recovery |

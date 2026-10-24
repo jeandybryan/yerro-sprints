@@ -1,7 +1,7 @@
 # Fixture — ruling de categoría 2 marcado y sin revisar
 
 `T1` cambia el límite por defecto de una paginación (observable, reversible, sin
-cambio de alcance) y lo marca con `**Sujeto a revisión:**`. El `AUDIT.md` cierra
+cambio de alcance) y lo marca con `**Sujeto a revisión R1:**`. El `AUDIT.md` cierra
 con `coincide` y **no** tiene la sección `### Rulings revisados`.
 
 Debe **fallar** (B-26): un ruling de categoría 2 sin resolver —ni aceptado ni

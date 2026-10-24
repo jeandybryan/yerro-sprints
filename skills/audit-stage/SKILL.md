@@ -76,8 +76,9 @@ scope or acceptance change reopens conciliation; it is not a delta.
 - `coincide` only when every principal CA is `cumple`, task methods and global
   checks have evidence, traceability is complete and no blocking deviation
   remains.
-- Every `**Sujeto a revisión:**` in `TAREAS.md` is resolved in
-  `### Rulings revisados`: either `aceptado` or `hallazgo`. Read the artifacts and
+- Every `**Sujeto a revisión R-NN:**` in `TAREAS.md` is resolved in
+  `### Rulings revisados` under the same ID: either `aceptado` or `hallazgo`.
+  Read the artifacts and
   the diff, never the implementation conversation (B-32); "I decided it because…"
   is not an argument. An unresolved mark blocks the close, and a ruling that does
   not explain its decision is itself a finding.

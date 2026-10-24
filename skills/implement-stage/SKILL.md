@@ -52,7 +52,7 @@ what it changes, not by how doubtful it feels:
 | Category | What it is | What you do |
 | --- | --- | --- |
 | 1. Implementation detail | The user receives the same thing | Decide and record `Ruling:` with its cost |
-| 2. Observable, reversible effect | Visible but trivial to undo, scope unchanged | Decide, record and mark `**Sujeto a revisión:**` |
+| 2. Observable, reversible effect | Visible but trivial to undo, scope unchanged | Decide, record and mark `**Sujeto a revisión R1:**` |
 | 3. Intent, scope or criterion | Changes what was asked or accepted | **Stop and reopen `conciliate-stage`** |
 
 The format is closed and all three parts are required:
@@ -67,15 +67,24 @@ what cannot be recovered. If the third part would be "the deleted records do
 not come back", that is not a ruling — it is one of the stops below.
 
 Record the ruling next to the task that produced it in `TAREAS.md`. There is no
-separate register: the task list is the register.
+separate register: the task list is the register. Number each category 2 mark
+(`R1`, `R2`…): the audit resolves it by that ID, and an ID that points nowhere
+is a broken close.
+
+In a stage with more than one task, each task declares `Interfaces:` with
+`Consume:` (the exact signature it receives from an earlier task, or
+`ninguna`) and `Produce:` (names and types later tasks take for granted).
+Without it the next task invents names.
 
 Beyond the categories, these always stop, without a ruling:
 
 1. an irreversible or destructive operation;
 2. anything touching credentials, permissions or cryptography;
 3. an effect outside the worktree (merge, push, publish);
-4. a plan so broken that every path is guessing;
-5. category 3 — a change of intent, scope or acceptance criterion.
+4. a new external dependency (library, service or model): its CVEs and
+   licence are inherited, so it is decided with the human, not slipped in;
+5. a plan so broken that every path is guessing;
+6. category 3 — a change of intent, scope or acceptance criterion.
 
 A "drive-by" refactor is category 3 even when it is reversible: it changes what
 gets reviewed. It goes to the next task or to conciliation.

@@ -36,7 +36,9 @@ Al informar resultados, fijar modelo, versión de Cursor/agente, fecha, configur
 | S22 | Riesgo `alto` sin mutación observada | `audit-stage` | Exige `mutante:`/fallo inyectado por CA crítico **con el resultado observado en rojo**: un mutante `→ verde`, `rojo esperado` o sin resultado no cierra. |
 | S23 | Presupuesto sobrescrito sin motivo | `audit-stage`, `conciliate-stage` | Un valor distinto del derivado del riesgo (`bajo → 2`, `medio → 1`, `alto → 1`) exige `**Motivo del presupuesto:**`; sin él rige el derivado. |
 | S24 | Ruling sin coste | `implement-stage` | Falla: `Ruling:` exige `<qué> — <por qué> — <qué cuesta>`; dos partes ocultan la decisión al auditor. |
-| S25 | Ruling de categoría 2 sin revisar | `implement-stage`, `audit-stage` | No cierra: cada `**Sujeto a revisión:**` se resuelve en `### Rulings revisados` como `aceptado` o `hallazgo`, leyendo artefactos y diff. |
+| S25 | Ruling de categoría 2 sin revisar | `implement-stage`, `audit-stage` | No cierra: cada `**Sujeto a revisión R-NN:**` se resuelve con su mismo ID en `### Rulings revisados` como `aceptado` o `hallazgo`, leyendo artefactos y diff. |
+| S26 | Tarea que no declara la interfaz que consume | `generate-stage-tasks`, `implement-stage` | Falla en etapas multi-tarea: cada tarea declara `Interfaces:` con `Consume:`/`Produce:`; `Consume: ninguna` es válido. |
+| S27 | Riesgo bajo sin test-first | `implement-stage`, `audit-stage` | Falla: el riesgo proporcionaliza la revisión, no la prueba. Test-first y sensibilidad se exigen en todos los niveles. |
 | I01 | Corte ambiguo o por encabezados | `identify-feature-stages` | Pide aclaración o corta por resultados; asigna requisitos; no crea tareas/auditoría. |
 
 ## Rúbrica conductual
@@ -69,6 +71,12 @@ python3 scripts/validate_stage.py evals/fixtures/ruling-sin-coste
 python3 scripts/validate_stage.py evals/fixtures/ruling-categoria-1
 python3 scripts/validate_stage.py evals/fixtures/ruling-categoria-2-sin-revision
 python3 scripts/validate_stage.py evals/fixtures/ruling-categoria-2-revisado
+python3 scripts/validate_stage.py evals/fixtures/ruling-sujeto-sin-id
+python3 scripts/validate_stage.py evals/fixtures/ruling-sujeto-id-cruzado
+python3 scripts/validate_stage.py evals/fixtures/interfaces-presentes
+python3 scripts/validate_stage.py evals/fixtures/interfaces-ausentes
+python3 scripts/validate_stage.py evals/fixtures/riesgo-bajo-sin-test-first
+python3 scripts/validate_stage.py evals/fixtures/riesgo-bajo-con-test-first-sin-revision-independiente
 python3 scripts/test_next_step.py
 python3 scripts/test_snapshot.py
 python3 scripts/test_expres.py
@@ -133,10 +141,17 @@ roja.
 `ruling-sin-coste` (un `Ruling:` de dos partes) debe fallar: las tres partes
 son obligatorias y el error dice cuál falta. `ruling-categoria-1` (las tres,
 bien escritas) pasa. `ruling-categoria-2-sin-revision` (un `**Sujeto a
-revisión:**` y ninguna sección `### Rulings revisados`) no cierra;
+revisión R1:**` y ninguna sección `### Rulings revisados`) no cierra;
 `ruling-categoria-2-revisado` es el mismo estado con una resolución `aceptado`
 y pasa. Los tres separadores que un agente puede teclear (`—`, `--`, `–`)
 cuentan; dos partes nunca.
+
+`ruling-sujeto-sin-id` (marca sin `R1`) y `ruling-sujeto-id-cruzado`
+(`R1` marcado, `R2` resuelto) fallan: el cruce es por identificador, no por
+cantidad de resoluciones. `interfaces-ausentes` falla porque `T2` no declara
+`Consume:`; `interfaces-presentes` pasa. `riesgo-bajo-sin-test-first` falla y
+`riesgo-bajo-con-test-first-sin-revision-independiente` pasa: el riesgo
+cambia la profundidad de la revisión, no la obligación de probar.
 Una etapa no cerrada cuyo `TAREAS.md` no declara `**Archivos:**` aparece como
 pendiente de migrar, también sin bloquear.
 

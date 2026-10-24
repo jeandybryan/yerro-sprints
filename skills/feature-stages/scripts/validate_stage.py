@@ -66,10 +66,17 @@ SENSITIVITY_RE = re.compile(r"(?:\||^)\s*Sensibilidad\s*(?:\||$)", re.I | re.M)
 # también `--` porque un agente puede escribir ASCII en un archivo markdown.
 RULING_RE = re.compile(r"^\s*Ruling:\s*(.+?)\s*$", re.I | re.M)
 RULING_SEPARATOR_RE = re.compile(r"\s+(?:—|--|–)\s+")
-# B-26: la marca de categoría 2 en la tarea, y su resolución en la auditoría.
-SUBJECT_RE = re.compile(r"\*\*Sujeto a revisión:\*\*\s*(.+?)\s*$", re.I | re.M)
+# B-26: la marca de categoría 2 lleva identificador (R1, R2…) para que su
+# resolución en la auditoría se cruce por ID y no por conteo.
+SUBJECT_RE = re.compile(r"\*\*Sujeto a revisión([^*]*):\*\*[ \t]*(.*?)[ \t]*$", re.I | re.M)
+SUBJECT_ID_RE = re.compile(r"R\d+", re.I)
 SUBJECT_REVIEW_SECTION = "### Rulings revisados"
-SUBJECT_RESOLVED_RE = re.compile(r"^\s*-\s*(?:aceptad[oa]|hallazgo)\b", re.I | re.M)
+SUBJECT_RESOLVED_RE = re.compile(r"^\s*-\s*(aceptado|hallazgo)\s+(R\d+)\b", re.I | re.M)
+# P17: interfaces entre tareas. Solo se exigen cuando la etapa tiene más de una
+# tarea; un `Consume: ninguna` explícito es una respuesta válida.
+# `[ \t]`, no `\s`: un `Consume:` vacío no debe "leerse" en la línea siguiente.
+CONSUME_RE = re.compile(r"^[ \t]*Consume:[ \t]*(\S.*?)[ \t]*$", re.I | re.M)
+PRODUCE_RE = re.compile(r"^[ \t]*Produce:[ \t]*(\S.*?)[ \t]*$", re.I | re.M)
 NO_DEMOSTRADA_RE = re.compile(r"no demostrada", re.I)
 
 # Presupuesto de deltas por riesgo. El default no se inventa: está calibrado
@@ -408,27 +415,77 @@ def main() -> int:
                     ";" in value or "oráculo" in value.lower(),
                     f"{task_id} no separa procedimiento y oráculo",
                 )
+        # P17: una etapa con varias tareas necesita decir qué firma recibe cada
+        # una de las anteriores. Un subagente no debe adivinar nombres.
+        if len(task_bodies) > 1:
+            for task_id, body in task_bodies.items():
+                result.require(
+                    bool(CONSUME_RE.search(body)),
+                    f"{task_id} no declara `Consume:` en Interfaces: una etapa con "
+                    "varias tareas exige qué firma recibe (`ninguna` si no consume)",
+                )
+                result.require(
+                    bool(PRODUCE_RE.search(body)),
+                    f"{task_id} no declara `Produce:` en Interfaces: las tareas "
+                    "posteriores necesitan nombres y tipos exactos",
+                )
+
         # B-26: un ruling de categoría 2 cambia algo observable. El auditor lo
         # revisa con artefactos, no con memoria (B-32), y mientras no lo acepte
-        # o lo convierta en hallazgo, el cierre no pasa.
-        subjects = [
-            (task_id, match.group(1))
-            for task_id, body in task_bodies.items()
-            for match in SUBJECT_RE.finditer(body)
-        ]
-        if subjects:
+        # o lo convierta en hallazgo, el cierre no pasa. El cruce es por ID:
+        # contar resoluciones dejaría dos `aceptado` tapando una marca sin leer.
+        marks: list[tuple[str, str]] = []
+        for task_id, body in task_bodies.items():
+            for match in SUBJECT_RE.finditer(body):
+                raw = match.group(1).strip()
+                text = match.group(2).strip()
+                found = SUBJECT_ID_RE.findall(raw)
+                valid_id = len(found) == 1 and raw == found[0]
+                marks.append((task_id, found[0].upper() if valid_id else ""))
+                if not valid_id:
+                    result.require(
+                        False,
+                        f"{task_id}: `**Sujeto a revisión{raw}:**` necesita un "
+                        "identificador (`**Sujeto a revisión R1:**`) para que la "
+                        "auditoría pueda resolverlo",
+                    )
+                result.require(
+                    bool(text),
+                    f"{task_id}: `**Sujeto a revisión{raw}:**` no describe qué "
+                    "cambió ni qué cuesta; no hay nada que revisar",
+                )
+        mark_ids = [rid for _, rid in marks if rid]
+        repeated = sorted({rid for rid in mark_ids if mark_ids.count(rid) > 1})
+        result.require(
+            not repeated,
+            f"identificadores de sujeto a revisión duplicados: {', '.join(repeated)}; "
+            "cada marca necesita el suyo",
+        )
+        if marks:
             reviewed = audit.split(SUBJECT_REVIEW_SECTION, 1)
             result.require(
                 len(reviewed) > 1,
-                f"AUDIT.md no tiene «{SUBJECT_REVIEW_SECTION}» y hay {len(subjects)} "
-                "ruling(s) de categoría 2 (`**Sujeto a revisión:**`) sin revisar",
+                f"AUDIT.md no tiene «{SUBJECT_REVIEW_SECTION}» y hay {len(marks)} "
+                "ruling(s) de categoría 2 (`**Sujeto a revisión R1:**`) sin revisar",
             )
             if len(reviewed) > 1:
-                resolutions = len(SUBJECT_RESOLVED_RE.findall(reviewed[1]))
+                resolved = [rid.upper() for _, rid in SUBJECT_RESOLVED_RE.findall(reviewed[1])]
+                twice = sorted({rid for rid in resolved if resolved.count(rid) > 1})
                 result.require(
-                    resolutions >= len(subjects),
-                    f"«{SUBJECT_REVIEW_SECTION}» resuelve {resolutions} de {len(subjects)} "
-                    "rulings de categoría 2: cada uno se acepta o se convierte en hallazgo",
+                    not twice,
+                    f"«{SUBJECT_REVIEW_SECTION}» resuelve dos veces {', '.join(twice)}",
+                )
+                missing = sorted(set(mark_ids) - set(resolved))
+                result.require(
+                    not missing,
+                    f"«{SUBJECT_REVIEW_SECTION}» no resuelve {', '.join(missing)}: "
+                    "cada marca se acepta o se convierte en hallazgo",
+                )
+                unknown = sorted(set(resolved) - set(mark_ids))
+                result.require(
+                    not unknown,
+                    f"«{SUBJECT_REVIEW_SECTION}» resuelve {', '.join(unknown)}, que "
+                    "ninguna tarea marca como sujeto a revisión",
                 )
         result.require(bool(task_bodies), "TAREAS.md no contiene tareas implementables")
         result.require(

@@ -48,13 +48,26 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
   para y pregunta»: el Modelo C sustituye esa parada por decidir, registrar y
   seguir, y el coste es lo que permite al auditor evaluar la decisión. Se
   aceptan `—`, `--` y `–` como separador.
-- **Sujetos a revisión resueltos (B-26).** Un `**Sujeto a revisión:**` (ruling
-  de categoría 2: observable, reversible, sin cambio de alcance) obliga a
-  `AUDIT.md` a traer `### Rulings revisados` con una resolución `aceptado` o
-  `hallazgo` por cada marca. Antes, la marca se escribía y nadie la leía.
+- **Sujetos a revisión resueltos por ID (B-26).** Un
+  `**Sujeto a revisión R1:**` (ruling de categoría 2: observable, reversible,
+  sin cambio de alcance) obliga a `AUDIT.md` a traer `### Rulings revisados`
+  con `- aceptado R1` o `- hallazgo R1`. El cruce es por identificador: contar
+  resoluciones dejaba que dos `aceptado` taparan una marca sin leer. Una marca
+  sin ID o un ID que apunta a otro sujeto rompe el cierre. Fixtures
+  `ruling-sujeto-sin-id` y `ruling-sujeto-id-cruzado`.
 - Fixtures `ruling-sin-coste` y `ruling-categoria-2-sin-revision` (negativas),
   `ruling-categoria-1` y `ruling-categoria-2-revisado` (positivas), y casos
   retenidos `S24` y `S25` en `EVALUATION.md`.
+- **Interfaces entre tareas (P17).** En una etapa con más de una tarea, cada
+  tarea declara `Interfaces:` con `Consume:` y `Produce:`; `Consume: ninguna`
+  es una respuesta válida. Una etapa de una sola tarea no lo necesita. Antes,
+  quien ejecutaba `T2` tenía que adivinar la firma que dejó `T1`.
+- Fixtures `interfaces-presentes` (pasa) e `interfaces-ausentes` (falla), más
+  el caso retenido `S26`.
+- **Prueba y revisión como dos ejes (P22).** Test-first, sensibilidad y suite
+  de referencia se exigen siempre; el riesgo solo cambia la profundidad de la
+  revisión. Fixture `riesgo-bajo-sin-test-first` (falla) y
+  `riesgo-bajo-con-test-first-sin-revision-independiente` (pasa); caso `S27`.
 
 - **Aprobación humana fuera del artefacto.** `scripts/approvals.py` lee
 `.yerro/approvals.yml` (archivo versionado que edita la persona);

@@ -18,7 +18,7 @@
 
 ### Rulings revisados
 
-- aceptado — límite por defecto 50: el resto de listados del proyecto usa 50 y
+- aceptado R1 — límite por defecto 50: el resto de listados del proyecto usa 50 y
   el CA no fija un número.
 
 **Veredicto:** coincide

@@ -208,6 +208,13 @@ VALIDATE_REJECTED = [
     ("ruling-sin-coste", "sin las tres partes"),
     # B-26: un ruling de categoría 2 sin revisar impide el cierre.
     ("ruling-categoria-2-sin-revision", "Rulings revisados"),
+ # B-26 por identificador: una marca sin ID no se puede resolver.
+ ("ruling-sujeto-sin-id", "necesita un identificador"),
+ ("ruling-sujeto-id-cruzado", "no resuelve R1"),
+ # P17: la etapa multi-tarea exige interfaces.
+ ("interfaces-ausentes", "no declara `Consume:`"),
+ # P22: test-first no se proporcionaliza por riesgo.
+ ("riesgo-bajo-sin-test-first", "no declara Test-first"),
 ]
 
 VALIDATE_ACCEPTED = [
@@ -216,6 +223,8 @@ VALIDATE_ACCEPTED = [
     "riesgo-cruzado-con-motivo",
     "ruling-categoria-1",
     "ruling-categoria-2-revisado",
+    "interfaces-presentes",
+    "riesgo-bajo-con-test-first-sin-revision-independiente",
 ]
 
 
@@ -289,6 +298,50 @@ for ruling, valido in (
     partes = [x for x in validate_stage.RULING_SEPARATOR_RE.split(ruling) if x.strip()]
     if (len(partes) >= 3) != valido:
         fail(f"ruling {ruling!r}: tres partes = {len(partes) >= 3}, se esperaba {valido}")
+
+# B-26 se cruza por identificador: la marca y su resolución comparten `R-NN`.
+# El parser acepta `R1` (y `r1`), y no confunde una marca sin ID.
+for marca, esperado in (
+    ("**Sujeto a revisión R1:** límite 50", "R1"),
+    ("**Sujeto a revisión r2:** texto de error", "r2"),
+    ("**Sujeto a revisión:** límite 50", ""),
+    ("**Sujeto a revisión R1 R2:** límite 50", "R1 R2"),
+):
+    checked += 1
+    encontrado = validate_stage.SUBJECT_RE.search(marca)
+    if encontrado is None:
+        fail(f"sujeto a revisión {marca!r}: el parser no lo reconoce")
+        continue
+    if encontrado.group(1).strip() != esperado:
+        fail(
+            f"sujeto a revisión {marca!r}: id "
+            f"{encontrado.group(1).strip()!r}, se esperaba {esperado!r}"
+        )
+
+for resolucion, esperado in (
+    ("- aceptado R1 — límite 50", ("aceptado", "R1")),
+    ("- hallazgo R2 — contradice el CA", ("hallazgo", "R2")),
+    ("- aceptado — límite 50", None),
+    ("- R1 aceptado — límite 50", None),
+):
+    checked += 1
+    encontrado = validate_stage.SUBJECT_RESOLVED_RE.search(resolucion)
+    obtenido = (encontrado.group(1), encontrado.group(2)) if encontrado else None
+    if obtenido != esperado:
+        fail(f"resolución {resolucion!r}: {obtenido}, se esperaba {esperado}")
+
+# P17: `Consume:`/`Produce:` se leen dentro de la tarea; `ninguna` es válido.
+for cuerpo, consume, produce in (
+    ("  Interfaces:\n    Consume: ninguna\n    Produce: `f() -> int`\n", True, True),
+    ("  Interfaces:\n    Consume: `f() -> int` de T1\n    Produce: README\n", True, True),
+    ("  Consume:\n    Produce: nada\n", False, True),
+    ("  Consume: ninguna\n", True, False),
+):
+    checked += 1
+    if bool(validate_stage.CONSUME_RE.search(cuerpo)) != consume:
+        fail(f"Interfaces: Consume mal detectado en {cuerpo!r}")
+    if bool(validate_stage.PRODUCE_RE.search(cuerpo)) != produce:
+        fail(f"Interfaces: Produce mal detectado en {cuerpo!r}")
 
 # Un mutante rojo en un CA y otro verde en otro no se compensan: basta uno que
 # sobreviva para que el ledger no demuestre sensibilidad.

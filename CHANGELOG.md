@@ -62,6 +62,11 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
   tarea declara `Interfaces:` con `Consume:` y `Produce:`; `Consume: ninguna`
   es una respuesta válida. Una etapa de una sola tarea no lo necesita. Antes,
   quien ejecutaba `T2` tenía que adivinar la firma que dejó `T1`.
+- **Fixtures migradas a `**Archivos:**`.** Las 58 listas de
+ `evals/fixtures/` declaran ahora los archivos que produce cada tarea, así que
+ `--repo` puede comprobar el alcance en todas ellas y no solo en la retenida.
+ El veredicto de cada etapa se comparó antes y después de la migración y no
+ cambió: es una migración, no un cambio de contrato.
 - Fixtures `interfaces-presentes` (pasa) e `interfaces-ausentes` (falla), más
   el caso retenido `S26`.
 - **Prueba y revisión como dos ejes (P22).** Test-first, sensibilidad y suite

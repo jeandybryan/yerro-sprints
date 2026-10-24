@@ -201,8 +201,11 @@ De los rulings, la forma implementada concreta:
 - La categoría 3 no tiene gate propio porque B-27 ya la cubre: lo que ningún CA
   ni tarea declara aparece en el diff.
 
-**Lo que queda de la Fase 5:** los dos casos conductuales y la migración de las
-fixtures que aún no declaran `**Archivos:**`.
+**Lo que queda de la Fase 5:** los dos casos conductuales. La migración de
+fixtures está hecha: las 58 listas del catálogo declaran `**Archivos:**` en
+cada tarea, sin cambiar el veredicto de ninguna etapa (se comparó antes y
+después). `cambio-fuera-de-alcance` conserva su alcance original
+(`src/export.csv`) porque `test_diff_scope.py` retiene ese valor.
 
 Hecho:
 

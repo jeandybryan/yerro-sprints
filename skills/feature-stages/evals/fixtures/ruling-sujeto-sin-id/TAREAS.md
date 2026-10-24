@@ -5,6 +5,7 @@
 ## Listado
 
 - [ ] T1 — implementar salida (CA-01)
+  **Archivos:** `src/salida.py`, `tests/test_salida.py`
   **Sujeto a revisión:** límite por defecto 50 en `/items` y no 100 — coincide con
   el resto de listados del proyecto — coste: cambiar una constante y un test.
   Test-first: sí; Test: pytest -q test_focal.py;

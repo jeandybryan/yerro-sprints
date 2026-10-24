@@ -147,7 +147,7 @@ no para"*, y se evalúa con el método de `EVALUATION.md` (control, ≥5 reps).
 | `references/decision-and-questions.md` | Separar pregunta de baseline (conciliar) de ruling (ejecutar), con la tabla de tres categorías | doc |
 | `implement-stage/SKILL.md` | Sección "Rulings" con la tabla y la lista de paradas; quitar "si es ambigua, para y pregunta" | doc |
 | `templates/TAREAS.md` | Campo `Ruling:` repetible y campo `**Sujeto a revisión:**` | template |
-| `templates/AUDIT.md` | Sección "Rulings a revisar": cada categoría 2 tiene aceptación o hallazgo | template |
+| `templates/AUDIT.md` | Sección `### Rulings revisados`: cada categoría 2 tiene aceptación o hallazgo | template |
 | `references/stage-contract.md` | La transición `implement → audit` admite rulings; `implement → conciliate` exige categoría 3 | doc |
 | `validate_stage.py` | Tres partes del ruling; diff declarado vs. tocado; categoría 2 sin resolver | código |
 | `evals/fixtures/` + `test_validate_stage.py` | Las cinco fixtures | test |

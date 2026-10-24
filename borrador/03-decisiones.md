@@ -287,6 +287,10 @@ peor que una pregunta.
 `Ruling: <qué decidí> — <por qué> — <qué cuesta si me equivoco>`.
 `validate_stage.py` rechaza un `Ruling:` al que le falte una parte. Una decisión
 tomada sin registro no cuenta como decidida.
+**Implementado así (2026-10-23):** tres tramos no vacíos separados por `—`, `--`
+o `–`; no hay longitud mínima, porque el gate juzga estructura, no prosa. El
+error nombra las tres partes en vez de decir «ruling inválido». Fixture
+`ruling-sin-coste` (falla) y `ruling-categoria-1` (pasa).
 
 ### B-26 — La categoría 2 existe para no forzar todo a los extremos
 **Fecha:** 2026-10-22
@@ -299,6 +303,11 @@ mantiene la visibilidad sin detener el trabajo.
 categoría 2 no resuelto (ni aceptado ni convertido en hallazgo) **impide el
 cierre**. La categoría 1 no requiere revisión del auditor; solo queda en el
 ledger.
+**Implementado así (2026-10-23):** la sección se llama `### Rulings revisados`;
+cada resolución empieza por `- aceptado` o `- hallazgo`, y el cierre exige
+tantas resoluciones como marcas haya. No se cruza marca con resolución: el
+conteo es lo que un validador juzga sin leer el argumento. Fixtures
+`ruling-categoria-2-sin-revision` (falla) y `ruling-categoria-2-revisado` (pasa).
 
 ### B-27 — El cambio de alcance se detecta en el diff, no en la confesión
 **Fecha:** 2026-10-22

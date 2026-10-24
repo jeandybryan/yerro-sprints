@@ -167,52 +167,71 @@ dominante. Antes de retomarla: medir cuántas veces `expres.py` devuelve
 
 ### Fase 5 — Disciplina de ejecución (P19 + P22 + P17)  ·  **Q15 resuelta: Modelo C**
 
-**Parcialmente implementada (2026-10-23): B-27, el alcance en el diff.**
+**Parcialmente implementada (2026-10-23): B-21/B-25/B-26 (rulings) y B-27 (alcance en el diff).**
 
 | Cambio | Fixture / caso |
 | --- | --- |
 | `diff_scope.py`: diff real vs. `**Archivos:**` declarado | `test_diff_scope.py` (15 comprobaciones) |
 | Cruce en `validate_stage.py --repo` | `test_snapshot.py`: `colado.py` rechaza la pasada |
 | `**Archivos:**` obligatorio en `templates/TAREAS.md` | `cambio-fuera-de-alcance` |
+| `Ruling:` de tres partes | `ruling-sin-coste` (falla), `ruling-categoria-1` (pasa), casos del parser en `test_next_step.py` |
+| `**Sujeto a revisión:**` resuelto al cerrar | `ruling-categoria-2-sin-revision` (falla), `ruling-categoria-2-revisado` (pasa) |
+| Sección "Rulings" en `implement-stage`; `### Rulings revisados` en `templates/AUDIT.md` | — (documentación) |
 
-Se hizo antes que los rulings porque B-28 ya había eliminado `--strict`: el
-contrato único quedaba **más débil** que antes, sin ningún gate que mirase el
-diff. Un alcance sin comprobar no es un cierre, es una promesa.
+B-27 se hizo **antes** que los rulings porque B-28 ya había eliminado
+`--strict`: el contrato único quedaba **más débil** que antes, sin ningún gate
+que mirase el diff. Un alcance sin comprobar no es un cierre, es una promesa.
 
 Decisiones tomadas al implementar: `--base` por defecto `HEAD`, y la etapa se
 interpreta relativa a la raíz del repo. Una ruta declarada que no cambió **no
 bloquea**; B-27 solo veta lo que aparece sin declarar, porque juzgar si la tarea
 se cumplió es cierre y no alcance (B-29).
 
-**Lo que queda de la Fase 5:** los rulings (B-21, B-25, B-26), P22, P17, y la
-migración de las fixtures que aún no declaran `**Archivos:**`.
+De los rulings, la forma implementada concreta:
 
-1. **P19 / B-21 + B-25**: sección "Rulings" en `implement-stage` con las tres
+- El separador del `Ruling:` acepta `—`, `--` y `–`; se exigen **tres tramos no
+  vacíos**, no una longitud mínima. El error nombra la parte que falta en prosa.
+- La sección se llama `### Rulings revisados` y cada resolución empieza por
+  `- aceptado` o `- hallazgo`. El cierre exige tantas resoluciones como marcas
+  `**Sujeto a revisión:**` haya. No se cruza cada marca con su resolución: el
+  conteo es lo que un validador puede juzgar sin leer el argumento.
+- La categoría 3 no tiene gate propio porque B-27 ya la cubre: lo que ningún CA
+  ni tarea declara aparece en el diff.
+
+**Lo que queda de la Fase 5:** P22, P17 y la migración de las fixtures que aún
+no declaran `**Archivos:**`.
+
+Hecho:
+
+1. ~~P19 / B-21 + B-25~~: sección "Rulings" en `implement-stage` con las tres
    categorías; `Ruling:` de tres partes obligatorias en `TAREAS.md`;
    `validate_stage.py` rechaza un ruling incompleto.
-2. **P19 / B-26**: `**Sujeto a revisión:**` y su sección de revisión en
+2. ~~P19 / B-26~~: `**Sujeto a revisión:**` y su sección de revisión en
    `AUDIT.md`; cierre bloqueado mientras haya uno sin resolver.
-3. **P19 / B-27**: comparación diff tocado vs. alcance declarado; archivo no
-   declarado ⇒ `necesita-decision`. Es el único punto donde entra código
-   nuevo de verdad.
-4. P22: corregir la tabla de P4 a dos ejes (prueba siempre, revisión
-   proporcional).
-5. P17: `Interfaces:` obligatorio en cada tarea.
-6. Fixtures de P19: `ruling-categoria-1`, `ruling-sin-coste`,
-   `ruling-categoria-3`, `ruling-archivo-no-declarado`,
-   `ruling-categoria-2-sin-revision`, más los dos conductuales (decidir vs.
-   parar; interfaces entre tareas).
-7. **B-28 — migración dura.** En el mismo release: eliminar `--strict` y el
-   parámetro `legacy` de `validate_stage.py`; convertir en positivas (o retirar)
-   `riesgo-ausente` y `ca-tipo`; quitar `--strict` de `SKILL.md`,
-   `CONTRIBUTING.md` y `EVALUATION.md`; añadir a `doctor.py` la comprobación de
-   "etapa no cerrada sin `**Archivos:**`" y su fixture; añadir la regla a
-   `AGENTS.md` de que un gate nuevo no deja modo legado.
+3. ~~P19 / B-27~~: comparación diff tocado vs. alcance declarado; archivo no
+   declarado ⇒ `necesita-decision`.
 
-   **Antes de esto:** migrar las etapas en curso de los repos consumidores
-   (re-conciliar el alcance, nunca derivar del diff) o cerrarlas con la versión
-   anterior. Es la única operación de este plan que toca trabajo humano fuera del
-   paquete.
+Pendiente:
+
+1. P22: corregir la tabla de P4 a dos ejes (prueba siempre, revisión
+   proporcional).
+2. P17: `Interfaces:` obligatorio en cada tarea.
+3. ~~Fixtures de P19~~: `ruling-categoria-1`, `ruling-sin-coste`,
+   `ruling-categoria-2-sin-revision`, `ruling-categoria-2-revisado`. La
+   categoría 3 no tiene fixture propia: se cubre con `cambio-fuera-de-alcance`
+   (B-27), porque lo que ningún CA ni tarea declara aparece en el diff. Los dos
+   conductuales (decidir vs. parar; interfaces entre tareas) siguen pendientes y
+   necesitan una sesión real, no una fixture estática.
+
+~~B-28 — migración dura.~~ Hecho en el release del contrato: `--strict` y el
+parámetro `legacy` ya no existen, `riesgo-ausente` y `ca-tipo` fallan siempre,
+`doctor.py` avisa de una etapa no cerrada sin `**Archivos:**`, y `AGENTS.md`
+prohíbe un gate con modo legado.
+
+**Antes de publicar:** migrar las etapas en curso de los repos consumidores
+(re-conciliar el alcance, nunca derivar del diff) o cerrarlas con la versión
+anterior. Es la única operación de este plan que toca trabajo humano fuera del
+paquete.
 
 **Criterio de salida:** una ambigüedad de detalle no detiene la etapa y deja
 ruling completo; una de alcance la detiene; ningún cierre pasa con un ruling

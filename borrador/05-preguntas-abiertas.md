@@ -7,7 +7,7 @@
 
 ---
 
-## Q1 — ¿La tabla riesgo → evidencia mínima es la correcta? 📏 `NECESITA DATO`
+## Q1 — ¿La tabla riesgo → evidencia mínima es la correcta? ✅ `RESUELTA`
 
 **Contexto:** P4 propone `bajo → 2`, `medio → 1`, `alto → 0` de presupuesto de
 deltas y una tabla de evidencia mínima. Son números razonables pero arbitrarios;
@@ -23,7 +23,10 @@ motivo. Da el beneficio del esfuerzo proporcional sin quitar el control humano.
 
 #### Estado de la resolución
 
-El default se deriva de etapas reales; si no hay, el conservador (`bajo → 1`) hasta medir. Ver `11-resolucion-abiertas.md`.
+El default se deriva del riesgo (`bajo → 2`, `medio → 1`, `alto → 1`) y se
+sobrescribe solo con `**Motivo del presupuesto:**`. El `alto → 0` original se
+descartó al implementar: con 0, cualquier `no coincide` reabre conciliación por
+defecto. Ratificado el 2026-10-23 como B-10. Ver `11-resolucion-abiertas.md`.
 
 ---
 
@@ -325,7 +328,7 @@ irreversibles y seguridad?
 
 **Resolución:** no se decide por duda ni solo por reversibilidad, sino por
 **clase de decisión**: detalle de implementación → decide y registra; efecto
-observable reversible → decide, registra y marca `**Sujeto a revisión:**`;
+observable reversible → decide, registra y marca `**Sujeto a revisión R1:**`;
 cambio de intención/alcance/CA → para y reabre conciliación. Cuatro paradas
 incondicionales por encima de todo.
 
@@ -423,7 +426,7 @@ B-27, B-28, P19, `validate_stage.py`, `next_step.py`, Q20.
 
 ## Q19 — ¿El ruling de categoría 2 se revisa en la misma etapa o en la siguiente? ✅ `RESUELTA`
 
-**Contexto:** B-26 dice que el `AUDIT.md` resuelve cada `**Sujeto a revisión:**`.
+**Contexto:** B-26 dice que el `AUDIT.md` resuelve cada `**Sujeto a revisión R1:**`.
 Pero el auditor es, en la práctica, el mismo agente que implementó en otra
 pasada. Si re-ejecuta sin contexto fresco, la revisión es una auto-revisión
 (C12 de superpowers dice que eso no cuenta).

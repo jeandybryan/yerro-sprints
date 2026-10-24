@@ -1,15 +1,15 @@
 # 11 — Resolución de lo abierto
 
-> Estado: **cerrado** el 2026-10-22. De las 20 preguntas, 16 quedaron resueltas
-> y 4 no necesitan respuesta escrita: dos esperan datos de uso real (Q1, Q9) y
-> dos siguen diferidas (Q2, Q13).
+> Estado: **cerrado** el 2026-10-23. De las 20 preguntas, 17 quedaron resueltas.
+> Q9 espera datos de uso real; Q2 y Q13 siguen diferidas por decisión
+> (B-06). Q1 se ratificó el 2026-10-23 como B-10 con `alto → 1`.
 >
 > Cada bloque conserva **qué cambia** y **qué se pierde**, para que la decisión
 > pueda revisarse con su motivo cuando llegue el momento.
 
 ---
 
-## Estado final: 20 preguntas, 16 cerradas
+## Estado final: 20 preguntas, 17 cerradas
 
 | Pregunta | Cómo quedó | Norma |
 | --- | --- | --- |
@@ -28,14 +28,15 @@
 | Q18 | Migración dura, sin modo legado | B-28 |
 | Q19 | El auditor revisa con artefactos, no con memoria | B-32 |
 | Q20 | Aviso a partir de cuatro rulings por tarea | B-33 |
-| Q1 | 📏 **Necesita dato**: el default se deriva de etapas reales | — |
+| Q1 | Presupuesto derivado `bajo → 2`, `medio → 1`, `alto → 1`, sobrescribible con motivo | B-10 |
 | Q9 | 📏 **Necesita dato**: `preflight.py` informa antes de fijar un número | — |
 | Q2 | ⏸ Diferida (B-06) | — |
 | Q13 | ⏸ Diferida (B-06) | — |
 
 **Consecuencia:** ninguna fase está bloqueada por una pregunta sin responder.
-Q1 y Q9 no se resuelven escribiendo más: se resuelven midiendo, y ambas tienen
-ya escrita la regla de medición.
+Q9 no se resuelve escribiendo más: se resuelve midiendo, y ya tiene escrita la
+regla de medición. Q1 se ratificó al implementar, con la evidencia del gate
+cruzado (B-10).
 
 ## Por qué estas se pudieron cerrar sin elegir nada
 
@@ -242,12 +243,11 @@ el intercambio real**, y conviene que lo decidas tú, no yo.
 
 Nada de este documento bloquea el plan.
 
-- **Q1 y Q9** se cierran con datos de uso real, no con más decisiones. Fase 2 y
-  Fase 3 respectivamente.
+- **Q9** se cierra con datos de uso real, no con más decisiones (Fase 3).
 - **Q2 y Q13** siguen diferidas hasta medir la fricción (B-06).
 - El siguiente trabajo es **implementar**, no seguir diseñando.
 
-Y una advertencia sobre el propio método: las dieciséis decisiones de arriba
+Y una advertencia sobre el propio método: las diecisiete decisiones de arriba
 fueron acordadas en conversación, no probadas. Antes de escribir la primera
 regla en `skills/` hay que ver al agente fallar sin ella (B-24) y, sobre todo,
 alfilerar con fixtures que hoy **fallan** con el contrato viejo (B-02). Sin

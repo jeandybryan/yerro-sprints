@@ -8,7 +8,7 @@
 
 ## P17 — Un plan debe ser ejecutable por quien no tiene contexto
 
-**Estado:** `abierta`
+**Estado:** `acordada` ✅ (B-41, 2026-10-23)
 **Origen:** C8. `writing-plans` (superpowers).
 **Relación:** B-22, `generate-stage-tasks`, `templates/TAREAS.md`.
 
@@ -30,7 +30,8 @@ Y dos reglas de forma, que actúan como antídoto contra los dos extremos:
 
 ### Dónde toca
 
-- `templates/TAREAS.md`: bloque `Interfaces:` obligatorio.
+- `templates/TAREAS.md`: bloque `Interfaces:` obligatorio **solo en etapas con
+  más de una tarea**; `Consume: ninguna` es un valor válido.
 - `references/skill-maintenance.md`: regla de proporción.
 - `generate-stage-tasks/SKILL.md`: verificación de interfaces entre tareas.
 
@@ -108,7 +109,7 @@ La decisión se clasifica y cada clase tiene una respuesta obligatoria:
 | Categoría | Qué es | Qué hace el agente |
 | --- | --- | --- |
 | 1. Detalle de implementación | No cambia lo que el usuario recibe | Decide y registra `Ruling:` con coste |
-| 2. Efecto observable, reversible | Visible pero trivial de deshacer, sin cambio de alcance | Decide, registra y marca `**Sujeto a revisión:**` |
+| 2. Efecto observable, reversible | Visible pero trivial de deshacer, sin cambio de alcance | Decide, registra y marca `**Sujeto a revisión R1:**` |
 | 3. Intención, alcance o criterio | Cambia lo pedido o lo aceptado | **Para y reabre conciliación** |
 
 Formato cerrado, las tres partes obligatorias:
@@ -132,7 +133,7 @@ aplicando al **baseline**.
 
 - `implement-stage/SKILL.md`: sección "Rulings" con las tres categorías.
 - `templates/TAREAS.md`: campo `Ruling:` (repetible) y
-  `**Sujeto a revisión:**` por tarea.
+  `**Sujeto a revisión R1:**` por tarea.
 - `references/decision-and-questions.md`: distinguir "pregunta de baseline" de
   "ruling de ejecución".
 - `validate_stage.py`: tres partes del `Ruling:`; diff declarado vs. tocado.
@@ -239,7 +240,7 @@ Bajo. **Beneficio:** elimina el fallo más caro conocido.
 
 ## P22 — Test-first no se proporcionaliza; la revisión sí
 
-**Estado:** `abierta`
+**Estado:** `acordada` ✅ (B-42, 2026-10-23)
 **Origen:** C13.
 **Relación:** B-23, P4, P1.
 

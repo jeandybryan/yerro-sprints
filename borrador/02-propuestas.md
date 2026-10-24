@@ -189,11 +189,18 @@ implícito.
 
 ### Qué
 
-| Riesgo | Evidencia mínima obligatoria |
-| --- | --- |
-| bajo | nivel `estructural` + `conductual`; ≥1 caso negativo |
-| medio | + sensibilidad demostrada (P1 nivel 2) + un caso límite |
-| alto | + fallo inyectado + recuperación observable + revisión humana (P3) |
+Dos ejes (corregido por P22/B-42): la prueba no se proporcionaliza, la revisión sí.
+
+| Nivel | Siempre | Proporcional al riesgo |
+| --- | --- | --- |
+| Test-first | ✅ | — |
+| Sensibilidad demostrada (revertir → rojo → restaurar) | ✅ | — |
+| Suite de referencia | ✅ antes de cerrar | — |
+| Profundidad de revisión | | ✅ `bajo` / `medio` / `alto` |
+
+Lo que el riesgo añade es revisión: caso límite o negativo demostrado por encima
+de `bajo`, y fallo inyectado con recuperación observable en `alto`. La revisión
+independiente y la aprobación humana son la profundidad máxima.
 
 `**Presupuesto de deltas:**` deja de tener default silencioso:
 

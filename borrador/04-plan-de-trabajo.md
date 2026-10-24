@@ -167,7 +167,7 @@ dominante. Antes de retomarla: medir cuántas veces `expres.py` devuelve
 
 ### Fase 5 — Disciplina de ejecución (P19 + P22 + P17)  ·  **Q15 resuelta: Modelo C**
 
-**Parcialmente implementada (2026-10-23): B-21/B-25/B-26 (rulings) y B-27 (alcance en el diff).**
+**Implementada (2026-10-23) salvo los casos conductuales y la migración de fixtures: rulings, alcance en el diff, P17 y P22.**
 
 | Cambio | Fixture / caso |
 | --- | --- |
@@ -175,8 +175,11 @@ dominante. Antes de retomarla: medir cuántas veces `expres.py` devuelve
 | Cruce en `validate_stage.py --repo` | `test_snapshot.py`: `colado.py` rechaza la pasada |
 | `**Archivos:**` obligatorio en `templates/TAREAS.md` | `cambio-fuera-de-alcance` |
 | `Ruling:` de tres partes | `ruling-sin-coste` (falla), `ruling-categoria-1` (pasa), casos del parser en `test_next_step.py` |
-| `**Sujeto a revisión:**` resuelto al cerrar | `ruling-categoria-2-sin-revision` (falla), `ruling-categoria-2-revisado` (pasa) |
+| `**Sujeto a revisión R1:**` resuelto al cerrar | `ruling-categoria-2-sin-revision` (falla), `ruling-categoria-2-revisado` (pasa) |
 | Sección "Rulings" en `implement-stage`; `### Rulings revisados` en `templates/AUDIT.md` | — (documentación) |
+| Sujeto a revisión con ID `R1`, resuelto por ID | `ruling-sujeto-sin-id`, `ruling-sujeto-id-cruzado` (fallan) |
+| `Interfaces:` en etapas multi-tarea (P17) | `interfaces-presentes` (pasa), `interfaces-ausentes` (falla) |
+| Dos ejes prueba/revisión (P22) | `riesgo-bajo-sin-test-first` (falla), `riesgo-bajo-...-sin-revision-independiente` (pasa) |
 
 B-27 se hizo **antes** que los rulings porque B-28 ya había eliminado
 `--strict`: el contrato único quedaba **más débil** que antes, sin ningún gate
@@ -191,31 +194,30 @@ De los rulings, la forma implementada concreta:
 
 - El separador del `Ruling:` acepta `—`, `--` y `–`; se exigen **tres tramos no
   vacíos**, no una longitud mínima. El error nombra la parte que falta en prosa.
-- La sección se llama `### Rulings revisados` y cada resolución empieza por
-  `- aceptado` o `- hallazgo`. El cierre exige tantas resoluciones como marcas
-  `**Sujeto a revisión:**` haya. No se cruza cada marca con su resolución: el
-  conteo es lo que un validador puede juzgar sin leer el argumento.
+- La sección se llama `### Rulings revisados`; la marca lleva `R1` y cada
+  resolución empieza por `- aceptado R1` o `- hallazgo R1`. El cruce es por
+  identificador: contar resoluciones dejaba que dos `aceptado` taparan una
+  marca sin leer, y se corrigió antes de commitear.
 - La categoría 3 no tiene gate propio porque B-27 ya la cubre: lo que ningún CA
   ni tarea declara aparece en el diff.
 
-**Lo que queda de la Fase 5:** P22, P17 y la migración de las fixtures que aún
-no declaran `**Archivos:**`.
+**Lo que queda de la Fase 5:** los dos casos conductuales y la migración de las
+fixtures que aún no declaran `**Archivos:**`.
 
 Hecho:
 
 1. ~~P19 / B-21 + B-25~~: sección "Rulings" en `implement-stage` con las tres
    categorías; `Ruling:` de tres partes obligatorias en `TAREAS.md`;
    `validate_stage.py` rechaza un ruling incompleto.
-2. ~~P19 / B-26~~: `**Sujeto a revisión:**` y su sección de revisión en
+2. ~~P19 / B-26~~: `**Sujeto a revisión R1:**` y su sección de revisión en
    `AUDIT.md`; cierre bloqueado mientras haya uno sin resolver.
 3. ~~P19 / B-27~~: comparación diff tocado vs. alcance declarado; archivo no
    declarado ⇒ `necesita-decision`.
 
 Pendiente:
 
-1. P22: corregir la tabla de P4 a dos ejes (prueba siempre, revisión
-   proporcional).
-2. P17: `Interfaces:` obligatorio en cada tarea.
+1. ~~P22~~: tabla de P4 corregida a dos ejes (B-42). Hecho.
+2. ~~P17~~: `Interfaces:` obligatorio en etapas multi-tarea (B-41). Hecho.
 3. ~~Fixtures de P19~~: `ruling-categoria-1`, `ruling-sin-coste`,
    `ruling-categoria-2-sin-revision`, `ruling-categoria-2-revisado`. La
    categoría 3 no tiene fixture propia: se cubre con `cambio-fuera-de-alcance`

@@ -63,7 +63,7 @@ por *clase* de decisión, no por duda.
 | Categoría | Qué hace el agente |
 | --- | --- |
 | Detalle de implementación | Decide y registra `Ruling:` con coste de equivocarse |
-| Efecto observable y reversible | Decide, registra y marca `**Sujeto a revisión:**` |
+| Efecto observable y reversible | Decide, registra y marca `**Sujeto a revisión R1:**` |
 | Cambio de intención, alcance o criterio | Para y reabre `conciliate-stage` |
 
 Y una decisión de migración asociada (B-28): cuando entre, **no habrá modo

@@ -26,7 +26,7 @@ Y la segunda frase, que es la que hace que el modelo sea implementable:
 | Categoría | Predicado observable | Qué hace el agente | Cómo se verifica |
 | --- | --- | --- | --- |
 | **1. Detalle de implementación** | El resultado observable del CA no cambia | Decide, registra `Ruling:` | El ruling tiene tres partes; el diff está en archivos declarados |
-| **2. Efecto observable, reversible** | El usuario vería algo distinto, pero es trivial de deshacer y el alcance no cambia | Decide, registra y marca `**Sujeto a revisión:**` | El `AUDIT.md` resuelve cada marca (acepta o convierte en hallazgo) |
+| **2. Efecto observable, reversible** | El usuario vería algo distinto, pero es trivial de deshacer y el alcance no cambia | Decide, registra y marca `**Sujeto a revisión R1:**` | El `AUDIT.md` resuelve cada marca (acepta o convierte en hallazgo) |
 | **3. Intención, alcance o criterio** | Cambia lo pedido, lo aceptado o un CA | **Para y reabre `conciliate-stage`** | El diff contiene archivos o superficie que ningún CA menciona |
 
 ### Ejemplos por categoría (para que no se confunda)
@@ -69,7 +69,7 @@ Ruling: separador `;` en el CSV — el CA menciona locales europeos en
 openspec — coste: una línea en el exportador y el test de formato.
                                    (categoría 1)
 
-**Sujeto a revisión:** límite por defecto 50 en `/items` y no 100 —
+**Sujeto a revisión R1:** límite por defecto 50 en `/items` y no 100 —
 coincide con el resto de listados del proyecto — coste: cambiar un
 constante y un test de paginación; el usuario vería más resultados.
                                    (categoría 2)
@@ -146,7 +146,7 @@ no para"*, y se evalúa con el método de `EVALUATION.md` (control, ≥5 reps).
 | --- | --- | --- |
 | `references/decision-and-questions.md` | Separar pregunta de baseline (conciliar) de ruling (ejecutar), con la tabla de tres categorías | doc |
 | `implement-stage/SKILL.md` | Sección "Rulings" con la tabla y la lista de paradas; quitar "si es ambigua, para y pregunta" | doc |
-| `templates/TAREAS.md` | Campo `Ruling:` repetible y campo `**Sujeto a revisión:**` | template |
+| `templates/TAREAS.md` | Campo `Ruling:` repetible y campo `**Sujeto a revisión R1:**` | template |
 | `templates/AUDIT.md` | Sección `### Rulings revisados`: cada categoría 2 tiene aceptación o hallazgo | template |
 | `references/stage-contract.md` | La transición `implement → audit` admite rulings; `implement → conciliate` exige categoría 3 | doc |
 | `validate_stage.py` | Tres partes del ruling; diff declarado vs. tocado; categoría 2 sin resolver | código |

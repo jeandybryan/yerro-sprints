@@ -84,13 +84,14 @@ por fila incompleta.
 ## Decisiones sobre roles
 
 ### B-08 — Auto-auditoría permitida solo con revisión humana
-**Fecha:** 2026-10-22
-**Estado:** `propuesta` ⚠
+**Fecha:** 2026-10-22 · **Decidida:** 2026-10-23
+**Estado:** `descartada` ⛔ (usuario, 2026-10-23)
 **Motivo:** el host no puede verificar quién escribe; fingir separación de
-roles sería teatro. Lo que sí se puede exigir es una **marca humana** cuando
-quien audita es quien implementó.
-**Consecuencias:** `AUDIT.md` registra implementador, auditor y aprobador. Si
-implementador = auditor, la aprobación humana es obligatoria para cerrar.
+roles sería teatro. Los campos `**Implementado por:**` / `**Auditado por:**`
+los escribiría el mismo agente, así que no aportan trazabilidad.
+**Consecuencias:** `AUDIT.md` no gana campos de rol. La separación real ya
+existe: `validate_stage.py --repo` exige una entrada humana en
+`.yerro/approvals.yml` para cerrar, implemente o no la misma persona.
 
 ### B-09 — La marca de aprobación no se auto-rellena por el agente
 **Fecha:** 2026-10-22
@@ -108,11 +109,13 @@ invoca sin instrucción). La solución exacta es Q3.
 
 ### B-10 — El presupuesto de deltas se deriva del riesgo
 **Fecha:** 2026-10-22
-**Estado:** `propuesta` ⚠ (los números exactos son Q1)
+**Estado:** `acordada` ✅ (Q1, 2026-10-23)
 **Motivo:** una constante global trata igual un cambio cosmético y uno de
 seguridad.
-**Consecuencias:** `bajo → 2`, `medio → 1`, `alto → 0` (recomendación). Un
-valor distinto exige motivo escrito en la conciliación.
+**Consecuencias:** `bajo → 2`, `medio → 1`, `alto → 1`. El `alto → 0`
+original se descartó al implementar: con 0, cualquier `no coincide` reabriría
+la conciliación por defecto, que es más fricción que gate. Un valor distinto
+exige `**Motivo del presupuesto:**` escrito en la conciliación.
 
 ### B-11 — La suite de referencia la declara el humano
 **Fecha:** 2026-10-22
@@ -258,23 +261,23 @@ obligatoria distinta:
 | Categoría | Qué es | Qué hace el agente |
 | --- | --- | --- |
 | 1. Detalle de implementación | No cambia lo que el usuario recibe: separador de CSV, nombre interno, librería equivalente, orden interno de pasos | Decide y registra `Ruling:` con coste |
-| 2. Efecto observable, reversible | Cambia algo visible pero deshacer es trivial y el alcance no cambia: texto de error, formato de fecha, límite por defecto | Decide, registra y marca `**Sujeto a revisión:**`; el auditor puede convertirlo en hallazgo |
+| 2. Efecto observable, reversible | Cambia algo visible pero deshacer es trivial y el alcance no cambia: texto de error, formato de fecha, límite por defecto | Decide, registra y marca `**Sujeto a revisión R1:**`; el auditor puede convertirlo en hallazgo |
 | 3. Intención, alcance o criterio | Cambia lo pedido o lo aceptado: columna extra, endpoint nuevo, otro CA | **Para y reabre `conciliate-stage`.** Sin excepciones |
 
-Por encima de las categorías, cuatro paradas incondicionales: operación
+Por encima de las categorías, seis paradas incondicionales: operación
 irreversible o destructiva, seguridad, efecto fuera del worktree (merge, push,
-publicación) y plan tan roto que todo es adivinar.
+publicación), **dependencia externa nueva** (librería, servicio o modelo, que
+llega con sus CVE y su licencia), plan tan roto que todo es adivinar, y la
+categoría 3.
 La regla de `conciliate-stage` de no cerrar con supuestos **no cambia**: aplica
 al baseline. La diferencia es el **momento**: conciliar = decidir con el humano;
 implementar = ejecutar y registrar.
 La categoría 3 se puede **comprobar** en el diff (¿aparece algo que ningún CA
 menciona?), así que no depende solo de la honestidad del agente (B-27).
 
-> **Pendiente de tu respuesta:** en la conversación de Q15 elegiste
-> explícitamente el Modelo C y la marca de la categoría 2. Para las categorías 1
-> y 3 no hubo elección: están contenidas en el Modelo C tal como lo describí.
-> Las cuatro paradas incondicionales son la única parte donde podrías querer
-> otra cosa (por ejemplo, añadir "cambio de dependencia externa").
+> **Cerrado el 2026-10-23.** La dependencia externa nueva se añadió a las
+> paradas por decisión explícita. La lista queda cerrada: una parada nueva
+> necesita una decisión nueva, no una interpretación en ejecución.
 
 ### B-25 — Un `Ruling:` sin coste de equivocarse es inválido
 **Fecha:** 2026-10-22
@@ -297,17 +300,20 @@ error nombra las tres partes en vez de decir «ruling inválido». Fixture
 **Estado:** `acordada` ✅ (usuario, 2026-10-22)
 **Origen:** Respuesta del usuario a la pregunta 2 de Q15.
 **Motivo:** sin categoría 2, cualquier cosa visible obligaría a preguntar, y con
-ello volveríamos al Modelo A en la práctica. La marca `**Sujeto a revisión:**`
+ello volveríamos al Modelo A en la práctica. La marca `**Sujeto a revisión R1:**`
 mantiene la visibilidad sin detener el trabajo.
 **Consecuencias:** `AUDIT.md` gana una sección de rulings revisados; un ruling de
 categoría 2 no resuelto (ni aceptado ni convertido en hallazgo) **impide el
 cierre**. La categoría 1 no requiere revisión del auditor; solo queda en el
 ledger.
-**Implementado así (2026-10-23):** la sección se llama `### Rulings revisados`;
-cada resolución empieza por `- aceptado` o `- hallazgo`, y el cierre exige
-tantas resoluciones como marcas haya. No se cruza marca con resolución: el
-conteo es lo que un validador juzga sin leer el argumento. Fixtures
-`ruling-categoria-2-sin-revision` (falla) y `ruling-categoria-2-revisado` (pasa).
+**Implementado así (2026-10-23):** la marca lleva identificador
+(`**Sujeto a revisión R1:**`) y la sección se llama `### Rulings revisados`; cada
+resolución empieza por `- aceptado R1` o `- hallazgo R1`. El cruce es por
+conjunto de IDs: una marca sin resolución, un ID que apunta a otro sujeto o un
+ID duplicado impiden el cierre. **Corrección al implementar:** el primer intento
+contaba resoluciones, y dos `aceptado` tapaban una marca sin leer. Fixtures
+`ruling-categoria-2-sin-revision`, `ruling-sujeto-sin-id` y
+`ruling-sujeto-id-cruzado` (fallan); `ruling-categoria-2-revisado` (pasa).
 
 ### B-27 — El cambio de alcance se detecta en el diff, no en la confesión
 **Fecha:** 2026-10-22
@@ -388,7 +394,7 @@ expone, y nunca deciden nada.
 **Origen:** Q19, `08-referencias-superpowers.md` C12.
 **Motivo:** *"implementer self-review never replaces the task review"*, y el
 revisor recibe *"precisely crafted context — never your session's history"*.
-**Consecuencias:** la revisión de un `**Sujeto a revisión:**` la hace el
+**Consecuencias:** la revisión de un `**Sujeto a revisión R1:**` la hace el
 `audit-stage` leyendo `TAREAS.md`, `CONCILIACION.md` y el diff. **No vale** el
 argumento "lo decidí porque…" que no esté escrito en el `Ruling:`. Un ruling que
 no explica su decisión es un hallazgo: así B-25 se paga sola.
@@ -543,3 +549,46 @@ factuales, de redacción o de formato quedan exentas.
 **Motivo:** <por qué; cita al diagnóstico o a la propuesta>
 **Consecuencias:** <qué cambia en skills, templates, scripts, fixtures>
 ```
+
+### B-41 — Las interfaces entre tareas se declaran en etapas multi-tarea (P17)
+**Fecha:** 2026-10-23
+**Estado:** `acordada` ✅ (usuario, 2026-10-23)
+**Origen:** P17 (C8, `writing-plans`), adjunta a `generate-stage-tasks`.
+**Motivo:** quien ejecuta `T2` sin contexto acaba inventando la firma que dejó
+`T1`. Declararla es una línea; adivinarla es un defecto.
+**Consecuencias:**
+1. En una etapa con más de una tarea, cada tarea declara `Interfaces:` con
+   `Consume:` (firma exacta recibida, o `ninguna`) y `Produce:` (nombres y tipos
+   que las posteriores dan por hechos).
+2. Una etapa de una sola tarea no lo necesita: no hay interfaz que cruzar.
+3. `validate_stage.py` lo exige; la ausencia de `Consume:` o `Produce:` es
+   error, no aviso. Fixtures `interfaces-presentes` (pasa) e
+   `interfaces-ausentes` (falla).
+
+### B-42 — Prueba y revisión son dos ejes independientes (P22)
+**Fecha:** 2026-10-23
+**Estado:** `acordada` ✅ (usuario, 2026-10-23)
+**Origen:** P22 (C13), corrige el exceso de P4.
+**Motivo:** con riesgo `bajo` no se puede comprar menos prueba. Test-first y
+sensibilidad son universales; lo que el riesgo modula es la profundidad de la
+revisión.
+**Consecuencias:**
+1. Test-first, sensibilidad demostrada y suite de referencia se exigen siempre.
+2. La profundidad de la revisión (pasiva, media, alta) se deriva del riesgo.
+3. «Revisión independiente» es un auditor distinto del implementador cuando el
+   host lo permite; si no, la aprobación humana en `.yerro/approvals.yml`, que ya
+   es obligatoria para cerrar.
+4. Fixtures `riesgo-bajo-sin-test-first` (falla) y
+   `riesgo-bajo-con-test-first-sin-revision-independiente` (pasa).
+
+### B-43 — Decisiones de release acordadas
+**Fecha:** 2026-10-23
+**Estado:** `acordada` ✅ (usuario, 2026-10-23)
+**Origen:** `GOVERNANCE.md`, sección «Decisiones pendientes antes de publicar».
+**Motivo:** sin estas decisiones el paquete puede validarse pero no presentarse
+como release gobernada.
+**Consecuencias:** licencia MIT con titular Jeandy Bryan; canal canónico
+`github.com/jeandybryan/yerro-sprints`; tags anotados `vX.Y.Z` inmutables en la
+serie `0.x`; hosts soportados por capacidad (shell y lectura/escritura de
+archivos); owner único de mantenimiento y aprobación. El detalle y el
+procedimiento para cambiarlas viven en `GOVERNANCE.md` y `LICENSE`.

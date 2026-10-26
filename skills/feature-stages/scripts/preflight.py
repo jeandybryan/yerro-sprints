@@ -87,9 +87,13 @@ def plan(feature_root: Path, requested_stage: str | None, requested_phase: str |
         # Regla 1: una fase que no se reconoce no recorta. Si tampoco hay
         # `next_step` (etapa lista o en decisión), se prepara la etapa entera.
         wanted = ("CONCILIACION.md", "TAREAS.md", "AUDIT.md")
-        warnings.append(
-            f"fase {detected!r} no reconocida: se prepara la etapa completa en vez de adivinar"
-        )
+        # Sin fase declarada no hay nada que adivinar: la etapa está lista o en
+        # decisión y el plan completo es la respuesta, no un aviso que se repite
+        # hasta que nadie lea los avisos.
+        if detected:
+            warnings.append(
+                f"fase {detected!r} no reconocida: se prepara la etapa completa en vez de adivinar"
+            )
 
     stage = feature_root / stage_name
     leer: list[dict] = []

@@ -17,6 +17,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
+import next_step  # noqa: E402
 import preflight  # noqa: E402
 
 errors: list[str] = []
@@ -137,6 +138,28 @@ def check_unknown_phase_is_not_a_guess() -> None:
         check("TAREAS.md" in paths, f"fase desconocida no incluye TAREAS.md: {paths}")
 
 
+def check_stage_without_phase_is_silent() -> None:
+    """Una etapa sin fase siguiente (lista) no inventa una advertencia."""
+    with tempfile.TemporaryDirectory() as tmp:
+        root = build(Path(tmp))
+        (root / "02-activa" / "TAREAS.md").write_text(
+            TASKS.format(n="02").replace("**Principal:** sí", "**Estado:** implementada\n**Principal:** sí"),
+            encoding="utf-8",
+        )
+        (root / "02-activa" / "AUDIT.md").write_text("\n\n**Veredicto:** coincide\n", encoding="utf-8")
+        index = (root / "README.md").read_text().replace(
+            "| implementando | — | TAREAS.md | — |", "| cerrada | — | TAREAS.md | AUDIT.md |"
+        )
+        (root / "README.md").write_text(index, encoding="utf-8")
+        state = next_step.analyze(root, "02-activa")
+        check(state["siguiente"] is None, f"la fixture no está 'lista': siguiente={state['siguiente']}")
+        plan = preflight.plan(root, "02-activa", None)
+        check(plan["fase_detectada"] == "", f"fase detectada {plan['fase_detectada']!r}, se esperaba vacía")
+        check(not plan["advertencias"], f"etapa sin fase siguiente generó avisos: {plan['advertencias']}")
+        paths = " ".join(item["ruta"] for item in plan["leer"])
+        check("TAREAS.md" in paths and "AUDIT.md" in paths, f"no preparó la etapa completa: {paths}")
+
+
 def check_phase_derives_from_next_step() -> None:
     """Sin --fase, la fase sale de next_step, no de la narración del agente."""
     with tempfile.TemporaryDirectory() as tmp:
@@ -226,6 +249,7 @@ def main() -> int:
     check_own_stage_only()
     check_neighbour_is_justified()
     check_unknown_phase_is_not_a_guess()
+    check_stage_without_phase_is_silent()
     check_phase_derives_from_next_step()
     check_tokens_are_an_estimate()
     check_signature()

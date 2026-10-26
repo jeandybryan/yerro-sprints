@@ -138,6 +138,46 @@ def check_unknown_phase_is_not_a_guess() -> None:
         check("TAREAS.md" in paths, f"fase desconocida no incluye TAREAS.md: {paths}")
 
 
+def check_contract_is_the_only_policy() -> None:
+    """La lista de lo que no se carga sale del contrato, no de una copia."""
+    rows = preflight.package_skips_contract()
+    check(bool(rows), "el contrato no tiene tabla «Por defecto no se cargan»")
+    paths = {path for path, _ in rows}
+    check("GOVERNANCE.md" in paths, f"el contrato no omite GOVERNANCE.md: {paths}")
+    check("templates.md" in paths, f"el contrato no omite templates.md: {paths}")
+    # Cada fila tiene su motivo: una tabla sin motivo no justifica el recorte.
+    check(all(reason for _, reason in rows), f"hay filas sin motivo: {rows}")
+
+    # Y una fila nueva en el contrato llega al plan de `preflight.py`.
+    with tempfile.TemporaryDirectory() as tmp:
+        contract = Path(tmp) / "stage-contract.md"
+        contract.write_text(
+            "Por defecto **no** se cargan:\n\n| Ruta | Motivo |\n|---|---|\n"
+            "| `GOVERNANCE.md` | mantenimiento |\n| `NUEVO.md` | recién añadido |\n"
+        )
+        original = preflight.CONTRACT
+        preflight.CONTRACT = contract
+        try:
+            emitted = {path for path, _ in preflight.package_skips_contract()}
+        finally:
+            preflight.CONTRACT = original
+        check("NUEVO.md" in emitted, f"una fila nueva del contrato no llega al script: {emitted}")
+
+        # No basta con que la función lea el contrato: el plan tiene que emitirlo.
+        with tempfile.TemporaryDirectory() as root_tmp:
+            root = build(Path(root_tmp))
+            preflight.CONTRACT = contract
+            try:
+                plan = preflight.plan(root, "02-activa", "implement")
+            finally:
+                preflight.CONTRACT = original
+            planned = {item["ruta"] for item in plan["no_leer"]}
+            check(
+                "NUEVO.md" in planned,
+                f"una fila nueva del contrato no aparece en no_leer: {sorted(planned)}",
+            )
+
+
 def check_stage_without_phase_is_silent() -> None:
     """Una etapa sin fase siguiente (lista) no inventa una advertencia."""
     with tempfile.TemporaryDirectory() as tmp:
@@ -249,6 +289,7 @@ def main() -> int:
     check_own_stage_only()
     check_neighbour_is_justified()
     check_unknown_phase_is_not_a_guess()
+    check_contract_is_the_only_policy()
     check_stage_without_phase_is_silent()
     check_phase_derives_from_next_step()
     check_tokens_are_an_estimate()

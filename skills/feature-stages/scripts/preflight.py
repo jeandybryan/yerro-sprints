@@ -43,11 +43,32 @@ FASE_LECTURAS = {
 # Documentos del paquete que una fase de una etapa no necesita. Se nombran para
 # que el recorte se vea, no para esconderlos: si un caso real los pide, se
 # declaran en la conciliación y entran por la puerta de los recortes visibles.
-NO_LEER_PAQUETE = (
-    ("references/express-lane.md", "solo aplica a la vía exprés; esa vía tiene su propio procedimiento"),
-    ("GOVERNANCE.md", "mantenimiento del paquete, no del trabajo de una etapa"),
-    ("RELEASE_CHECKLIST.md", "publicación del paquete, no del trabajo de una etapa"),
-)
+# Qué no se carga por defecto. La tabla vive en el contrato y este script la
+# emite; `test_preflight.py` falla si divergen, así que no hay dos políticas.
+CONTRACT = HERE.parent / "references" / "stage-contract.md"
+
+
+def package_skips_contract() -> tuple[tuple[str, str], ...]:
+    """Filas de la tabla «Por defecto no se cargan» del contrato."""
+    try:
+        text = CONTRACT.read_text(encoding="utf-8")
+    except OSError:
+        return ()
+    match = re.search(
+        r"Por defecto \*\*no\*\* se cargan:\n\n((?:\|[^\n]*\n)+)", text
+    )
+    if not match:
+        return ()
+    rows = []
+    for line in match.group(1).splitlines():
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if len(cells) < 2 or cells[0] in ("Ruta", "---"):
+            continue
+        path = cells[0].strip("`")
+        # `templates.md` es un índice que no está en el árbol de una etapa: se
+        # omite igual, pero solo se emiten rutas que el agente podría abrir.
+        rows.append((path, cells[1]))
+    return tuple(rows)
 BUDGET_RE = re.compile(r"\*\*Presupuesto de contexto:\*\*\s*(\d+)\s*l[ií]neas", re.I)
 CIDA_BY_CA_RE = re.compile(r"^\s*-\s*\*\*(CA-\d+)\*\*", re.M)
 TOKENS_PER_CHAR = 0.25
@@ -130,7 +151,7 @@ def plan(feature_root: Path, requested_stage: str | None, requested_phase: str |
             }
         )
 
-    for relative, reason in NO_LEER_PAQUETE:
+    for relative, reason in package_skips_contract():
         no_leer.append({"ruta": relative, "motivo": reason})
     for name in ("CONCILIACION.md", "TAREAS.md", "AUDIT.md"):
         if name in wanted:

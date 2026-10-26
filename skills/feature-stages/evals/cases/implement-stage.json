@@ -44,7 +44,7 @@
       ]
     },
     {
-      "id": "S25-S28",
+      "id": "S28",
       "kind": "execution",
       "prompt": "Implementa T1 de la etapa 03. Durante el trabajo aparecen dos ambigüedades: (a) el export pide «el nombre visible» de la columna con el total y nadie fija el texto; (b) alguien propone añadir también una columna con el identificador interno.",
       "files": [
@@ -59,7 +59,7 @@
       ]
     },
     {
-      "id": "S26-S28",
+      "id": "S29",
       "kind": "execution",
       "prompt": "Implementa T2 de la etapa 04 y deja la documentación probada.",
       "files": [

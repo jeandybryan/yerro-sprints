@@ -31,7 +31,7 @@
       ]
     },
     {
-      "id": "S26-S28",
+      "id": "S29",
       "kind": "execution",
       "prompt": "Revisa esta lista antes de darla por buena: ¿puede ejecutar T2 alguien que no la escribió?",
       "files": [

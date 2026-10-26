@@ -86,7 +86,7 @@
       ]
     },
     {
-      "id": "S26-S28",
+      "id": "S29",
       "kind": "execution",
       "prompt": "Audita la etapa 04: T1 y T2 implementadas, y el ejemplo de docs/export.md llama a la función sin el parámetro del separador.",
       "files": [

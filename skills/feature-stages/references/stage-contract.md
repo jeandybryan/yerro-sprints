@@ -115,8 +115,18 @@ inventa una siguiente fase.
 
 Lee primero el `SKILL.md` activo, el contrato y los artefactos de entrada. Lee
 una referencia temática o la plantilla específica solo cuando vayas a escribir
-ese artefacto o resolver el caso que cubre. No cargues `templates.md`,
-`GOVERNANCE.md` o referencias de otras fases por defecto.
+ese artefacto o resolver el caso que cubre. Por defecto **no** se cargan:
+
+| Ruta | Motivo |
+|---|---|
+| `references/express-lane.md` | solo aplica a la vía exprés; esa vía tiene su propio procedimiento |
+| `GOVERNANCE.md` | mantenimiento del paquete, no del trabajo de una etapa |
+| `RELEASE_CHECKLIST.md` | publicación del paquete, no del trabajo de una etapa |
+| `templates.md` | se lee la plantilla concreta que se va a escribir, no el índice de plantillas |
+
+Esta tabla es la fuente: `preflight.py` emite la misma lista y `test_preflight.py`
+falla si divergen. Añadir una fila cambia lo que el script omite; no hay dos
+políticas.
 
 | Fase | Lee primero | Carga bajo demanda |
 |---|---|---|

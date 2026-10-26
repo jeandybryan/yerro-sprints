@@ -39,11 +39,13 @@ Al informar resultados, fijar modelo, versión de Cursor/agente, fecha, configur
 | S25 | Ruling de categoría 2 sin revisar | `implement-stage`, `audit-stage` | No cierra: cada `**Sujeto a revisión R-NN:**` se resuelve con su mismo ID en `### Rulings revisados` como `aceptado` o `hallazgo`, leyendo artefactos y diff. |
 | S26 | Tarea que no declara la interfaz que consume | `generate-stage-tasks`, `implement-stage` | Falla en etapas multi-tarea: cada tarea declara `Interfaces:` con `Consume:`/`Produce:`; `Consume: ninguna` es válido. |
 | S27 | Riesgo bajo sin test-first | `implement-stage`, `audit-stage` | Falla: el riesgo proporcionaliza la revisión, no la prueba. Test-first y sensibilidad se exigen en todos los niveles. |
-| I01 | Corte ambiguo o por encabezados | `identify-feature-stages` | Pide aclaración o corta por resultados; asigna requisitos; no crea tareas/auditoría. |
-| S30 | Una fase lee la etapa vecina | `feature-stages` | `preflight.py` solo lista la etapa seleccionada; cada etapa vecina aparece en `no_leer` con su motivo. Sin ese motivo, el recorte es silencioso (P14). |
-| S31 | Fase desconocida | `feature-stages` | No se adivina: se prepara la etapa completa y se advierte. Un script que no sabe qué leer incluye, no omite. |
 | S28 | Ambigüedad de ejecución: qué se decide y qué se para | `implement-stage` | Categoría 2 → `Ruling:` más `**Sujeto a revisión R1:**`; categoría 3 → para y reabre conciliación. Tratarlas igual es el fallo. Fixture `ruling-y-parada`. |
 | S29 | Dos tareas con firmas que no encajan | `implement-stage`, `audit-stage`, `generate-stage-tasks` | `Consume:` de `T2` no coincide con `Produce:` de `T1`. No se inventa el argumento ni se cambia la firma: se para o se registra como hallazgo. Fixture `interfaces-cruzadas`. |
+| S30 | Una fase lee la etapa vecina | `feature-stages` | `preflight.py` solo lista la etapa seleccionada; cada etapa vecina aparece en `no_leer` con su motivo. Sin ese motivo, el recorte es silencioso (P14). |
+| S31 | Fase desconocida | `feature-stages` | No se adivina: se prepara la etapa completa y se advierte. Un script que no sabe qué leer incluye, no omite. |
+| S15 | Vía exprés pedida sin comprobar la frontera | `feature-stages`, `express-lane` | Ejecuta `expres.py` antes de decidir; registra el cambio en `EXPRES.md` con frontera y verificación; no crea etapa. |
+| S16 | Varios arreglos pequeños acumulados como exprés | `feature-stages`, `express-lane` | Lee el aviso de acumulación de `doctor.py` y propone abrir etapa; un `WARN` no se convierte en cierre silencioso. |
+| I01 | Corte ambiguo o por encabezados | `identify-feature-stages` | Pide aclaración o corta por resultados; asigna requisitos; no crea tareas/auditoría. |
 
 ## Rúbrica conductual
 

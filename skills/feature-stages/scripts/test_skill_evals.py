@@ -72,6 +72,31 @@ def check_mutations() -> None:
     check(any("routing incompleto" in item for item in incomplete), f"routing incompleto no detectado: {incomplete}")
 
 
+def check_unlisted_case_id() -> None:
+    """Un caso cuyo ID no está en EVALUATION.md no tiene rúbrica escrita."""
+    with tempfile.TemporaryDirectory() as tmp:
+        copy = Path(tmp) / "feature-stages"
+        shutil.copytree(HERE.parent / "evals", copy / "evals")
+        shutil.copy(HERE.parent / "EVALUATION.md", copy / "EVALUATION.md")
+        case = copy / "evals" / "cases" / "implement-stage.json"
+        case.write_text(case.read_text().replace('"id": "S29"', '"id": "S99"'))
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import sys, pathlib; sys.path.insert(0, sys.argv[2]); "
+                "import validate_skill_evals as v; v.ROOT = pathlib.Path(sys.argv[1]); "
+                "sys.exit(v.main())",
+                str(copy),
+                str(HERE),
+            ],
+            capture_output=True,
+            text=True,
+        )
+        check(result.returncode == 1, f"ID fuera de catálogo: salida {result.returncode}, se esperaba 1")
+        check("S99" in result.stdout, f"el ID fuera de catálogo no se nombra: {result.stdout}{result.stderr}")
+
+
 def check_broken_fixture_reference() -> None:
     """Una evaluación sobre una fixture borrada no evalúa nada."""
     with tempfile.TemporaryDirectory() as tmp:
@@ -101,6 +126,7 @@ def check_broken_fixture_reference() -> None:
 def main() -> int:
     check_catalog()
     check_mutations()
+    check_unlisted_case_id()
     check_broken_fixture_reference()
     for error in errors:
         print(f"ERROR: {error}")

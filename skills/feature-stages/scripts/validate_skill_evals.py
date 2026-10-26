@@ -92,6 +92,27 @@ def main() -> int:
         for name in ev.get("files", []):
             if not (ROOT / "evals" / "fixtures" / name).is_dir():
                 errors.append(f"{skill}: el caso {ev.get('id')} apunta a una fixture inexistente: {name}")
+    # Un id de caso que no está en EVALUATION.md es un caso sin rúbrica escrita:
+    # se ejecuta, se puntúa "bien" y nadie sabe qué fallo sembraba.
+    catalog = ROOT / "EVALUATION.md"
+    if catalog.is_file():
+        # Un caso cubre uno o varios IDs (`S07-S08`): basta con que todos estén.
+        known = set(re.findall(r"^\|\s*([SI]\d{2})\s*\|", catalog.read_text(), re.M))
+        def covered(case_id: str) -> bool:
+            parts = re.findall(r"[SI]\d{2}", case_id)
+            return bool(parts) and all(part in known for part in parts)
+        for skill in SKILLS:
+            path = ROOT / "evals" / "cases" / f"{skill}.json"
+            if not path.exists():
+                continue
+            try:
+                data = json.loads(path.read_text())
+            except json.JSONDecodeError:
+                continue
+            for ev in data.get("evals", []):
+                case_id = ev.get("id", "")
+                if not covered(case_id):
+                    errors.append(f"{skill}: el caso {case_id!r} nombra IDs que no están en el catálogo de EVALUATION.md")
     for error in errors: print(f"ERROR: {error}")
     if not errors: print("OK: catálogo de evaluaciones válido")
     return bool(errors)

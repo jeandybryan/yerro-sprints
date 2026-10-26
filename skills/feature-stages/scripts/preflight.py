@@ -89,12 +89,6 @@ def character_count(path: Path) -> int:
         return 0
 
 
-def stage_names(feature_root: Path) -> list[str]:
-    index = next_step.read(feature_root / "README.md")
-    _, by_folder = next_step.parse_index(index)
-    return sorted(by_folder)
-
-
 def plan(feature_root: Path, requested_stage: str | None, requested_phase: str | None) -> dict:
     """Devuelve el plan de lectura y el recorte, con su motivo."""
     state = next_step.analyze(feature_root, requested_stage)
@@ -133,11 +127,11 @@ def plan(feature_root: Path, requested_stage: str | None, requested_phase: str |
             }
         )
 
-    # Una etapa pedida que no está en el índice no convierte el paquete entero en
-    # "vecino": sin índice no hay etapas que omitir, y next_step ya advirtió.
-    listed = set(state.get("etapas", {})) or set(stage_names(feature_root))
+    # Las etapas vecinas son las del índice y solo ellas. Recorrer el disco
+    # listaba la carpeta del paquete como vecina; el índice es la lista de
+    # etapas, y `next_step.analyze` ya falla si el índice no la tiene.
     no_leer: list[dict] = []
-    for other in sorted(listed):
+    for other in sorted(state.get("etapas", {})):
         if other == stage_name:
             continue
         no_leer.append(

@@ -108,19 +108,24 @@ def plan(feature_root: Path, requested_stage: str | None, requested_phase: str |
             }
         )
 
+    # Una etapa pedida que no está en el índice no convierte el paquete entero en
+    # "vecino": sin índice no hay etapas que omitir, y next_step ya advirtió.
+    listed = set(state.get("etapas", {})) or set(stage_names(feature_root))
     no_leer: list[dict] = []
-    for other in stage_names(feature_root):
+    for other in sorted(listed):
         if other == stage_name:
             continue
         no_leer.append(
             {
                 "ruta": f"{other}/",
                 "motivo": (
-                    f"etapa vecina: su estado es {state['etapas'][other]['etapa'] if other in state.get('etapas', {}) else 'desconocido'}; "
+                    f"etapa vecina: su estado es "
+                    f"{state['etapas'][other]['etapa'] if other in state.get('etapas', {}) else 'desconocido'}; "
                     "leerla no cambia lo que esta fase debe hacer y su contexto se arrastra a la decisión"
                 ),
             }
         )
+
     for relative, reason in NO_LEER_PAQUETE:
         no_leer.append({"ruta": relative, "motivo": reason})
     for name in ("CONCILIACION.md", "TAREAS.md", "AUDIT.md"):

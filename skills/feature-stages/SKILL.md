@@ -48,7 +48,7 @@ the next skill or replace `necesita-decision` with a default.
 For audit work, also use:
 
 ```bash
-python3 <skills-root>/feature-stages/scripts/snapshot.py <repo> --exclude <feature-root>
+python3 <skills-root>/feature-stages/scripts/snapshot.py <repo> --exclude <feature-root> --exclude .yerro/approvals.yml
 python3 <skills-root>/feature-stages/scripts/validate_stage.py <stage> --repo <repo>
 ```
 

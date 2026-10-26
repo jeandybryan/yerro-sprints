@@ -245,7 +245,9 @@ Pídele: **"audita la etapa NN"**.
 - Skill: `audit-stage`. Intenta **refutar** el cumplimiento, no confirmarlo.
 - Cada pasada registra `**Snapshot:**` (identidad del código auditado, vía
   `scripts/snapshot.py`) y `**Riesgo auditado:**`. Un `coincide` solo vale para
-  ese snapshot: si el árbol cambió, se reaudita.
+  ese snapshot: si el árbol cambió, se reaudita. El snapshot excluye el árbol
+  de la feature y `.yerro/approvals.yml`; con menos exclusiones la identidad
+  no coincide aunque el código sea el mismo.
 - El ledger exige **`Sensibilidad`**: la prueba de que el test pudo fallar
  (`revertir → rojo → restaurar`, un mutante que produce rojo o una regresión
  contra `HEAD`). Un ledger que solo dice que el test pasó no cierra.

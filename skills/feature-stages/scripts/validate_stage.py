@@ -144,6 +144,42 @@ def parse_excludes(snapshot: str) -> tuple[Path, ...]:
     return tuple(Path(item) for item in match.group(1).split(",") if item)
 
 
+SNAPSHOT_PARTS_RE = re.compile(
+    r"head=(?P<head>\S+)\s+tree=(?P<tree>\S+)\s+dirty=(?P<dirty>\S+)\s+exclude=(?P<exclude>\S+)",
+    re.I,
+)
+
+def snapshot_mismatch(recorded: str, current: str) -> str:
+    """Explica la diferencia en vez de mandar a reauditar sin salida.
+
+    El validador excluye siempre `.yerro/approvals.yml`; si la pasada no lo
+    excluyó, la lista de exclusiones no coincide aunque el árbol sea el mismo.
+    Decir "reauditar" ahí manda a repetir una pasada que fallaría igual.
+    """
+    before = SNAPSHOT_PARTS_RE.search(recorded)
+    after = SNAPSHOT_PARTS_RE.search(current)
+    if not before or not after:
+        return f"la pasada auditó {recorded} y el árbol actual es {current}; reauditar"
+    same_tree = before.group("head", "tree", "dirty") == after.group("head", "tree", "dirty")
+    same_excludes = before.group("exclude").lower() == after.group("exclude").lower()
+    command = (
+        "`snapshot.py <repo> --exclude <feature-root> "
+        f"--exclude {DEFAULT_APPROVALS}`"
+    )
+    if same_tree and not same_excludes:
+        return (
+            f"el snapshot grabado {recorded} no excluye {DEFAULT_APPROVALS}, que el "
+            "validador excluye siempre. El árbol auditado es el mismo, así que no hace "
+            f"falta reauditar: vuelve a tomar el snapshot con {command}"
+        )
+    if same_tree or same_excludes:
+        return f"la pasada auditó {recorded} y el árbol actual es {current}; reauditar"
+    return (
+        f"la pasada auditó {recorded} y el árbol actual es {current}; el árbol cambió, "
+        f"así que hay que reauditar, y el snapshot nuevo debe excluir {DEFAULT_APPROVALS} "
+        f"(el validador lo excluye siempre): {command}"
+    )
+
 def declarative_command(command: str) -> bool:
     """¿El comando es trivio disfrazado? Se mira cada parte encadenada."""
     for part in CHAIN_RE.split(command.strip()):
@@ -600,7 +636,7 @@ def main() -> int:
             else:
                 result.require(
                     recorded.lower() == current.lower(),
-                    f"la pasada auditó {recorded} y el árbol actual es {current}; reauditar",
+                    snapshot_mismatch(recorded, current),
                 )
                 result.require(
                     checkpoint_approval(args.repo, stage, recorded),

@@ -59,9 +59,11 @@ delta. Do not delete principal rows or failed prior passes.
 ```
 
 `**Snapshot:**` is the exact value emitted by
-`python3 <skills-root>/feature-stages/scripts/snapshot.py <repo> --exclude <feature-root>`.
-It freezes the code the pass audited: same `head`, `tree` and `dirty` mean the
-same candidate. If the tree changes after the pass, the verdict is stale and
+`python3 <skills-root>/feature-stages/scripts/snapshot.py <repo> --exclude <feature-root> --exclude .yerro/approvals.yml`.
+Both exclusions are required: the validator always excludes the approval file,
+so a snapshot without it never matches even when the tree is identical. The
+value freezes the code the pass audited: same `head`, `tree` and `dirty` mean
+the same candidate. If the tree changes after the pass, the verdict is stale and
 the stage must be audited again; never reuse it to close. The feature root is
 excluded so writing this file does not invalidate its own evidence, and
 `exclude=` travels inside the value so verification recomputes the same tree.

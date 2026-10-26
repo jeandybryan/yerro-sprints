@@ -9,6 +9,16 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Corregido
 
+- **El snapshot de la pasada excluye también `.yerro/approvals.yml`.** Al
+  verificar, `validate_stage.py --repo` añadía esa exclusión a la lista grabada,
+  pero los cinco sitios que documentaban el comando solo excluían el árbol de la
+  feature. El `**Snapshot:**` de una pasada real nunca coincidía, aunque el
+  árbol fuera idéntico, y el error mandaba a «reauditar»: repetir la pasada con
+  el mismo comando fallaba igual, así que un cierre correcto no tenía salida.
+  El comando canónico lleva ahora las dos exclusiones, y el error distingue un
+  árbol distinto (reauditar) de una lista de exclusiones corta (volver a tomar
+  el snapshot, sin reauditar). Casos nuevos en `test_snapshot.py`; con el
+  mensaje anterior, fallan.
 - **El gate de alcance ya no se salta con `git commit` (B-44).** `validate_stage.py
   --repo` medía el diff contra `HEAD`; un agente que commiteaba su trabajo dejaba
   el diff vacío y un archivo que ninguna tarea declara pasaba el cierre. La base

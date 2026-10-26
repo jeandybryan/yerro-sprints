@@ -104,7 +104,10 @@ el snapshot de otra pasada, o con un riesgo menor al congelado, no cierra.
 `test_snapshot.py` crea repositorios temporales: la identidad debe cambiar al
 cambiar el código, mantenerse al escribir en la ruta excluida y rechazar el
 cierre sin `.yerro/approvals.yml`, con una entrada fuera de alcance o con el
-archivo mal formado.
+archivo mal formado. También comprueba que un `**Snapshot:**` que no excluye
+`.yerro/approvals.yml` no coincide aunque el árbol sea el mismo, que el error
+nombra la exclusión que falta en vez de mandar a reauditar en vano, y que el
+mismo árbol con las dos exclusiones cierra.
 
 Hay **un** contrato y **un** modo: no existe `--strict`. `riesgo-ausente` y
 `ca-tipo` fallan siempre, porque describen estados que el contrato rechaza sin

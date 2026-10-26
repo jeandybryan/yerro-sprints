@@ -9,7 +9,7 @@ El estado no se recuerda ni se negocia: se lee de los artefactos.
 ```bash
 python3 <skills-root>/feature-stages/scripts/next_step.py <feature-root> [--stage NN-slug] [--json]
 python3 <skills-root>/feature-stages/scripts/doctor.py <feature-root>
-python3 <skills-root>/feature-stages/scripts/snapshot.py <repo> --exclude <feature-root>
+python3 <skills-root>/feature-stages/scripts/snapshot.py <repo> --exclude <feature-root> --exclude .yerro/approvals.yml
 python3 <skills-root>/feature-stages/scripts/expres.py <repo> [--base REF]
 python3 <skills-root>/feature-stages/scripts/evidence.py run -- <comando...>
 python3 <skills-root>/feature-stages/scripts/evidence.py verify <stage>/AUDIT.md
@@ -38,7 +38,7 @@ Un `AUDIT.md` que cierre una etapa conserva cada pasada. El veredicto `coincide`
 ## Riesgo, snapshot y presupuesto
 
 - `**Riesgo:** bajo | medio | alto` se congela al cerrar la conciliación. `alto` nombra los ítems concretos: datos, seguridad, contratos compartidos, concurrencia, entrega o huecos de prueba. El auditor puede subirlo en `AUDIT.md`; bajarlo reabre la conciliación.
-- Cada pasada registra `**Snapshot:**` con la salida exacta de `snapshot.py`. `exclude=` identifica el árbol de la feature para que la evidencia no invalide su propio hash: el snapshot es del código auditado, no del archivo que lo describe.
+- Cada pasada registra `**Snapshot:**` con la salida exacta de `snapshot.py`. `exclude=` identifica el árbol de la feature y `.yerro/approvals.yml` para que ni la evidencia ni la firma invaliden su propio hash: el snapshot es del código auditado, no de los archivos que lo describen o lo aprueban. El validador excluye siempre `.yerro/approvals.yml`, así que un snapshot que no lo excluya no coincide aunque el árbol sea idéntico; la pasada se vuelve a tomar, no se reaudita.
 - Un `coincide` solo vale para el snapshot que auditó. Si el árbol cambió, la pasada está obsoleta y se reaudita; no se reutiliza el veredicto para cerrar. `validate_stage.py <etapa> --repo <repo>` verifica esa coincidencia.
 - `**Presupuesto de deltas:**` se **deriva del riesgo**: `bajo → 2`, `medio → 1`, `alto → 1`. Un valor escrito distinto solo vale con `**Motivo del presupuesto:**`; sin motivo gana el derivado, tanto en `validate_stage.py` como en `next_step.py`. Agotado el presupuesto, si la auditoría sigue en `no coincide`, `next_step.py` devuelve `necesita-decision` con `PRESUPUESTO_DE_DELTAS_AGOTADO`: reabrir la conciliación, aceptar el riesgo residual con owner o detener la etapa. Escribir otro delta no es una salida.
 - **Prueba y revisión son dos ejes (P22).** Test-first, sensibilidad demostrada y suite de referencia se exigen siempre; el riesgo solo cambia la profundidad de la revisión. «Revisión independiente» es un auditor distinto del implementador cuando el host lo permite; si no, la aprobación humana en `.yerro/approvals.yml`. Riesgo `bajo` no compra menos prueba.

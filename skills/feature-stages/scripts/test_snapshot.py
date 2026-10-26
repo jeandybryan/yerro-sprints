@@ -262,6 +262,61 @@ def check_validate(repo: Path) -> None:
         fail(f"validate --repo: rechazó por otro motivo: {committed_scope.stdout}")
 
 
+def check_missing_approval_exclusion(repo: Path) -> None:
+    """Un snapshot sin la exclusión de `.yerro/approvals.yml` no coincide.
+
+    El validador excluye siempre el archivo de aprobación. Si la pasada no lo
+    excluyó, la identidad no coincide aunque el árbol sea el mismo, y reauditar
+    no arregla nada: falta volver a tomar el snapshot. El mensaje debe decir eso
+    y nombrar la exclusión, en los dos casos —con y sin el archivo ya escrito.
+    """
+    global checked
+    stage = repo / "feature" / "01-snapshot"
+    stage.mkdir(parents=True)
+    (stage / "CONCILIACION.md").write_text(STAGE, encoding="utf-8")
+    (stage / "TAREAS.md").write_text(TASKS, encoding="utf-8")
+    audit = stage / "AUDIT.md"
+
+    # Sin `.yerro/approvals.yml` en el repositorio: el árbol es el mismo y lo
+    # único distinto es la lista de exclusiones.
+    snapshot = identity(repo, (Path("feature"),))
+    audit.write_text(AUDIT.format(snapshot=snapshot), encoding="utf-8")
+    checked += 1
+    missing = validate(stage, repo)
+    if missing.returncode == 0:
+        fail("validate --repo: aceptó un snapshot sin excluir .yerro/approvals.yml")
+    elif "no hace falta reauditar" not in missing.stdout:
+        fail(f"validate --repo: no explicó que solo falta reexcluir: {missing.stdout}")
+
+    # El flujo real escribe la aprobación antes de auditar. Si la pasada no
+    # excluye el archivo, su árbol lo incluye y el actual no: el mensaje debe
+    # nombrar la exclusión, porque reauditar con el mismo comando vuelve a
+    # fallar.
+    approvals = repo / APPROVALS
+    approvals.parent.mkdir(parents=True, exist_ok=True)
+    approvals.write_text(
+        f"- etapa: 01-snapshot\n aprobado-por: Ana\n fecha: 2026-10-23\n", encoding="utf-8"
+    )
+    snapshot = identity(repo, (Path("feature"),))
+    audit.write_text(AUDIT.format(snapshot=snapshot), encoding="utf-8")
+    checked += 1
+    signed = validate(stage, repo)
+    if signed.returncode == 0:
+        fail("validate --repo: aceptó un snapshot que no excluye la aprobación")
+    elif "--exclude .yerro/approvals.yml" not in signed.stdout:
+        fail(f"validate --repo: no nombró la exclusión que falta: {signed.stdout}")
+
+    # Y con la exclusión el mismo árbol cierra: no es un gate más estricto, es
+    # el mismo árbol con la lista correcta.
+    audit.write_text(
+        AUDIT.format(snapshot=identity(repo, (Path("feature"), APPROVALS))),
+        encoding="utf-8",
+    )
+    checked += 1
+    closed = validate(stage, repo)
+    if closed.returncode != 0:
+        fail(f"validate --repo: rechazó el snapshot con la exclusión correcta: {closed.stdout}")
+
 def main() -> int:
     if shutil.which("git") is None:
         print("SKIP: git no está disponible")
@@ -275,6 +330,10 @@ def main() -> int:
         check_stability(repo)
         check_exclude(repo, bare)
         check_validate(repo)
+        sin_exclusion = Path(raw) / "sin-exclusion"
+        sin_exclusion.mkdir()
+        init_repo(sin_exclusion)
+        check_missing_approval_exclusion(sin_exclusion)
     for error in errors:
         print(f"ERROR: {error}")
     if not errors:

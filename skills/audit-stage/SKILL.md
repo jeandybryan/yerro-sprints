@@ -46,7 +46,7 @@ before opening files; everything it omits is listed with its reason.
    structural validator:
 
    ```bash
-   python3 <skills-root>/feature-stages/scripts/snapshot.py <repo> --exclude <feature-root>
+   python3 <skills-root>/feature-stages/scripts/snapshot.py <repo> --exclude <feature-root> --exclude .yerro/approvals.yml
    python3 <skills-root>/feature-stages/scripts/validate_stage.py <stage>
    python3 <skills-root>/feature-stages/scripts/approvals.py <repo> --stage <NN-slug>
    ```

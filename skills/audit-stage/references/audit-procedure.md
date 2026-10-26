@@ -7,8 +7,13 @@
    valor exacto en la pasada:
 
    ```bash
-   python3 <skills-root>/feature-stages/scripts/snapshot.py <repo> --exclude <feature-root>
+   python3 <skills-root>/feature-stages/scripts/snapshot.py <repo> --exclude <feature-root> --exclude .yerro/approvals.yml
    ```
+
+   Las dos exclusiones son obligatorias: el validador excluye siempre
+   `.yerro/approvals.yml`, así que un snapshot sin esa exclusión no coincide
+   aunque el árbol sea el mismo. Si el validador lo señala, se vuelve a tomar el
+   snapshot; no se reaudita una pasada cuyo árbol no cambió.
 
 4. Registra `**Riesgo auditado:**`; puede subir, nunca bajar del riesgo
    congelado.

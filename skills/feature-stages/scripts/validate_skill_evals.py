@@ -87,6 +87,11 @@ def main() -> int:
             errors.extend(routing_errors(data.get("routing_exclusions", [])))
         for ev in data.get("evals", []):
             if ev.get("kind") == "execution" and not ev.get("files"): errors.append(f"{skill}: execution sin fixture")
+        # Una evaluación sobre una fixture que no existe no evalúa nada: el
+        # evaluador materializaría la nada y puntuaría la conversación.
+        for name in ev.get("files", []):
+            if not (ROOT / "evals" / "fixtures" / name).is_dir():
+                errors.append(f"{skill}: el caso {ev.get('id')} apunta a una fixture inexistente: {name}")
     for error in errors: print(f"ERROR: {error}")
     if not errors: print("OK: catálogo de evaluaciones válido")
     return bool(errors)

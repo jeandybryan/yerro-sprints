@@ -7,6 +7,7 @@ ambigua. El árbol real debe seguir pasando.
 """
 from __future__ import annotations
 
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -71,9 +72,36 @@ def check_mutations() -> None:
     check(any("routing incompleto" in item for item in incomplete), f"routing incompleto no detectado: {incomplete}")
 
 
+def check_broken_fixture_reference() -> None:
+    """Una evaluación sobre una fixture borrada no evalúa nada."""
+    with tempfile.TemporaryDirectory() as tmp:
+        copy = Path(tmp) / "feature-stages"
+        shutil.copytree(HERE.parent / "evals", copy / "evals")
+        shutil.rmtree(copy / "evals" / "fixtures" / "interfaces-cruzadas")
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import sys, pathlib; sys.path.insert(0, sys.argv[2]); "
+                "import validate_skill_evals as v; v.ROOT = pathlib.Path(sys.argv[1]); "
+                "sys.exit(v.main())",
+                str(copy),
+                str(HERE),
+            ],
+            capture_output=True,
+            text=True,
+        )
+        check(result.returncode == 1, f"fixture borrada: salida {result.returncode}, se esperaba 1")
+        check(
+            "interfaces-cruzadas" in result.stdout,
+            f"fixture borrada no nombrada en el error: {result.stdout}{result.stderr}",
+        )
+
+
 def main() -> int:
     check_catalog()
     check_mutations()
+    check_broken_fixture_reference()
     for error in errors:
         print(f"ERROR: {error}")
     if not errors:

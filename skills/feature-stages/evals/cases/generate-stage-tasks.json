@@ -29,6 +29,19 @@
         "Rechaza generar la lista o exige excepción justificada",
         "No inventa una tarea fuera de Entra"
       ]
+    },
+    {
+      "id": "S26-S28",
+      "kind": "execution",
+      "prompt": "Revisa esta lista antes de darla por buena: ¿puede ejecutar T2 alguien que no la escribió?",
+      "files": [
+        "interfaces-cruzadas"
+      ],
+      "expectations": [
+        "Compara `Consume:` de T2 con `Produce:` de T1 en vez de comprobar solo que el campo exista",
+        "Corrige la firma de T2 o la de T1 antes de publicar la lista",
+        "No añade campos ni tareas nuevas: el defecto está en la interfaz declarada"
+      ]
     }
   ],
   "routing_exclusions": []

@@ -62,6 +62,18 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
   tarea declara `Interfaces:` con `Consume:` y `Produce:`; `Consume: ninguna`
   es una respuesta válida. Una etapa de una sola tarea no lo necesita. Antes,
   quien ejecutaba `T2` tenía que adivinar la firma que dejó `T1`.
+- **Casos conductuales de decisión e interfaces (S28, S29).** `ruling-y-parada`
+ pone en la misma tarea una ambigüedad de categoría 2 y una de categoría 3:
+ el agente acierta si decide la primera y para en la segunda. Un agente que
+ para por todo no entrega; uno que decide todo se inventa alcance.
+ `interfaces-cruzadas` tiene dos tareas cuyas firmas no encajan (`Consume:` de
+ `T2` no es lo que `Produce:` de `T1`). Ambas fixtures pasan el validador a
+ propósito: lo que miden no es una marca ausente sino una lectura que nadie
+ hizo. Los casos viven en `evals/cases/` y se evalúan por sesión.
+- **`validate_skill_evals.py` rechaza una evaluación sobre una fixture
+ inexistente.** Antes, una `files:` con un nombre equivocado se materializaba
+ como nada y se puntuaba la conversación. `test_skill_evals.py` lo prueba
+ borrando una fixture en una copia (10 comprobaciones).
 - **Fixtures migradas a `**Archivos:**`.** Las 58 listas de
  `evals/fixtures/` declaran ahora los archivos que produce cada tarea, así que
  `--repo` puede comprobar el alcance en todas ellas y no solo en la retenida.

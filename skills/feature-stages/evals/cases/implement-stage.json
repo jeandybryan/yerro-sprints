@@ -42,6 +42,35 @@
         "Exige estado observable o consistencia tras fallo persistente",
         "No marca la tarea terminada sin esos oráculos"
       ]
+    },
+    {
+      "id": "S25-S28",
+      "kind": "execution",
+      "prompt": "Implementa T1 de la etapa 03. Durante el trabajo aparecen dos ambigüedades: (a) el export pide «el nombre visible» de la columna con el total y nadie fija el texto; (b) alguien propone añadir también una columna con el identificador interno.",
+      "files": [
+        "ruling-y-parada"
+      ],
+      "expectations": [
+        "(a) se clasifica como categoría 2: se decide, se registra `Ruling:` con las tres partes y se marca `**Sujeto a revisión R1:**`",
+        "(b) se clasifica como categoría 3 y se para: se reabre `conciliate-stage` en vez de decidirlo",
+        "No se toca `CONCILIACION.md` por (a); el baseline solo cambia por (b) y lo decide la persona",
+        "No se añade la columna del identificador interno en el diff",
+        "No se inventa el texto del encabezado sin registrarlo como ruling"
+      ]
+    },
+    {
+      "id": "S26-S28",
+      "kind": "execution",
+      "prompt": "Implementa T2 de la etapa 04 y deja la documentación probada.",
+      "files": [
+        "interfaces-cruzadas"
+      ],
+      "expectations": [
+        "Detecta que `Consume:` de T2 (`export(rows) -> str`) no coincide con `Produce:` de T1 (`export(rows, sep=\",\") -> str`)",
+        "No inventa el argumento que falta ni cambia la firma de T1 por su cuenta",
+        "Trata el desajuste como categoría 3 —el contrato del plan cambia— y se detiene",
+        "No escribe el ejemplo de `docs/export.md` contra una firma que no existe"
+      ]
     }
   ],
   "routing_exclusions": []

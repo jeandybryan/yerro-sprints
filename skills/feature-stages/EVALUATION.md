@@ -40,6 +40,8 @@ Al informar resultados, fijar modelo, versión de Cursor/agente, fecha, configur
 | S26 | Tarea que no declara la interfaz que consume | `generate-stage-tasks`, `implement-stage` | Falla en etapas multi-tarea: cada tarea declara `Interfaces:` con `Consume:`/`Produce:`; `Consume: ninguna` es válido. |
 | S27 | Riesgo bajo sin test-first | `implement-stage`, `audit-stage` | Falla: el riesgo proporcionaliza la revisión, no la prueba. Test-first y sensibilidad se exigen en todos los niveles. |
 | I01 | Corte ambiguo o por encabezados | `identify-feature-stages` | Pide aclaración o corta por resultados; asigna requisitos; no crea tareas/auditoría. |
+| S28 | Ambigüedad de ejecución: qué se decide y qué se para | `implement-stage` | Categoría 2 → `Ruling:` más `**Sujeto a revisión R1:**`; categoría 3 → para y reabre conciliación. Tratarlas igual es el fallo. Fixture `ruling-y-parada`. |
+| S29 | Dos tareas con firmas que no encajan | `implement-stage`, `audit-stage`, `generate-stage-tasks` | `Consume:` de `T2` no coincide con `Produce:` de `T1`. No se inventa el argumento ni se cambia la firma: se para o se registra como hallazgo. Fixture `interfaces-cruzadas`. |
 
 ## Rúbrica conductual
 
@@ -77,6 +79,8 @@ python3 scripts/validate_stage.py evals/fixtures/interfaces-presentes
 python3 scripts/validate_stage.py evals/fixtures/interfaces-ausentes
 python3 scripts/validate_stage.py evals/fixtures/riesgo-bajo-sin-test-first
 python3 scripts/validate_stage.py evals/fixtures/riesgo-bajo-con-test-first-sin-revision-independiente
+python3 scripts/validate_stage.py evals/fixtures/ruling-y-parada
+python3 scripts/validate_stage.py evals/fixtures/interfaces-cruzadas
 python3 scripts/test_next_step.py
 python3 scripts/test_snapshot.py
 python3 scripts/test_expres.py
@@ -160,4 +164,4 @@ estructurales de `doctor.py` (etapa sin lista, sin auditoría o sin
 conciliación, delta mal nombrado o sin `Cierra:`, carpeta sin fila, índice sin
 tabla). Una regla nueva sin fixture que la viole no cuenta como cubierta.
 
-Para comportamiento, materializar la fixture indicada en un repositorio temporal, dar el `prompt` a un agente con la skill objetivo y aplicar la rúbrica a la conversación y artefactos. Los casos de activación se revisan al editar `description` de cualquier skill: al menos tres positivos, dos negativos con propietario y una evaluación conductual por skill modificada.
+Para comportamiento, materializar la fixture indicada en un repositorio temporal, dar el `prompt` a un agente con la skill objetivo y aplicar la rúbrica a la conversación y artefactos. Los dos casos de `S28` y `S29` viven en `evals/cases/{implement-stage,audit-stage,generate-stage-tasks}.json`: sus fixtures pasan `validate_stage.py` a propósito, porque lo que miden no es una marca que falte sino una decisión mal clasificada o una interfaz que nadie leyó. `validate_skill_evals.py` comprueba además que toda `files:` nombrada exista: una evaluación sobre una fixture borrada no evalúa nada. Los casos de activación se revisan al editar `description` de cualquier skill: al menos tres positivos, dos negativos con propietario y una evaluación conductual por skill modificada.

@@ -75,9 +75,10 @@ B-21, B-25, B-26 y B-27; propuesta P19; Fase 5 del plan.
 
 ## Estado del borrador
 
-Las 20 preguntas abiertas están resueltas salvo dos que **no se resuelven
-escribiendo**: Q1 (presupuesto de deltas por riesgo) y Q9 (presupuesto de
-contexto) se cierran con datos de uso real. Q2 y Q13 siguen diferidas (B-06).
+Las 20 preguntas abiertas están resueltas salvo las que **no se resuelven
+escribiendo**: Q9 (presupuesto de contexto) se cierra con datos de uso real.
+Q1 (presupuesto de deltas por riesgo) se ratificó el 2026-10-23 como B-10; Q2 y
+Q13 siguen diferidas (B-06).
 
 Resumen y razonamiento en [11-resolucion-abiertas.md](11-resolucion-abiertas.md).
 **Fase 1 implementada (2026-10-22):** oráculo mínimo, `Sensibilidad` obligatoria

@@ -201,11 +201,19 @@ De los rulings, la forma implementada concreta:
 - La categoría 3 no tiene gate propio porque B-27 ya la cubre: lo que ningún CA
   ni tarea declara aparece en el diff.
 
-**Lo que queda de la Fase 5:** los dos casos conductuales. La migración de
-fixtures está hecha: las 58 listas del catálogo declaran `**Archivos:**` en
-cada tarea, sin cambiar el veredicto de ninguna etapa (se comparó antes y
-después). `cambio-fuera-de-alcance` conserva su alcance original
-(`src/export.csv`) porque `test_diff_scope.py` retiene ese valor.
+**Fase 5 cerrada (2026-10-26).** La migración de fixtures está hecha: las 58
+listas del catálogo declaran `**Archivos:**` en cada tarea, sin cambiar el
+veredicto de ninguna etapa (se comparó antes y después).
+`cambio-fuera-de-alcance` conserva su alcance original (`src/export.csv`)
+porque `test_diff_scope.py` retiene ese valor.
+
+Los dos casos conductuales existen: `ruling-y-parada` (S28, decidir o parar) e
+`interfaces-cruzadas` (S29, interfaces que no encajan), en
+`evals/cases/{implement-stage,audit-stage,generate-stage-tasks}.json`. Sus
+fixtures pasan el validador a propósito: lo que miden es una decisión mal
+clasificada o una interfaz que nadie leyó, no una marca ausente.
+`validate_skill_evals.py` ahora exige que toda `files:` nombrada exista, y
+`test_skill_evals.py` lo prueba borrando una fixture en una copia.
 
 Hecho:
 
@@ -216,6 +224,9 @@ Hecho:
    `AUDIT.md`; cierre bloqueado mientras haya uno sin resolver.
 3. ~~P19 / B-27~~: comparación diff tocado vs. alcance declarado; archivo no
    declarado ⇒ `necesita-decision`.
+4. ~~Casos conductuales de P19/P17~~: `ruling-y-parada` (S28) e
+   `interfaces-cruzadas` (S29), en `evals/cases/`. No son fixtures estáticas
+   que sustituyan la sesión: la sesión es el mecanismo.
 
 Pendiente:
 
@@ -223,10 +234,11 @@ Pendiente:
 2. ~~P17~~: `Interfaces:` obligatorio en etapas multi-tarea (B-41). Hecho.
 3. ~~Fixtures de P19~~: `ruling-categoria-1`, `ruling-sin-coste`,
    `ruling-categoria-2-sin-revision`, `ruling-categoria-2-revisado`. La
-   categoría 3 no tiene fixture propia: se cubre con `cambio-fuera-de-alcance`
-   (B-27), porque lo que ningún CA ni tarea declara aparece en el diff. Los dos
-   conductuales (decidir vs. parar; interfaces entre tareas) siguen pendientes y
-   necesitan una sesión real, no una fixture estática.
+   categoría 3 no tiene fixture estática: se cubre con
+   `cambio-fuera-de-alcance` (B-27) y con el caso conductual `ruling-y-parada`,
+   donde aparece junto a una categoría 2 en la misma tarea.
+4. ~~Casos conductuales~~: `ruling-y-parada` (S28) e `interfaces-cruzadas`
+   (S29). Hecho.
 
 ~~B-28 — migración dura.~~ Hecho en el release del contrato: `--strict` y el
 parámetro `legacy` ya no existen, `riesgo-ausente` y `ca-tipo` fallan siempre,

@@ -123,8 +123,10 @@ Cuándo **sí** se para, por encima de las categorías (lista cerrada):
 1. operación irreversible o destructiva;
 2. acción sensible a seguridad;
 3. efecto fuera del worktree (merge, push, publicación);
-4. plan tan roto que todo camino es adivinar;
-5. categoría 3 — cambio de intención, alcance o criterio de aceptación.
+4. dependencia externa nueva (librería, servicio o modelo): llega con sus CVE y
+   su licencia;
+5. plan tan roto que todo camino es adivinar;
+6. categoría 3 — cambio de intención, alcance o criterio de aceptación.
 
 La regla de `conciliate-stage` ("no cerrar con supuestos") no cambia: sigue
 aplicando al **baseline**.
@@ -150,8 +152,9 @@ aplicando al **baseline**.
   declara. Debe **fallar** (B-27).
 - Fixture `ruling-categoria-2-sin-revision`: marca `Sujeto a revisión` y el
   `AUDIT.md` no lo resuelve. Debe **fallar el cierre**.
-- Caso negativo: el agente encuentra un cambio de alcance y debe **parar y
-  reabrir**, no decidir.
+- Fixture `ruling-y-parada`: dos ambigüedades en la misma tarea —una de
+  categoría 2 y una de categoría 3— en `evals/cases/implement-stage.json`.
+  El agente acierta si las trata **distinto**.
 
 ### Coste
 Nulo en código para la política. **Medio** para B-27 (comparación diff vs.

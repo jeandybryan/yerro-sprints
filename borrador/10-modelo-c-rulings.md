@@ -47,6 +47,7 @@ Y la segunda frase, que es la que hace que el modelo sea implementable:
 | Borrar datos reales, migración sin vuelta | parada | Irreversible |
 | Tocar credenciales, permisos, criptografía | parada | Seguridad |
 | `git push`, merge a main, publicar | parada | Fuera del worktree |
+| Añadir una librería, servicio o modelo que no estaba | parada | Dependencia externa: sus CVE y su licencia se heredan |
 
 El caso del refactor es el más importante y el más incómodo: **un refactor
 "de paso" es categoría 3 aunque sea reversible**, porque cambia lo que se

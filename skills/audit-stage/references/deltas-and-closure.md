@@ -6,7 +6,8 @@ ninguna desviación bloqueante.
 
 Para un gap contra el baseline sin cambios:
 
-1. comprueba `**Presupuesto de deltas:**` (dos por defecto);
+1. comprueba `**Presupuesto de deltas:**`, derivado del riesgo
+   (`bajo → 2`, `medio → 1`, `alto → 1`) salvo `**Motivo del presupuesto:**`;
 2. si queda presupuesto, crea solo el `TAREAS-delta-NN.md` necesario y enlaza
    pasada, CA y evidencia/hueco;
 3. si el presupuesto se agotó, detén el ciclo y pide decisión: reabrir

@@ -9,6 +9,14 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Corregido
 
+- **El presupuesto agotado distingue «usado» de «excedido».** La fixture
+  `presupuesto-agotado` tenía dos deltas con riesgo `medio`, cuyo presupuesto
+  derivado es 1, así que ejercitaba la rama de exceso igual que
+  `presupuesto-excedido`; el mensaje «N delta(s) usados de M» no lo producía
+  ninguna fixture. `deltas-and-closure.md` decía «dos por defecto», que
+  contradice la derivación por riesgo. La fixture usa ahora el presupuesto justo
+  y `test_next_step.py` comprueba que los dos mensajes no se confunden: uno
+  prohíbe otro delta, el otro avisa de que ya se escribió de más.
 - **El skill que cierra invoca el cierre cruzado.** `audit-stage` ejecutaba
   `validate_stage.py <stage>` sin `--repo`, y ese modo solo juzga la forma: el
   snapshot, la aprobación humana y el alcance del diff no se comprobaban en el

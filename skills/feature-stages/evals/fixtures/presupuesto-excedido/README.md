@@ -1,6 +1,6 @@
 # Fixture — presupuesto de deltas excedido
 
-Etapa con tres deltas cuando el presupuesto por defecto es dos: el tercero ya
+Etapa con tres deltas cuando el presupuesto de riesgo `medio` es 1: el segundo ya
 se escribió, así que el contrato detiene la etapa en vez de seguir corrigiendo.
 
 ## Estado del corte

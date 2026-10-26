@@ -469,6 +469,34 @@ def check_validate_no_crash() -> None:
                 )
 
 
+def check_budget_branches() -> None:
+    """`agotado` y `excedido` son estados distintos, no dos nombres del mismo.
+
+    Agotado: se usó todo el presupuesto y la auditoría sigue en `no coincide`.
+    Excedido: se escribió un delta más de los que el presupuesto permite. Si se
+    confunden, el auditor no sabe si puede escribir otro delta.
+    """
+    global checked
+    agotado = analyze(FIXTURES / "presupuesto-agotado")
+    checked += 1
+    mensaje = " ".join(item["mensaje"] for item in agotado["blockers"])
+    if "usados de" not in mensaje:
+        fail(f"presupuesto-agotado: no informa del presupuesto agotado: {mensaje}")
+    if len(agotado["deltas"]) != agotado["presupuesto_deltas"]:
+        fail(
+            f"presupuesto-agotado: {len(agotado['deltas'])} deltas con presupuesto "
+            f"{agotado['presupuesto_deltas']}, se esperaba el presupuesto justo"
+        )
+
+    excedido = analyze(FIXTURES / "presupuesto-excedido")
+    checked += 1
+    mensaje = " ".join(item["mensaje"] for item in excedido["blockers"])
+    if "usados de" in mensaje:
+        fail(f"presupuesto-excedido: se leyó como agotado: {mensaje}")
+    if len(excedido["deltas"]) <= excedido["presupuesto_deltas"]:
+        fail("presupuesto-excedido: la fixture no excede el presupuesto")
+
+
 def main() -> int:
     check_transitions()
     check_doctor()
@@ -478,6 +506,7 @@ def main() -> int:
     check_validate_no_crash()
     check_expres_warning()
     check_rulings_warning()
+    check_budget_branches()
     for error in errors:
         print(f"ERROR: {error}")
     if not errors:

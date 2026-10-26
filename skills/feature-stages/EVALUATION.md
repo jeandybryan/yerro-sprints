@@ -137,7 +137,10 @@ cierre y delta, más los negativos `sin-tareas`, `abierta`, `inconsistente`,
 y el positivo `presupuesto-amplio`. Cada caso afirma
 estado público, skill siguiente y código de bloqueo; un cambio en
 `next_step.py` que altere una transición sin actualizar su caso deja la suite
-roja.
+roja. `presupuesto-agotado` usa el presupuesto justo (riesgo `medio`: un delta)
+y `presupuesto-excedido` uno de más: `test_next_step.py` comprueba que sus
+mensajes no se confunden, porque «agotado» y «excedido» autorizan cosas
+distintas.
 
 - Fixture `cambio-fuera-de-alcance`: una etapa cuyo `**Archivos:**` no cubre una
   ruta tocada. `diff_scope.py` debe salir con error (alcance nuevo, B-27);

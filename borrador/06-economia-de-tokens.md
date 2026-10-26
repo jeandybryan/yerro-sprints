@@ -67,7 +67,7 @@ Debería decir `python3 scripts/x.py` o no estar.
 
 ### P11 — `preflight.py`: el contexto se calcula, no se adivina
 
-**Estado:** `abierta`
+**Estado:** `implementada` ✅ (2026-10-26; P12 sigue sin número hasta Q9)
 **Relación:** extiende la Política de contexto de `stage-contract.md`; depende de
 P6 (trazabilidad) para saber qué citar.
 

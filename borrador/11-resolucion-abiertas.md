@@ -116,6 +116,11 @@ trabajar.
 **Respuesta:** `preflight.py` entra **sin gate**, en modo informe. Se mide una
 semana de uso real. El presupuesto se fija en Fase 3 **con los datos delante**.
 
+**Instrumento listo (2026-10-26):** `preflight.py` mide líneas por fase y
+respeta un `**Presupuesto de contexto:**` solo si la etapa lo declara. Sin
+ese campo no falla, que es lo que impide inventar el número antes de tener
+el dato. Lo que falta ya no es código: es medir.
+
 La pregunta de si es `WARN` o `ERROR` (que plantea gentle-ai, que *rechaza* el
 trabajo que no cabe) se decide **con el mismo dato**: si al fijar el número real
 el 90 % del trabajo cabe, es `ERROR`; si el 40 % no cabe, poner `ERROR` solo

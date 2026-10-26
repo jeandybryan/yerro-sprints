@@ -24,14 +24,16 @@
 - [ ] **Criterio de salida:** ninguna propuesta queda `abierta` sin dueño de
       decisión; el plan de abajo se reescribe con lo acordado.
 
-### Fase 1b — Contexto determinista (P11 + P14) — en paralelo
+### Fase 1b — Contexto determinista (P11 + P14) ✅ **IMPLEMENTADA** (2026-10-26)
 
 Dependencia: ninguna. Se puede hacer junto con la Fase 1.
 
-1. `scripts/preflight.py`: lista mínima de lecturas por fase (sin presupuesto
-   todavía), en **rutas y fragmentos exactos**, nunca resúmenes.
+1. ~~`scripts/preflight.py`~~: lista mínima de lecturas por fase (sin presupuesto
+   todavía), en **rutas y fragmentos exactos**, nunca resúmenes. Hecho: emite
+   qué no leer y por qué, y una fase desconocida lee la etapa completa.
 2. Regla P14 en `references/skill-maintenance.md`: ningún gate se sustituye por
    heurística; la omisión es el lado peligroso del ahorro.
+   Hecho: `preflight.py` aplica la regla y el contrato la nombra.
 3. `SKILL.md` de cada fase: una línea que apunte a `preflight.py`.
 4. Fixture negativa: plan de lectura que incluye una etapa vecina debe fallar.
 5. Regla B-18 en `implement-stage` y `audit-stage`: un test existente que falla

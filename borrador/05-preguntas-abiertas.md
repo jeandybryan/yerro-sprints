@@ -181,6 +181,9 @@ qué criterio sirve, que es lo único que hoy no comprueba nadie.
 
 ## Q9 — ¿Qué presupuesto de contexto por fase es razonable? 📏 `NECESITA DATO`
 
+> **Estado 2026-10-26:** el instrumento existe (`preflight.py`) y mide. El
+> número sigue sin fijarse: ese es el dato que falta. Ver `11-resolucion-abiertas.md`.
+
 **Contexto:** P12 propone límites en líneas (`identify ≤ 400`,
 `conciliate ≤ 600`, `generate ≤ 400`, `implement ≤ 800`, `audit ≤ 1000`). Son
 estimaciones mías basadas en el tamaño actual de las plantillas y referencias;

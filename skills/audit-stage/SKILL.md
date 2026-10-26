@@ -71,6 +71,16 @@ before opening files; everything it omits is listed with its reason.
 5. Write one immutable audit pass with fresh reproducible evidence. Append; do
    not erase failed or superseded passes.
 6. Run the validator again before writing `**Veredicto:** coincide`.
+7. With the `coincide` verdict written, run the close cross:
+
+   ```bash
+   python3 <skills-root>/feature-stages/scripts/validate_stage.py <stage> --repo <repo>
+   ```
+
+   It checks the recorded snapshot against the current tree, the human
+   approval covering stage and snapshot, and the diff against the declared
+   scope. Without `--repo` the validator judges shape only: a `coincide` that
+   did not pass this command does not close.
 
 Do not implement or repair findings in the same audit pass. A product-intent,
 scope or acceptance change reopens conciliation; it is not a delta.

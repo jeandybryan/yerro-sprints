@@ -18,6 +18,7 @@ sys.path.insert(0, str(HERE))
 
 from validate_skill_evals import (  # noqa: E402
     GATE_TOKENS,
+    closing_gate_errors,
     gate_errors,
     markdown_reference_errors,
     routing_errors,
@@ -57,6 +58,15 @@ def check_mutations() -> None:
     missing = gate_errors("documento sin gates")
     check(len(missing) == len(GATE_TOKENS), f"gates ausentes: {missing}")
     check(gate_errors(" ".join(GATE_TOKENS)) == [], "un corpus completo no debe fallar gates")
+
+    # El skill que escribe el veredicto tiene que invocar el cierre cruzado: sin
+    # `--repo` el validador no mira snapshot, aprobación ni alcance.
+    blind = closing_gate_errors("valida con validate_stage.py <stage> a secas")
+    check(bool(blind), "un cierre sin `--repo` no se detecta")
+    check(
+        closing_gate_errors("validate_stage.py <stage> --repo <repo>") == [],
+        "el cierre cruzado no debe fallar",
+    )
 
     ambiguous = routing_errors(
         [{"prompt": "implementa y audita", "expected": "implement-stage", "excluded": ["implement-stage"]} for _ in range(5)]

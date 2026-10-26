@@ -17,7 +17,8 @@
 
 4. Registra `**Riesgo auditado:**`; puede subir, nunca bajar del riesgo
    congelado.
-5. Ejecuta `validate_stage.py` antes de juzgar el resultado.
+5. Ejecuta `validate_stage.py` sin `--repo` antes de juzgar el resultado: así se
+   comprueba la forma de los artefactos.
 6. Descompón cada CA en afirmaciones atómicas y comprueba trazabilidad
    `S → CA → T → test → E`.
 7. Ejecuta el método de verificación declarado en cada tarea. No heredes el
@@ -25,6 +26,16 @@
 8. Añade negativos, límites o fault injection proporcionalmente al riesgo.
 9. Escribe una pasada inmutable, conserva las anteriores y valida de nuevo
    antes de `coincide`.
+10. Con `**Veredicto:** coincide` escrito, ejecuta el cierre cruzado:
+
+    ```bash
+    python3 <skills-root>/feature-stages/scripts/validate_stage.py <stage> --repo <repo>
+    ```
+
+    Comprueba que el snapshot es el del árbol actual, que la aprobación
+    humana cubre etapa y snapshot, y que ningún archivo queda fuera del
+    alcance declarado. Sin `--repo` el validador solo juzga la forma: un
+    `coincide` que no pasó este comando no cierra.
 
 La auditoría no implementa ni repara hallazgos en la misma pasada. Un cambio de
 intención, alcance o criterio reabre conciliación; no crea un delta.

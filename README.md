@@ -259,7 +259,9 @@ Pídele: **"audita la etapa NN"**.
  `**Motivo del presupuesto:** …`, o no cierra.
 - El cierre requiere una **aprobación humana** en `.yerro/approvals.yml`, un
  archivo versionado que edita la persona: sin entrada que cubra la etapa y el
- snapshot, la etapa no cierra. El agente nunca escribe ese archivo.
+ snapshot, la etapa no cierra. El agente nunca escribe ese archivo. El cierre
+ se comprueba con `validate_stage.py <etapa> --repo <repo>`: sin `--repo` el
+ validador solo mira la forma de los artefactos.
 - Resultado: `AUDIT.md` con un veredicto:
   - `coincide` → la etapa se cierra (`cerrada`).
   - `no coincide` → se escribe `TAREAS-delta-NN.md` y se repiten los pasos

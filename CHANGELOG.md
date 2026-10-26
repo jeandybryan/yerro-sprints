@@ -9,6 +9,15 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Corregido
 
+- **El skill que cierra invoca el cierre cruzado.** `audit-stage` ejecutaba
+  `validate_stage.py <stage>` sin `--repo`, y ese modo solo juzga la forma: el
+  snapshot, la aprobación humana y el alcance del diff no se comprobaban en el
+  procedimiento que escribe el `coincide`. La etapa podía cerrarse con un
+  snapshot obsoleto y sin firma mientras la skill decía «cerrar». El
+  procedimiento ahora ejecuta el cierre con `--repo` después de escribir el
+  veredicto, y `validate_skill_evals.py` falla si el skill de auditoría deja de
+  nombrar ese comando. Comprobado quitando el comando del `SKILL.md`: el
+  catálogo falla nombrándolo.
 - **El snapshot de la pasada excluye también `.yerro/approvals.yml`.** Al
   verificar, `validate_stage.py --repo` añadía esa exclusión a la lista grabada,
   pero los cinco sitios que documentaban el comando solo excluían el árbol de la

@@ -46,6 +46,18 @@ def markdown_reference_errors(markdown: Path, skills_root: Path, feature_root: P
 def gate_errors(corpus: str) -> list[str]:
     return [f"falta gate crítico documentado: {token}" for token in GATE_TOKENS if token not in corpus]
 
+CLOSING_GATE = "validate_stage.py <stage> --repo <repo>"
+def closing_gate_errors(skill: str) -> list[str]:
+    """El skill que escribe el veredicto debe invocar el cierre cruzado.
+
+    `validate_stage.py` sin `--repo` juzga la forma; el snapshot, la aprobación
+    y el alcance solo se comprueban en el cierre. Un procedimiento de auditoría
+    que no ejecute ese comando cierra a ciegas.
+    """
+    if CLOSING_GATE in skill:
+        return []
+    return [f"falta el cierre cruzado documentado: `{CLOSING_GATE}`"]
+
 def routing_errors(routes: list) -> list[str]:
     errors: list[str] = []
     if len(routes) < 5:
@@ -74,6 +86,9 @@ def main() -> int:
         errors.extend(markdown_reference_errors(markdown, ROOT.parent, ROOT))
     corpus = "\n".join(path.read_text() for path in [*markdown_files, *DOCUMENTS] if path.exists())
     errors.extend(gate_errors(corpus))
+    audit_skill = ROOT.parent / "audit-stage" / "SKILL.md"
+    if audit_skill.exists():
+        errors.extend(closing_gate_errors(audit_skill.read_text()))
     for skill in SKILLS:
         path=ROOT/"evals"/"cases"/f"{skill}.json"
         if not path.exists(): errors.append(f"falta caso para {skill}"); continue

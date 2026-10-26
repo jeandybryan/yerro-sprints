@@ -34,6 +34,10 @@ principal list or delta marked `implementada`. `necesita-decision` blocks. An
 explicit user request may produce an intermediate audit for an implementing or
 blocked stage, but cannot close it.
 
+Plan the reading with
+`python3 <skills-root>/feature-stages/scripts/preflight.py <feature-root> --fase audit-stage`
+before opening files; everything it omits is listed with its reason.
+
 ## Audit procedure
 
 1. Read spec, closed conciliation, principal tasks, deltas, previous audits and

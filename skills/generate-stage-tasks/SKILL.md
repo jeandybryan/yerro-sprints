@@ -16,6 +16,8 @@ que la transición es `generate-stage-tasks`; si devuelve otro estado o un bloqu
 `validate_stage.py <stage>`: las advertencias de formato legado se registran,
 los errores estructurales bloquean la entrega.
 
+Lee primero el plan de contexto: `python3 <skills-root>/feature-stages/scripts/preflight.py <feature-root> --fase generate-stage-tasks`. Lo que omita y justifique no se lee; si hace falta, se dice por qué.
+
 ## Do
 
 1. Confirm estado `cerrada`, acceptance criteria with stable IDs,

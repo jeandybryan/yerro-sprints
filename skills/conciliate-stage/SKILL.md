@@ -57,6 +57,10 @@ primera versión?
 **Propuesta:** una entidad con identificador estable y eventos explícitos de
 inicio y cierre; evita que el consumidor tenga que inferir su ciclo de vida.
 
+Antes de leer artefactos, pide el plan de contexto:
+`python3 <skills-root>/feature-stages/scripts/preflight.py <feature-root> --fase conciliate-stage`.
+Lee solo lo que lista y no leas lo que justifica omitir; si crees que falta algo, dilo antes de leerlo.
+
 ## Do
 
 1. Work **one** stage folder. Select it in this order: user-named; committed

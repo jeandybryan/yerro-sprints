@@ -31,8 +31,14 @@ See [express-lane.md](references/express-lane.md).
 
 ```bash
 python3 <skills-root>/feature-stages/scripts/next_step.py <feature-root> [--stage NN-slug] [--json]
+python3 <skills-root>/feature-stages/scripts/preflight.py <feature-root> [--fase <skill>] [--json]
 python3 <skills-root>/feature-stages/scripts/doctor.py <feature-root>
 ```
+
+`preflight.py` lists what the phase must read and what it must not, with a
+reason for each omission: no silent cut (P11, P14). Without
+`**Presupuesto de contexto:**` in the conciliation it only reports; with it,
+`--check` fails when the read exceeds the budget.
 
 `next_step.py` is read-only and returns exactly one public state:
 `trabajando`, `verificando`, `listo` or `necesita-decision`, plus the next

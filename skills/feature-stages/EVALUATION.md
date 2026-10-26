@@ -40,6 +40,8 @@ Al informar resultados, fijar modelo, versión de Cursor/agente, fecha, configur
 | S26 | Tarea que no declara la interfaz que consume | `generate-stage-tasks`, `implement-stage` | Falla en etapas multi-tarea: cada tarea declara `Interfaces:` con `Consume:`/`Produce:`; `Consume: ninguna` es válido. |
 | S27 | Riesgo bajo sin test-first | `implement-stage`, `audit-stage` | Falla: el riesgo proporcionaliza la revisión, no la prueba. Test-first y sensibilidad se exigen en todos los niveles. |
 | I01 | Corte ambiguo o por encabezados | `identify-feature-stages` | Pide aclaración o corta por resultados; asigna requisitos; no crea tareas/auditoría. |
+| S30 | Una fase lee la etapa vecina | `feature-stages` | `preflight.py` solo lista la etapa seleccionada; cada etapa vecina aparece en `no_leer` con su motivo. Sin ese motivo, el recorte es silencioso (P14). |
+| S31 | Fase desconocida | `feature-stages` | No se adivina: se prepara la etapa completa y se advierte. Un script que no sabe qué leer incluye, no omite. |
 | S28 | Ambigüedad de ejecución: qué se decide y qué se para | `implement-stage` | Categoría 2 → `Ruling:` más `**Sujeto a revisión R1:**`; categoría 3 → para y reabre conciliación. Tratarlas igual es el fallo. Fixture `ruling-y-parada`. |
 | S29 | Dos tareas con firmas que no encajan | `implement-stage`, `audit-stage`, `generate-stage-tasks` | `Consume:` de `T2` no coincide con `Produce:` de `T1`. No se inventa el argumento ni se cambia la firma: se para o se registra como hallazgo. Fixture `interfaces-cruzadas`. |
 
@@ -85,11 +87,13 @@ python3 scripts/test_next_step.py
 python3 scripts/test_snapshot.py
 python3 scripts/test_expres.py
 python3 scripts/test_evidence.py
+python3 scripts/test_preflight.py
 python3 scripts/test_skill_evals.py
 python3 scripts/validate_skill_evals.py
 python3 scripts/doctor.py evals/fixtures/transiciones
 python3 scripts/doctor.py evals/fixtures/rulings-excesivos
 python3 scripts/doctor.py evals/fixtures/rulings-aceptados
+python3 scripts/preflight.py evals/fixtures/transiciones --etapa 04-lista
 ```
 
 `coincide-sin-snapshot`, `snapshot-de-pasada-anterior` y `riesgo-rebajado` deben

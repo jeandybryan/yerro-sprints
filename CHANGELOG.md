@@ -74,6 +74,20 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
  inexistente.** Antes, una `files:` con un nombre equivocado se materializaba
  como nada y se puntuaba la conversación. `test_skill_evals.py` lo prueba
  borrando una fixture en una copia (10 comprobaciones).
+- **`preflight.py`: el contexto de una fase se calcula (P11, P14).** Dada una
+ etapa y una fase —deducida de `next_step.py` si no se pide— emite en orden los
+ archivos que hay que leer con sus líneas, todo lo que **no** se debe leer con
+ su motivo (etapas vecinas, documentos del paquete que no aplican, artefactos
+ de otra fase) y una estimación de tokens que declara su margen.
+ Tres reglas: una fase no reconocida prepara la etapa completa en vez de
+ recortar; ningún recorte es silencioso; las líneas son la medida y los tokens
+ son información (B-15).
+- **`--check` es el único modo que falla, y solo con presupuesto declarado.**
+ Sin `**Presupuesto de contexto:**` en la conciliación el script informa; con
+ él, `--check` devuelve error al excederse. El número no se inventa: Q9 sigue
+ esperando datos de uso, así que hoy ninguna etapa lo declara.
+- `test_preflight.py` (18 comprobaciones), casos retenidos S30 y S31, y
+ `preflight.py` citado en el contrato y en las cuatro skills de fase.
 - **Fixtures migradas a `**Archivos:**`.** Las 58 listas de
  `evals/fixtures/` declaran ahora los archivos que produce cada tarea, así que
  `--repo` puede comprobar el alcance en todas ellas y no solo en la retenida.

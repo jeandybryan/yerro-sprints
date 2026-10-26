@@ -127,6 +127,22 @@ ese artefacto o resolver el caso que cubre. No cargues `templates.md`,
 | Audit | contrato y procedimiento de auditoría | scoring, evidencia y deltas |
 | Router | routing y estado calculado | referencia solicitada explícitamente |
 
+El plan de lectura no se adivina: `python3 scripts/preflight.py <feature-root>
+[--etapa NN-slug] [--fase <skill>]` devuelve los archivos de la etapa en orden
+con sus líneas, lo que **no** hay que leer con su motivo, y una estimación de
+tokens con margen declarado (P11, B-15).
+
+Tres reglas lo gobiernan (P14):
+
+- si la fase no se reconoce, se prepara la etapa completa en vez de recortar;
+- cada archivo omitido aparece con su motivo: un recorte silencioso es un
+  defecto;
+- las **líneas** son la medida reproducible; los tokens son información.
+
+Sin `**Presupuesto de contexto:**` en la conciliación, `preflight.py` solo
+informa. Con él, `--check` devuelve error al excederse (P12). El número no se
+fija hasta medir (Q9): hoy no hay presupuesto declarado en ninguna etapa.
+
 ## Glosario
 
 - **Estado:** valor público del índice o del artefacto. Etapa: `borrador`, `conciliando`, `lista`, `implementando`, `auditando`, `cerrada`, `bloqueada`. Conciliación: `borrador-corte`, `abierta`, `cerrada`.

@@ -89,6 +89,8 @@ Beyond the categories, these always stop, without a ruling:
 A "drive-by" refactor is category 3 even when it is reversible: it changes what
 gets reviewed. It goes to the next task or to conciliation.
 
+Read the stage through `preflight.py` before opening files: `python3 <skills-root>/feature-stages/scripts/preflight.py <feature-root> --fase implement-stage`. It lists what to read and, for everything it skips, the reason. A silent cut is a defect (P14).
+
 ## Do
 
 1. Set stage `implementando` and task state `en curso`.

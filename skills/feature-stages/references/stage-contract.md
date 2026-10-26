@@ -71,7 +71,8 @@ Un `coincide` que baja el criterio más exigente declara `**Cruza riesgo:** sí 
 ## Alcance en el diff (B-27)
 
 - Cada tarea declara `**Archivos:**` con las rutas que produce. Se derivan del CA, **nunca del diff** ya producido: tomarlas del diff blanquea justo el caso que el gate persigue (B-28).
-- `scripts/diff_scope.py <etapa> --repo <repo> [--base REF]` compara lo que git ve cambiado contra lo declarado. Un archivo que ninguna tarea declara es **alcance nuevo** y abre `necesita-decision`; `validate_stage.py <etapa> --repo` lo comprueba en el cierre (`--base` por defecto `HEAD`).
+- `scripts/diff_scope.py <etapa> --repo <repo> [--base REF]` compara lo que git ve cambiado contra lo declarado. Un archivo que ninguna tarea declara es **alcance nuevo** y abre `necesita-decision`; `validate_stage.py <etapa> --repo` lo comprueba en el cierre con la misma regla.
+- La base es **el commit que abrió la etapa**, derivado de la historia de su árbol: con `HEAD` como base, `git commit` dejaría el diff vacío y el gate aprobaría cualquier archivo (B-44). Si la etapa no está commiteada, se usa `HEAD` y el cierre avisa de que solo ve lo que sigue sin commitear.
 - Una ruta declarada que no cambió **no bloquea**: es una tarea incompleta, y decidir si la tarea se cumplió es cierre, no alcance (B-29). Se informa.
 - La evidencia de la etapa y `.yerro/` nunca cuentan como código: son el registro, no el cambio. La exclusión es la misma que la del snapshot, para que diff y snapshot hablen del mismo árbol.
 

@@ -241,6 +241,26 @@ def check_validate(repo: Path) -> None:
         fail(f"validate --repo: rechazó por otro motivo: {out_of_scope.stdout}")
     (repo / "colado.py").unlink()
 
+    # B-27 con el trabajo commiteado: quien commitea antes de auditar deja
+    # `git diff HEAD` vacío. El alcance se mide desde el commit que abrió la
+    # etapa, así que lo commiteado sigue contando.
+    git(repo, "add", "-A")
+    git(repo, "commit", "-qm", "abrir la etapa")
+    (repo / "src.txt").write_text("tres\n", encoding="utf-8")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-qm", "cumplir la tarea")
+    (repo / "commitado.py").write_text("alcance nuevo\n", encoding="utf-8")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-qm", "colar un archivo")
+    current = identity(repo, (Path("feature"), APPROVALS))
+    audit.write_text(AUDIT.format(snapshot=current), encoding="utf-8")
+    checked += 1
+    committed_scope = validate(stage, repo)
+    if committed_scope.returncode == 0:
+        fail("validate --repo: aceptó trabajo commiteado que ninguna tarea declara")
+    elif "commitado.py" not in committed_scope.stdout or "alcance nuevo" not in committed_scope.stdout:
+        fail(f"validate --repo: rechazó por otro motivo: {committed_scope.stdout}")
+
 
 def main() -> int:
     if shutil.which("git") is None:

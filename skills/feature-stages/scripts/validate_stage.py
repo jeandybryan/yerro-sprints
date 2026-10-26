@@ -21,7 +21,14 @@ from approvals import (  # noqa: E402
     load as load_approvals,
 )
 from snapshot import SnapshotError, identity, repo_root  # noqa: E402
-from diff_scope import ScopeError, compare, declared_files, touched_files  # noqa: E402
+from diff_scope import ( # noqa: E402
+    ScopeError,
+    compare,
+    declared_files,
+    scope_base,
+    stage_base,
+    touched_files,
+)
 
 CA_RE = re.compile(r"^\s*-\s*\*\*(CA-\d+)\b", re.M)
 DECISION_RE = re.compile(r"^\s*-\s*\*\*(S-\d+)\s+—", re.M)
@@ -605,7 +612,18 @@ def main() -> int:
             # declara es superficie nueva y abre necesita-decision.
             try:
                 declared = declared_files(tasks)
-                touched = touched_files(repo_root(args.repo.resolve()), "HEAD", (stage, DEFAULT_APPROVALS))
+                # La base es el commit que abrió la etapa, no `HEAD`: quien
+                # commitea su trabajo deja `git diff HEAD` vacío y el gate
+                # aprobaría cualquier archivo (B-27).
+                root = repo_root(args.repo.resolve())
+                if stage_base(root, stage) is None:
+                    result.warnings.append(
+                        "la etapa no está commiteada: el alcance solo ve lo que "
+                        "sigue sin commitear, no lo que ya se commiteó"
+                    )
+                touched = touched_files(
+                    root, scope_base(root, stage), (stage, DEFAULT_APPROVALS)
+                )
             except (ScopeError, SnapshotError) as error:
                 result.warnings.append(f"no se pudo comprobar el alcance del diff: {error}")
             else:

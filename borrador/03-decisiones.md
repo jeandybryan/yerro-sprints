@@ -581,6 +581,26 @@ revisión.
 4. Fixtures `riesgo-bajo-sin-test-first` (falla) y
    `riesgo-bajo-con-test-first-sin-revision-independiente` (pasa).
 
+### B-44 — El alcance se mide desde que abrió la etapa
+**Fecha:** 2026-10-26
+**Estado:** `acordada` ✅ (usuario, 2026-10-26)
+**Origen:** Revisión de `44b5cf1` (B-27): reproducido que el cierre aceptaba un
+archivo no declarado cuando el agente lo había commiteado.
+**Motivo:** con `--base HEAD`, `git commit` deja el diff vacío y el gate aprueba
+cualquier archivo. El `head=` del snapshot tampoco sirve: es el `HEAD` de
+después del commit. Un gate que se salta con `git commit` es una promesa, no un
+gate.
+**Consecuencias:**
+1. La base del alcance es el commit que abrió la etapa, derivado de la historia
+   (`git log --diff-filter=A` sobre el árbol de la etapa). No hay campo nuevo ni
+   migración de etapas existentes.
+2. Si la etapa todavía no está commiteada no hay base: se usa `HEAD` y el cierre
+   avisa de que solo puede ver lo que sigue sin commitear.
+3. `diff_scope.py` y el cierre comparten `scope_base()`; no hay dos reglas.
+4. Casos: `test_diff_scope.py` (base por defecto y `stage_base`) y
+   `test_snapshot.py` (el cierre rechaza un archivo commiteado que ninguna tarea
+   declara). Con `HEAD` como base, ambos fallan.
+
 ### B-43 — Decisiones de release acordadas
 **Fecha:** 2026-10-23
 **Estado:** `acordada` ✅ (usuario, 2026-10-23)

@@ -7,6 +7,17 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+### Corregido
+
+- **El gate de alcance ya no se salta con `git commit` (B-44).** `validate_stage.py
+  --repo` medía el diff contra `HEAD`; un agente que commiteaba su trabajo dejaba
+  el diff vacío y un archivo que ninguna tarea declara pasaba el cierre. La base
+  es ahora el commit que abrió la etapa, derivado de la historia de su árbol, y
+  `diff_scope.py` y el cierre comparten `scope_base()`. Si la etapa no está
+  commiteada no hay base y el cierre avisa de que solo ve lo que sigue sin
+  commitear. Casos nuevos en `test_diff_scope.py` y `test_snapshot.py`; con la
+  base anterior, ambos fallan.
+
 ### Añadido
 
 - **Oráculo mínimo en `Test:`.** `validate_stage.py` rechaza el trivio

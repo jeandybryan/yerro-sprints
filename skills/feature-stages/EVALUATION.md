@@ -143,7 +143,10 @@ roja.
   archivos sin trackear y que la evidencia de la etapa no cuente como código.
 - `validate_stage.py <etapa> --repo` aplica ese cruce en el cierre: un archivo
   que ninguna tarea declara rechaza la pasada. `test_snapshot.py` lo comprueba
-  creando `colado.py` y reauditando.
+  creando `colado.py` y reauditando, y una segunda vez **commiteando** el archivo
+  colado: la base es el commit que abrió la etapa, no `HEAD`, porque con `HEAD`
+  el commit vacía el diff y el gate aprobaría (B-44). `test_diff_scope.py`
+  comprueba la base por defecto y que una etapa sin commitear cae a `HEAD`.
 
 `rulings-excesivos` (cuatro rulings en una tarea) debe avisar y apuntar a
 `generate-stage-tasks` sin bloquear; `rulings-aceptados` (tres) debe callar.

@@ -21,7 +21,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-from diff_scope import _normalize, compare, declared_files # noqa: E402
+from diff_scope import _normalize, compare, declared_files, stage_base # noqa: E402
 
 SCRIPT = HERE / "diff_scope.py"
 errors: list[str] = []
@@ -163,6 +163,100 @@ def check_untracked(repo: Path) -> None:
         fail(f"diff_scope untracked: no detectó src/otro.py ({payload.get('undeclared')})")
 
 
+def check_committed_change_is_seen() -> None:
+    """`--base` ve el trabajo commiteado; contra `HEAD` desaparece.
+
+    Con `--base HEAD`, quien commitea su trabajo deja el diff vacío. El script
+    sí ve lo commiteado cuando la base es un commit anterior, así que medir el
+    alcance depende de elegir bien la base. Repo propio: este caso commitea y no
+    debe dejar el árbol de los demás casos a medias.
+    """
+    global checked
+    repo = Path(tempfile.mkdtemp(prefix="yerro-diffscope-commit-"))
+    try:
+        init_repo(repo)
+        git(repo, "add", "-A")
+        git(repo, "commit", "-qm", "etapa en su linea base")
+        base = git(repo, "rev-parse", "HEAD").stdout.strip()
+
+        # La etapa se implementa y se commitea, como haría un agente ordenado.
+        (repo / "src" / "export.csv").write_text("nuevo\n", encoding="utf-8")
+        (repo / "src" / "intruso.py").write_text("alcance nuevo\n", encoding="utf-8")
+        git(repo, "add", "-A")
+        git(repo, "commit", "-qm", "implementar la etapa")
+
+        # Desde la base el intruso se ve y bloquea.
+        result = run(repo, "features/01-export", "--base", base)
+        checked += 1
+        payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        if result.returncode != 1 or payload.get("undeclared") != ["src/intruso.py"]:
+            fail(f"diff_scope committed: desde la base obtuvo {result.returncode} {payload.get('undeclared')}")
+
+        # Contra HEAD el mismo trabajo es invisible: el caso de por qué el
+        # cierre no puede usar HEAD como base.
+        result = run(repo, "features/01-export", "--base", "HEAD")
+        checked += 1
+        payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        if result.returncode != 0 or payload.get("undeclared"):
+            fail(f"diff_scope committed: HEAD debería no ver nada, obtuvo {payload.get('undeclared')}")
+    finally:
+        shutil.rmtree(repo, ignore_errors=True)
+
+
+def check_default_base_is_stage_start() -> None:
+    """Sin `--base`, el alcance se mide desde que la etapa apareció.
+
+    Con `HEAD` como base, quien commitea su trabajo deja el diff vacío y el
+    gate aprueba cualquier archivo. La base es el commit que abrió la etapa:
+    se deriva de la historia, sin campo nuevo ni migración.
+    """
+    global checked
+    repo = Path(tempfile.mkdtemp(prefix="yerro-diffscope-base-"))
+    try:
+        init_repo(repo)
+        git(repo, "add", "-A")
+        git(repo, "commit", "-qm", "abrir la etapa")
+        opened = git(repo, "rev-parse", "HEAD").stdout.strip()
+
+        checked += 1
+        derived = stage_base(repo, repo / "features" / "01-export")
+        if derived != opened:
+            fail(f"stage_base: obtuvo {derived!r}, se esperaba el commit {opened[:8]}")
+
+        (repo / "src" / "export.csv").write_text("nuevo\n", encoding="utf-8")
+        (repo / "src" / "colado.py").write_text("alcance nuevo\n", encoding="utf-8")
+        git(repo, "add", "-A")
+        git(repo, "commit", "-qm", "implementar la etapa")
+
+        # Sin `--base` el intruso commiteado se ve y bloquea.
+        result = run(repo)
+        checked += 1
+        payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        if result.returncode != 1 or payload.get("undeclared") != ["src/colado.py"]:
+            fail(
+                "diff_scope base por defecto: no bloqueó lo commiteado "
+                f"({result.returncode}, {payload.get('undeclared')})"
+            )
+
+        # Con `--base HEAD` el mismo trabajo es invisible: por eso la base no
+        # puede ser HEAD.
+        result = run(repo, "features/01-export", "--base", "HEAD")
+        checked += 1
+        payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        if payload.get("undeclared"):
+            fail(f"diff_scope base por defecto: HEAD debería no ver nada, vio {payload.get('undeclared')}")
+
+        # Una etapa que todavía no está commiteada no tiene commit de apertura:
+        # se cae a HEAD, que es lo que sí puede verse.
+        (repo / "features" / "02-nueva").mkdir()
+        (repo / "features" / "02-nueva" / "TAREAS.md").write_text(TASKS, encoding="utf-8")
+        checked += 1
+        if stage_base(repo, repo / "features" / "02-nueva") is not None:
+            fail("stage_base: una etapa sin commitear no debe tener base")
+    finally:
+        shutil.rmtree(repo, ignore_errors=True)
+
+
 def check_missing_is_warning(repo: Path) -> None:
     """Declarado y no tocado: advertencia, no bloqueo (B-27 solo veta lo nuevo)."""
     global checked
@@ -250,7 +344,9 @@ def main() -> int:
         check_evidence_ignored(work)
         check_undeclared(work)
         check_untracked(work)
+        check_committed_change_is_seen()
         check_missing_is_warning(work)
+        check_default_base_is_stage_start()
         check_bad_base(work)
         check_unmigrated(work)
     finally:

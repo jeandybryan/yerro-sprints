@@ -13,6 +13,11 @@ La comparación es **mecánica** (B-29): el script dice qué rutas sobran y cuá
 faltan. No juzga si el cambio es correcto ni si merece cerrar; eso es riesgo y
 cierre, y lo aprueba una persona.
 
+La base por defecto es el commit que abrió la etapa, derivado de su historia:
+medir contra `HEAD` dejaría ciego el gate en cuanto el agente commitea su
+trabajo (B-44). Si la etapa no está commiteada se usa `HEAD`, que es lo único
+que puede verse.
+
 Qué cuenta como tocado:
 - archivos modificados, añadidos, borrados o renombrados respecto de `--base`;
 - archivos sin trackear, que git no vería en un `diff` normal.
@@ -135,6 +140,37 @@ def _relative_safe(root: Path, path: Path) -> str:
         return str(path)
 
 
+def stage_base(root: Path, stage: Path) -> str | None:
+    """Commit en el que apareció la etapa; `None` si la etapa no está commiteada.
+
+    La base no puede ser `HEAD`: quien commitea su trabajo deja el diff vacío y
+    el gate aprobaría cualquier archivo. El commit que abrió la etapa se deriva
+    de la historia (`--diff-filter=A` sobre el árbol de la etapa), así que no
+    hace falta un campo nuevo ni migrar las etapas existentes.
+
+    `git log` lista de más reciente a más antiguo: la última coincidencia es la
+    primera vez que apareció la etapa.
+    """
+    relative = _relative_safe(root, stage)
+    result = _run(root, ["log", "--diff-filter=A", "--format=%H", "--", relative])
+    if result.returncode != 0:
+        raise ScopeError(f"no se pudo leer la historia de {relative}: {result.stderr.strip()}")
+    commits = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    return commits[-1] if commits else None
+
+
+def scope_base(root: Path, stage: Path, explicit: str | None = None) -> str:
+    """Base contra la que se mide el alcance.
+
+    Orden: la que pase quien llama, el commit que abrió la etapa, y `HEAD`
+    como último recurso si la etapa todavía no está commiteada. Es la única
+    regla: `diff_scope.py` y el cierre la comparten.
+    """
+    if explicit is not None:
+        return explicit
+    return stage_base(root, stage) or "HEAD"
+
+
 def compare(declared: dict[str, list[str]], touched: list[str]) -> dict[str, list[str]]:
     """Diferencias en las dos direcciones.
 
@@ -157,7 +193,14 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("stage", type=Path)
     parser.add_argument("--repo", type=Path, required=True, help="raíz del repositorio git")
-    parser.add_argument("--base", default="HEAD", help="referencia contra la que comparar (por defecto HEAD)")
+    parser.add_argument(
+        "--base",
+        default=None,
+        help=(
+            "referencia contra la que comparar (por defecto, el commit que abrió la "
+            "etapa; si la etapa no está commiteada, HEAD)"
+        ),
+    )
     parser.add_argument(
         "--exclude",
         type=Path,
@@ -192,15 +235,19 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     try:
-        touched = touched_files(root, args.base, (stage, *(root / item if not item.is_absolute() else item for item in args.exclude)))
+        # La base se elige una sola vez, aquí: el cierre llama al mismo contrato
+        # y no puede inventarse otra.
+        base = scope_base(root, stage, args.base)
+        touched = touched_files(root, base, (stage, *(root / item if not item.is_absolute() else item for item in args.exclude)))
     except ScopeError as error:
         print(f"ERROR: {error}", file=sys.stderr)
         return 2
 
     result = compare(declared, touched)
     if args.json:
-        print(json.dumps({**result, "touched": touched, "base": args.base}, ensure_ascii=False, indent=2))
+        print(json.dumps({**result, "touched": touched, "base": base}, ensure_ascii=False, indent=2))
     else:
+        print(f"Base: {base}")
         for path in result["undeclared"]:
             print(f"ERROR: {path} cambió y ninguna tarea lo declara (alcance nuevo, B-27)")
         for path in result["missing"]:

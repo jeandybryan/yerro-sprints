@@ -222,13 +222,13 @@ VALIDATE_REJECTED = [
     ("ruling-sin-coste", "sin las tres partes"),
     # B-26: un ruling de categoría 2 sin revisar impide el cierre.
     ("ruling-categoria-2-sin-revision", "Rulings revisados"),
- # B-26 por identificador: una marca sin ID no se puede resolver.
- ("ruling-sujeto-sin-id", "necesita un identificador"),
- ("ruling-sujeto-id-cruzado", "no resuelve R1"),
- # P17: la etapa multi-tarea exige interfaces.
- ("interfaces-ausentes", "no declara `Consume:`"),
- # P22: test-first no se proporcionaliza por riesgo.
- ("riesgo-bajo-sin-test-first", "no declara Test-first"),
+    # B-26 por identificador: una marca sin ID no se puede resolver.
+    ("ruling-sujeto-sin-id", "necesita un identificador"),
+    ("ruling-sujeto-id-cruzado", "no resuelve R1"),
+    # P17: la etapa multi-tarea exige interfaces.
+    ("interfaces-ausentes", "no declara `Consume:`"),
+    # P22: test-first no se proporcionaliza por riesgo.
+    ("riesgo-bajo-sin-test-first", "no declara Test-first"),
     # Un delta se juzga con el mismo contrato que la lista principal: si la
     # corrección acotada pudiera corregir sin prueba, el hueco no quedaría
     # cerrado. Y sin `**Archivos:**` su archivo sería alcance nuevo (B-27).

@@ -7,7 +7,14 @@ Comprueba la coherencia entre el índice, los artefactos de cada etapa y los
 deltas, y reutiliza la transición calculada por next_step.py. No escribe ni
 repara nada: informa errores, advertencias y el siguiente paso válido.
 
-Salida: 0 sin errores; 1 con errores estructurales o de contrato.
+No juzga el contrato completo de artefactos: comprueba que el índice y los
+artefactos no se contradigan y que estén los campos que su lista enumera. Un
+`OK` aquí no significa que la etapa cumpla el contrato; eso lo decide
+`validate_stage.py`. Presentar la coherencia como veredicto de contrato fue el
+defecto: `doctor.py` decía «árbol coherente» sobre cortes reales cuyas nueve
+etapas rechazaba el validador.
+
+Salida: 0 sin errores de doctor; 1 con errores.
 """
 from __future__ import annotations
 
@@ -253,7 +260,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"WARN: {warning}")
         if result:
             print(f"INFO: siguiente={result['state']} skill={result['siguiente']} etapa={result['etapa']}")
-        print("OK: árbol de feature coherente" if not errors else "FALLA: el árbol no cumple el contrato")
+            print("OK: índice y artefactos coherentes (no es el contrato: validate_stage.py)" if not errors else "FALLA: el árbol no cumple las comprobaciones de doctor")
     return 1 if errors else 0
 
 if __name__ == "__main__":

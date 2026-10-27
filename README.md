@@ -160,8 +160,9 @@ bloqueos con su resolución. `declarada-cerrada` significa que el índice y la
 auditoría declaran la etapa cerrada, no que los artefactos cumplan el contrato:
 para eso está `validate_stage.py`. `--json` para máquinas, `--stage NN-slug`
 para una etapa concreta y `--check` para CI. `doctor.py` informa incoherencias
-entre el índice y los artefactos. Ambos son de solo lectura y no sustituyen
-ningún gate.
+entre el índice y los artefactos; su `OK` dice que son coherentes, no que
+cumplen el contrato. Ninguno de los dos sustituye un gate: el contrato lo juzga
+`validate_stage.py`.
 
 ### Evidencia ejecutable
 

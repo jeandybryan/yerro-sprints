@@ -103,6 +103,17 @@ def check_doctor() -> None:
         if report["siguiente"]["state"] != VERIFICANDO:
             fail("doctor/transiciones: la transición reportada no coincide con next_step")
 
+    # Un OK de doctor no es un contrato válido: `transiciones` es coherente para
+    # doctor y, a la vez, validate_stage.py rechaza su etapa cerrada. Va fuera del
+    # `else` para que corra siempre, no solo cuando doctor ya falló.
+    contract = run("validate_stage.py", str(FIXTURES / "transiciones" / "06-cerrada"))
+    checked += 1
+    if contract.returncode == 0:
+        fail(
+            "doctor/transiciones: el contrato acepta la etapa cerrada; la fixture ya "
+            "no demuestra que el OK de doctor no implica contrato válido"
+        )
+
     broken = run("doctor.py", str(FIXTURES / "inconsistente"), "--json")
     checked += 1
     if broken.returncode != 1:

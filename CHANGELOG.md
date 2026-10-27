@@ -15,6 +15,10 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 - **El estado `listo` pasa a `declarada-cerrada`, porque no prometía lo que comprobaba.** `next_step.py` devolvía `listo` cuando el índice marcaba la etapa `cerrada` y su auditoría decía `coincide`: eso es una declaración de los artefactos, no una verificación del contrato. En un corte real de seis features, once etapas mostraban «nada por hacer» mientras `validate_stage.py` las rechazaba en todas sus tareas. Renombrar era la corrección barata y honesta: exigir el contrato en el router habría acoplado el estado a un gate completo y habría dejado sin salida cualquier árbol escrito con el contrato anterior, que es justo el patrón que Q9 descartó. `declarada-cerrada` dice lo que el router mira —índice cerrado más veredicto `coincide`— y deja el contrato a `validate_stage.py`. Fixture nueva `cerrada-sin-contrato`: un cierre declarado con `**Snapshot:**` ausente, que el router acepta como terminado y el validador rechaza; el caso exige las dos cosas a la vez para que el nombre no vuelva a prometer de más.
 
+### Corregido
+
+- **`doctor.py` ya no presenta la coherencia como veredicto de contrato.** Imprimía `OK: árbol de feature coherente` y, en caso contrario, `FALLA: el árbol no cumple el contrato`: dos frases que se leían como si describieran lo mismo, cuando el script comprueba un subconjunto —coherencia del índice, vocabulario de estados, presencia de artefactos, `Test-first:`/`Test:` y cuatro campos de `AUDIT`— y no mira `S-NN`, `Origen:`, `Interfaces:`, el ledger ni el presupuesto de deltas. Sobre el corte real de seis features decía árbol coherente mientras `validate_stage.py` rechazaba etapas. Ahora el `OK` nombra su alcance y remite al validador, y el aviso de fallo dice «no cumple las comprobaciones de doctor», no «el contrato». El caso de `test_next_step.py` ejecuta doctor sobre `transiciones` y exige a la vez su `OK` y el rechazo de `06-cerrada` por el validador: si doctor empieza a prometer el contrato, o la fixture deja de discrepar, el caso falla. Caso `S33`.
+
 ## [0.2.0] - 2026-10-27
 
 ### Corregido

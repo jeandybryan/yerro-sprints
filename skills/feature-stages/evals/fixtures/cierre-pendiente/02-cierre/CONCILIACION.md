@@ -1,6 +1,7 @@
 # Etapa 02 — veredicto coincide, índice sin cerrar
 
 **Estado:** cerrada
+**Suites de referencia:** `pytest`
 
 ## Criterios de aceptación
 

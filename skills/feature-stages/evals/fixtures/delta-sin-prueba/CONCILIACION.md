@@ -1,6 +1,7 @@
 # Etapa 01 — delta sin prueba
 
 **Estado:** cerrada
+**Suites de referencia:** `pytest`
 **Riesgo:** bajo
 
 ## Aclaraciones

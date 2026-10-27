@@ -1,6 +1,7 @@
 # Etapa 01 — presupuesto ampliado
 
 **Estado:** cerrada
+**Suites de referencia:** `pytest`
 **Riesgo:** medio
 **Presupuesto de deltas:** 3
 **Motivo del presupuesto:** la etapa corrige dos defectos ya auditados en el mismo módulo; se acota a tres para no reabrir conciliación por el segundo.

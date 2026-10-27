@@ -1,6 +1,7 @@
 # Etapa 04 — exportar con separador configurable
 
 **Estado:** cerrada
+**Suites de referencia:** `pytest tests/test_export.py`
 **Riesgo:** medio
 
 ## Resultado observable

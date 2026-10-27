@@ -5,6 +5,7 @@
 ## Aclaraciones
 
 - **S-01 — Decisión de baseline:** se acepta el resultado observable del criterio y su verificación focalizada.
+**Suites de referencia:** `pytest -q`
 **Riesgo:** bajo
 
 ## Criterios de aceptación

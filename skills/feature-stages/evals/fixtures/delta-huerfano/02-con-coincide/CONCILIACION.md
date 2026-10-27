@@ -1,6 +1,7 @@
 # Etapa 02 — delta con veredicto coincide
 
 **Estado:** cerrada
+**Suites de referencia:** `pytest`
 
 ## Criterios de aceptación
 

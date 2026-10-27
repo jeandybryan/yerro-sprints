@@ -112,6 +112,7 @@ def check_exclude(repo: Path, bare: Path) -> None:
 STAGE = """# Etapa 01 — snapshot
 
 **Estado:** cerrada
+**Suites de referencia:** `pytest`
 **Riesgo:** medio
 
 ## Aclaraciones

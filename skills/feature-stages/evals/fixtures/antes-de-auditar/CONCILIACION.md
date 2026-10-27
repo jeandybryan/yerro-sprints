@@ -1,6 +1,7 @@
 # Etapa 01 — antes de auditar
 
 **Estado:** cerrada
+**Suites de referencia:** `pytest -q`
 **Riesgo:** medio
 
 ## Aclaraciones

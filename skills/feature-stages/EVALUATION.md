@@ -46,6 +46,7 @@ Al informar resultados, fijar modelo, versión de Cursor/agente, fecha, configur
 | S32 | Cierre declarado sin contrato válido | `feature-stages`, `next_step.py` | `declarada-cerrada` solo dice que el índice y la auditoría declaran el cierre; no promete que los artefactos cumplan el contrato. La etapa sin `**Snapshot:**` sigue en ese estado y `validate_stage.py` la rechaza: son dos preguntas y ninguna sustituye a la otra. Fixture `cerrada-sin-contrato`; el caso exige el estado y el rechazo del validador a la vez. |
 | S33 | `doctor.py` en verde sobre un árbol que el contrato rechaza | `feature-stages` | Un `OK` de `doctor.py` dice que el índice y los artefactos no se contradicen y que están los campos que su lista enumera; no es un veredicto de contrato. `transiciones` es coherente para doctor y `validate_stage.py` rechaza su etapa cerrada. El caso exige las dos cosas a la vez: si doctor empieza a prometer el contrato, o la fixture se migra y deja de discrepar, falla. |
 | S34 | Bloqueo cuya continuación no desbloquea | `feature-stages`, `next_step.py` | Cada código de bloqueo trae una resolución que el router puede ver. `test_blockers.py` parte de la fixture que produce el bloqueo, aplica sobre una copia la resolución que el propio blocker declara y exige que el código desaparezca. Así se descubrió que `PRESUPUESTO_DE_DELTAS_AGOTADO` ofrecía «aceptar el riesgo residual con owner», que el router no leía nunca: la salida existía en el texto y no en el comportamiento. La resolución se recortó a reabrir o detener. Un código nuevo sin caso falla. |
+| S35 | Suite de referencia declarada y no ejecutada | `feature-stages`, `validate_stage.py` | `**Suites de referencia:**` la declara el humano (B-11) y el cierre exige una fila `E-NN` por comando. `suite-ausente` falla por no declararla y `suite-sin-evidencia` por declarar `npm run lint` sin fila que lo demuestre; `suite-con-evidencia` pasa con dos comandos y dos filas. Antes, la verificación global era narrativa: un `coincide` podía cerrarse sin ejecutar nada. |
 | S15 | Vía exprés pedida sin comprobar la frontera | `feature-stages`, `express-lane` | Ejecuta `expres.py` antes de decidir; registra el cambio en `EXPRES.md` con frontera y verificación; no crea etapa. |
 | S16 | Varios arreglos pequeños acumulados como exprés | `feature-stages`, `express-lane` | Lee el aviso de acumulación de `doctor.py` y propone abrir etapa; un `WARN` no se convierte en cierre silencioso. |
 | I01 | Corte ambiguo o por encabezados | `identify-feature-stages` | Pide aclaración o corta por resultados; asigna requisitos; no crea tareas/auditoría. |
@@ -89,6 +90,9 @@ python3 scripts/validate_stage.py evals/fixtures/riesgo-bajo-sin-test-first
 python3 scripts/validate_stage.py evals/fixtures/riesgo-bajo-con-test-first-sin-revision-independiente
 python3 scripts/validate_stage.py evals/fixtures/ruling-y-parada
 python3 scripts/validate_stage.py evals/fixtures/interfaces-cruzadas
+python3 scripts/validate_stage.py evals/fixtures/suite-con-evidencia/01-etapa
+python3 scripts/validate_stage.py evals/fixtures/suite-ausente/01-etapa
+python3 scripts/validate_stage.py evals/fixtures/suite-sin-evidencia/01-etapa
 python3 scripts/test_next_step.py
 python3 scripts/test_blockers.py
 python3 scripts/test_snapshot.py

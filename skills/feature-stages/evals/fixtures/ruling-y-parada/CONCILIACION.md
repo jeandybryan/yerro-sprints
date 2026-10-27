@@ -1,6 +1,7 @@
 # Etapa 03 — exportar las solicitudes cerradas
 
 **Estado:** cerrada
+**Suites de referencia:** `pytest tests/test_export.py`
 **Riesgo:** medio
 
 ## Resultado observable

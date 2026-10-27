@@ -1,6 +1,7 @@
 # Etapa 01 — presupuesto excedido con veredicto posterior
 
 **Estado:** cerrada
+**Suites de referencia:** `pytest`
 **Riesgo:** medio
 
 ## Criterios de aceptación

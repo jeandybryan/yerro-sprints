@@ -1,6 +1,7 @@
 # Etapa 01 — activa
 
 **Estado:** cerrada
+**Suites de referencia:** `pytest -q`
 
 ## Criterios de aceptación
 

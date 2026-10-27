@@ -1,6 +1,7 @@
 # Etapa 01 — presupuesto agotado
 
 **Estado:** cerrada
+**Suites de referencia:** `pytest`
 **Riesgo:** medio
 
 ## Criterios de aceptación

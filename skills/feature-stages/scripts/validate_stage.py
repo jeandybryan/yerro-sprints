@@ -68,6 +68,7 @@ RISK_RANK = {"bajo": 0, "medio": 1, "alto": 2}
 VERDICT_RE = re.compile(r"^\s*\*\*Veredicto:\*\*\s*(.+?)\s*$", re.I | re.M)
 AUDIT_PASS_RE = re.compile(r"^##\s+Pasada\b.*?$(.*?)(?=^##\s+Pasada\b|\Z)", re.M | re.S | re.I)
 RUNNERS_RE = re.compile(r"^\s*\*\*Runners:\*\*\s*(.+?)\s*$", re.M | re.I)
+SUITES_RE = re.compile(r"^\s*\*\*Suites de referencia:\*\*\s*(.+?)\s*$", re.M | re.I)
 SENSITIVITY_RE = re.compile(r"(?:\||^)\s*Sensibilidad\s*(?:\||$)", re.I | re.M)
 # B-25: `Ruling: <qué> — <por qué> — <qué cuesta>`. Las tres partes son
 # obligatorias; dos guiones largos separan tres tramos no vacíos. Se acepta
@@ -382,6 +383,43 @@ def ledger_rows(audit: str) -> list[str]:
     ]
 
 
+def suite_motivo(conciliation: str) -> bool:
+    """Motivo escrito para declarar `ninguna` como suite de referencia."""
+    return re.search(r"^\s*\*\*Motivo de la suite:\*\*\s*\S", conciliation, re.M | re.I) is not None
+
+
+def reference_suites(conciliation: str) -> list[str] | None:
+    """Comandos de `**Suites de referencia:**`, o None si el campo no está.
+
+    `ninguna` solo vale con motivo escrito: es la misma forma que el contrato
+    usa para un presupuesto ampliado, y evita que «no ejecuté nada» pase en
+    silencio.
+    """
+    match = SUITES_RE.search(conciliation)
+    if not match:
+        return None
+    values = [item.strip() for item in match.group(1).split(",") if item.strip()]
+    if not values:
+        return None
+    if len(values) == 1 and values[0].strip("`*. ").lower() == "ninguna":
+        return [] if suite_motivo(conciliation) else ["ninguna"]
+    return [value.strip("`") for value in values]
+
+
+def ledger_commands(audit: str) -> str:
+    """Texto de la columna `Procedimiento/comando` de cada fila del ledger.
+
+    Se compara por subcadena: el ledger escribe el comando con su invocación
+    completa, así que contenerlo basta para demostrar que se ejecutó.
+    """
+    rows = []
+    for row in ledger_rows(audit):
+        cells = [cell.strip().strip("`") for cell in row.strip().strip("|").split("|")]
+        if len(cells) >= 3:
+            rows.append(cells[2])
+    return "\n".join(rows)
+
+
 def sensitivity_cell(row: str, audit: str) -> str:
     """Valor de la celda `Sensibilidad` de una fila del ledger, o "" si no hay."""
     header = next(
@@ -629,6 +667,24 @@ def main() -> int:
                 )
         result.require(bool(TRACE_RE.search(audit)), "AUDIT coincide sin **Trazabilidad:** CA → T → E")
         result.require(bool(re.search(r"\bE-\d+\b", audit)), "AUDIT coincide sin evidencia E-NN")
+
+        # B-11: la suite de referencia la declara el humano y el cierre la
+        # ejecuta. Sin declararla, `### Verificación global` es narrativa y nadie
+        # sabe qué se corrió; declararla y no registrarla deja un comando
+        # prometido que nunca se ejecutó.
+        suites = reference_suites(conciliation)
+        result.require(
+            suites is not None,
+            "CONCILIACION.md no declara **Suites de referencia:** "
+            "(usar `ninguna` con **Motivo de la suite:** si no aplica)",
+        )
+        for command in suites or []:
+            result.require(
+                command in ledger_commands(audit),
+                "suites de referencia: "
+                + repr(command)
+                + " no tiene fila E-NN en el ledger que demuestre que se ejecutó",
+            )
 
     # Riesgo → evidencia y presupuesto → deltas. Son gates cruzados: el riesgo
     # declarado en la conciliación decide qué fondo exige el ledger, y el delta

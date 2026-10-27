@@ -1,6 +1,7 @@
 # Etapa 04 — deltas mal formados
 
 **Estado:** cerrada
+**Suites de referencia:** `pytest`
 
 ## Criterios de aceptación
 

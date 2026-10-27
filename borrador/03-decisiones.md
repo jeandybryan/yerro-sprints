@@ -119,11 +119,25 @@ exige `**Motivo del presupuesto:**` escrito en la conciliación.
 
 ### B-11 — La suite de referencia la declara el humano
 **Fecha:** 2026-10-22
-**Estado:** `propuesta` ⚠
+**Estado:** `acordada` (2026-10-27)
 **Motivo:** exigir "toda la suite" en repos grandes es caro; exigir "nada" no
 protege. La suite de referencia es una decisión de operador, no del agente.
-**Consecuencias:** nuevo campo `Suites de referencia:` y `Comandos de calidad:`
-en `CONCILIACION.md`; el audit los ejecuta y registra.
+**Consecuencias:** nuevo campo `**Suites de referencia:**` en
+`CONCILIACION.md`; el audit los ejecuta y registra. Acordado al implementar:
+
+- **Siempre obligatorio, con `ninguna` + motivo.** Todo cierre declara la
+  suite; `ninguna` solo vale con `**Motivo de la suite:**` escrito. No se
+  condiciona al riesgo: P22 ya decidió que la prueba no se proporcionaliza, y
+  dos formas de conciliación válida según el riesgo reintroducirían lo que P22
+  descartó.
+- **Se registra como evidencias `E-NN` del ledger**, no como tabla propia en
+  `AUDIT.md`. Reutiliza el cruce `CA → E` que ya existe y se valida igual que
+  el resto: una segunda forma de registrar ejecuciones habría que validarla
+  aparte.
+- **Gate:** cada comando declarado debe aparecer en el `Procedimiento/comando`
+  de una fila `E-NN`. Sin esa fila, el comando se prometió y no se corrió.
+- **Migración:** las 42 conciliaciones de fixture que cierran declaran el
+  comando que su ledger ya registraba. No se inventó ninguna ejecución.
 
 ### B-12 — La mutación obligatoria empieza en riesgo `medio`
 **Fecha:** 2026-10-22

@@ -1,6 +1,7 @@
 # Etapa 07 — auditoría que rebaja el riesgo declarado
 
 **Estado:** cerrada
+**Suites de referencia:** `pytest`
 **Riesgo:** alto
 
 ## Criterios de aceptación

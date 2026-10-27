@@ -233,6 +233,9 @@ VALIDATE_REJECTED = [
     # corrección acotada pudiera corregir sin prueba, el hueco no quedaría
     # cerrado. Y sin `**Archivos:**` su archivo sería alcance nuevo (B-27).
     ("delta-sin-prueba", "D01-T1 no declara Test-first"),
+    # B-11: la suite de referencia la declara el humano y el cierre la ejecuta.
+    ("suite-ausente/01-etapa", "no declara **Suites de referencia:**"),
+    ("suite-sin-evidencia/01-etapa", "'npm run lint' no tiene fila E-NN"),
 ]
 
 VALIDATE_ACCEPTED = [
@@ -248,6 +251,8 @@ VALIDATE_ACCEPTED = [
     "ruling-categoria-2-revisado",
     "interfaces-presentes",
     "riesgo-bajo-con-test-first-sin-revision-independiente",
+    # B-11 positiva: declara dos suites y el ledger tiene una fila por comando.
+    "suite-con-evidencia/01-etapa",
 ]
 
 

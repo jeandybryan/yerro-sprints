@@ -1,6 +1,7 @@
 # Etapa 07 — delta pendiente
 
 **Estado:** cerrada
+**Suites de referencia:** `pytest`
 **Riesgo:** bajo
 
 ## Aclaraciones

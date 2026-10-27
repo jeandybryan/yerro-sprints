@@ -5,6 +5,9 @@
 
 **Estado:** borrador-corte | abierta | cerrada
 **Riesgo:** bajo | medio | alto
+**Suites de referencia:** `pytest -q`, `npm run lint` (los comandos que deben
+pasar para cerrar; `ninguna` solo con **Motivo de la suite:** escrito)
+**Motivo de la suite:** <solo si se declara `ninguna`>
 **Runners:** <pytest | npm test | go test ./...> (opcional; si falta, un `Test:`
 fuera de la lista negra del validador solo avisa)
 **Presupuesto de deltas:** <derivado del riesgo: bajo 2 | medio 1 | alto 1; otro

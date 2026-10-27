@@ -319,8 +319,14 @@ def risk_evidence_gaps(risk: str, audit: str) -> list[str]:
     La sensibilidad se exige siempre (B-23); el riesgo solo añade fondo:
     un caso límite declarado por encima de `bajo` y una prueba de mutación
     observada en rojo por encima de `alto` (B-35, sin herramienta obligatoria).
+
+    Sin auditoría no hay ledger que juzgar: una etapa que se está
+    implementando todavía no tiene pasada, y `implement-stage` ejecuta este
+    validador como comprobación antes del relevo. Exigir el fondo ahí deja un
+    error que solo se silencia escribiendo una auditoría, que es justo lo que
+    esa fase no puede hacer.
     """
-    if not risk:
+    if not risk or not audit.strip():
         return []
     gaps: list[str] = []
     ledger = "\n".join(ledger_rows(audit))

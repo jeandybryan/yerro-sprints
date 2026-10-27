@@ -58,6 +58,21 @@ def closing_gate_errors(skill: str) -> list[str]:
         return []
     return [f"falta el cierre cruzado documentado: `{CLOSING_GATE}`"]
 
+BLOCK_SECTION = "## Bloqueos"
+def blocked_gate_errors(skill: str) -> list[str]:
+    """El bloqueo se escribe donde el router lo lee.
+
+    `next_step.py` y `doctor.py` toman la causa de `## Bloqueos` en
+    `CONCILIACION.md`. Una skill que manda el bloqueo al README o a la lista
+    deja la etapa bloqueada «sin causa escrita», y quien la sigue acaba
+    editando la conciliación sin que nadie se lo haya dicho.
+    """
+    if BLOCK_SECTION in skill and "CONCILIACION.md" in skill:
+        return []
+    return [
+        f"falta el sitio del bloqueo documentado: `{BLOCK_SECTION}` en `CONCILIACION.md`"
+    ]
+
 def routing_errors(routes: list) -> list[str]:
     errors: list[str] = []
     if len(routes) < 5:
@@ -89,6 +104,9 @@ def main() -> int:
     audit_skill = ROOT.parent / "audit-stage" / "SKILL.md"
     if audit_skill.exists():
         errors.extend(closing_gate_errors(audit_skill.read_text()))
+    implement_skill = ROOT.parent / "implement-stage" / "SKILL.md"
+    if implement_skill.exists():
+        errors.extend(blocked_gate_errors(implement_skill.read_text()))
     for skill in SKILLS:
         path=ROOT/"evals"/"cases"/f"{skill}.json"
         if not path.exists(): errors.append(f"falta caso para {skill}"); continue

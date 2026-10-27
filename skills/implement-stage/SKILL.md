@@ -115,8 +115,12 @@ Read the stage through `preflight.py` before opening files: `python3 <skills-roo
 
 ## If blocked
 
-Set stage `bloqueada` and write the concrete blocker in the feature
-README or task list. Do not mark incomplete work done.
+Set stage `bloqueada` and write the concrete blocker in `## Bloqueos` of
+`CONCILIACION.md`: cause, unblocker, required evidence and next review. That
+section is operational, not baseline: leave `Entra`, `No entra`, the decisions
+and the criteria untouched. `next_step.py` and `doctor.py` read the cause from
+there, so a block written anywhere else is reported as "sin causa escrita" and
+the stage looks blocked for no reason. Do not mark incomplete work done.
 
 ## Do not
 

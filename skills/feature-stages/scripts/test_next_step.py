@@ -223,6 +223,11 @@ VALIDATE_REJECTED = [
 
 VALIDATE_ACCEPTED = [
     "valid-stage",
+    # Una etapa en implementación todavía no tiene auditoría. El fondo que
+    # exige el riesgo se juzga sobre el ledger; sin pasada no hay ledger que
+    # juzgar, y pedirlo antes empuja a escribir una auditoría para callar al
+    # validador.
+    "antes-de-auditar",
     "index-estado/05-hecha",
     "riesgo-cruzado-con-motivo",
     "ruling-categoria-1",

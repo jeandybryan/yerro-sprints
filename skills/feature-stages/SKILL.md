@@ -33,6 +33,7 @@ See [express-lane.md](references/express-lane.md).
 python3 <skills-root>/feature-stages/scripts/next_step.py <feature-root> [--stage NN-slug] [--json]
 python3 <skills-root>/feature-stages/scripts/preflight.py <feature-root> [--fase <skill>] [--json]
 python3 <skills-root>/feature-stages/scripts/doctor.py <feature-root>
+python3 <skills-root>/feature-stages/scripts/tasks.py pending <stage> [--json]
 ```
 
 `preflight.py` lists what the phase must read and what it must not, with a
@@ -40,6 +41,12 @@ reason for each omission: no silent cut (P11, P14). Without
 `**Presupuesto de contexto:**` in the conciliation it only reports; with it,
 `--check` fails when the read exceeds the budget. The recommended budget per
 phase is in [stage-contract.md](references/stage-contract.md).
+
+`tasks.py pending <stage>` answers which task IDs are still unchecked across
+`TAREAS.md` and its deltas without re-reading the lists, and flags a
+`**Estado:**` that declares `implementada`/`auditada` while a task is still
+unchecked. It projects the checkbox and decides nothing; the pending gaps of
+the contract are still `validate_stage.py`'s `ERROR:` lines.
 
 `next_step.py` is read-only and returns exactly one public state:
 `trabajando`, `verificando`, `declarada-cerrada` or `necesita-decision`, plus

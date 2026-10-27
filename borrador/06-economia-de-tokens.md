@@ -153,7 +153,7 @@ información, no gate.
 
 ### P13 — Zero-diff antes de leer: el estado se deriva, no se narra
 
-**Estado:** `abierta`
+**Estado:** `implementada` (2026-10-27; consulta de tareas; `trace.py` se colapsó en `validate_stage.py`)
 **Relación:** P5 (diff completo), P8 (vía exprés).
 
 **Qué:** que las preguntas que hoy se responden con una lectura larga se
@@ -162,13 +162,35 @@ respondan con un script que emite una **línea**:
 | Hoy (tokens) | Propuesta (determinista) |
 | --- | --- |
 | El agente lee el diff para saber qué cambió | `diff_scope.py --since <snapshot>` → una línea por archivo + clasificación |
-| El agente lee `TAREAS.md` para saber qué falta | `tasks.py pending --stage NN` → IDs pendientes |
-| El agente compara CA vs tareas vs evidencias | `trace.py --stage NN` → huecos, o `OK` |
+| El agente lee `TAREAS.md` para saber qué falta | `tasks.py pending <etapa>` → IDs pendientes |
+| El agente compara CA vs tareas vs evidencias | `validate_stage.py <etapa>` → huecos como `ERROR:`, o `OK` (no hay `trace.py`) |
 | El agente re-ejecuta y describe el resultado | `evidence.py run` → firma (P2) |
 
 Patrón común: **el LLM lee la conclusión, no el material con el que se obtuvo**.
 La conclusión se puede verificar (`--check`); el material no se pierde: queda en
 los artefactos para el humano.
+
+**Hecho:** `tasks.py pending <etapa> [--json]` responde «qué falta» desde el
+checkbox de `TAREAS.md` y de cada `TAREAS-delta-NN.md`, sin releer las listas.
+Cada fila es `ID`, `archivo` y `título`; el título se acota a 80 caracteres
+porque en datos reales la primera línea de una tarea es un párrafo, y devolverlo
+entero reimportaría el material que la consulta evita. Avisa cuando
+`**Estado:**` dice `implementada`/`auditada` y queda una tarea sin marcar, y una
+lista vacía sale con 2: no hay `OK` sobre una lista que no tiene tareas.
+
+**Lo que se colapsó, y por qué:** `trace.py --stage NN → huecos, o OK` ya existe
+como `validate_stage.py <etapa>`, que emite cada hueco como `ERROR:` y `OK`
+cuando el contrato pasa. Un `trace.py` habría sido una segunda forma de decir lo
+mismo, y el paquete tiene un solo contrato y un solo modo de validación. La
+consulta de huecos sigue siendo `validate_stage.py`; `tasks.py` solo responde
+qué tareas no están marcadas, que es otra pregunta.
+
+`--check` no se añadió: «¿la etapa terminó?» ya lo responde el estado público de
+`next_step.py`, y un segundo veredicto sería un segundo contrato.
+
+**Ejercicio real:** 37 etapas, 9 con pendientes y 1 contradicción
+(`Estado: implementada` con una tarea sin marcar); la consulta pasa de 5–51 KB a
+100–800 bytes por etapa. Tabla S38 en `EVALUATION.md`.
 
 ---
 

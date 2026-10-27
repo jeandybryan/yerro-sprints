@@ -49,6 +49,7 @@ Al informar resultados, fijar modelo, versión de Cursor/agente, fecha, configur
 | S35 | Suite de referencia declarada y no ejecutada | `feature-stages`, `validate_stage.py` | `**Suites de referencia:**` la declara el humano (B-11) y el cierre exige una fila `E-NN` por comando. `suite-ausente` falla por no declararla y `suite-sin-evidencia` por declarar `npm run lint` sin fila que lo demuestre; `suite-con-evidencia` pasa con dos comandos y dos filas. Antes, la verificación global era narrativa: un `coincide` podía cerrarse sin ejecutar nada. |
 | S36 | Trazabilidad que nombra IDs inexistentes | `feature-stages`, `validate_stage.py` | `**Trazabilidad:**` solo se comprobaba que existiera: `CA-01 → T9 → … → E-77` pasaba con `T9` y `E-77` inexistentes. Ahora cada ID citado debe existir en su fuente (T en `TAREAS.md`, E en el ledger de esa pasada, CA/S en `CONCILIACION.md`) y la traza debe nombrar CA, T y E a la vez. Fixtures `trazabilidad-t-inexistente` y `trazabilidad-e-inexistente`; el caso exige el rechazo nombrando el ID ausente. |
 | S37 | Bloqueo sin salida | `feature-stages`, `next_step.py` | B-20: cada bloqueo se clasifica en una banda derivada del router. `in band` nombra a quién o cómo seguir; `out of band` dice qué hacer sin nombrar el camino; `dead end` no tiene salida. `test_blockers.py` clasifica los 11 y falla si alguno es `dead end`; los `out of band` se informan para empujar a escribir la salida. La banda no se escribe a mano porque se desactualiza. |
+| S38 | Leer la lista entera para saber qué falta | `feature-stages`, `implement-stage` | P13: `tasks.py pending` proyecta el checkbox de `TAREAS.md` y de cada `TAREAS-delta-NN.md` en IDs pendientes, sin releer las listas. No decide el estado (`next_step.py`) ni emite huecos (`validate_stage.py`): un `trace.py` habría sido una segunda forma de decir lo mismo. Avisa cuando `**Estado:**` declara la lista terminada con una tarea sin marcar, y una lista vacía no cuenta como "todo hecho". Ejercitada contra 37 etapas reales: 9 con pendientes y 1 contradicción; la consulta baja de 5–51 KB a 100–800 bytes por etapa. |
 | S15 | Vía exprés pedida sin comprobar la frontera | `feature-stages`, `express-lane` | Ejecuta `expres.py` antes de decidir; registra el cambio en `EXPRES.md` con frontera y verificación; no crea etapa. |
 | S16 | Varios arreglos pequeños acumulados como exprés | `feature-stages`, `express-lane` | Lee el aviso de acumulación de `doctor.py` y propone abrir etapa; un `WARN` no se convierte en cierre silencioso. |
 | I01 | Corte ambiguo o por encabezados | `identify-feature-stages` | Pide aclaración o corta por resultados; asigna requisitos; no crea tareas/auditoría. |
@@ -97,7 +98,10 @@ python3 scripts/validate_stage.py evals/fixtures/suite-ausente/01-etapa
 python3 scripts/validate_stage.py evals/fixtures/suite-sin-evidencia/01-etapa
 python3 scripts/validate_stage.py evals/fixtures/trazabilidad-t-inexistente
 python3 scripts/validate_stage.py evals/fixtures/trazabilidad-e-inexistente
+python3 scripts/tasks.py pending evals/fixtures/valid-stage
+python3 scripts/tasks.py pending evals/fixtures/valid-stage --json
 python3 scripts/test_next_step.py
+python3 scripts/test_tasks.py
 python3 scripts/test_blockers.py
 python3 scripts/test_snapshot.py
 python3 scripts/test_expres.py

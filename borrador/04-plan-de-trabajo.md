@@ -137,8 +137,10 @@ Dependencia: B-11 para "suite de referencia".
    `next_step.py` y compruebe que el bloqueo desaparece.
 8. B-20: clasificación `in band` / `out of band` / `dead end` de cada bloqueo de
    fixture en `EVALUATION.md`; un `dead end` es error.
-7. Consultas deterministas de estado (P13): `trace.py`, `tasks.py pending`.
-8. Presupuesto de contexto por fase (P12) sobre `preflight.py`.
+9. Consultas deterministas de estado (P13): `tasks.py pending`; no hay
+   `trace.py` porque `validate_stage.py` ya emite los huecos como `ERROR:`.
+   Hecho 2026-10-27.
+10. Presupuesto de contexto por fase (P12) sobre `preflight.py`.
 
 **Criterio de salida:** los gates cruzados funcionan y el positivo sigue verde
 sin relleno artificial; el contexto de cada fase tiene presupuesto verificado.

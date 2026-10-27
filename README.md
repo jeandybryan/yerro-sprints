@@ -152,6 +152,7 @@ Antes de elegir un paso, léelo desde los artefactos en vez de recordarlo:
 ```bash
 python3 <skills-root>/feature-stages/scripts/next_step.py <feature-root>
 python3 <skills-root>/feature-stages/scripts/doctor.py <feature-root>
+python3 <skills-root>/feature-stages/scripts/tasks.py pending <stage>
 ```
 
 `next_step.py` devuelve un estado público (`trabajando`, `verificando`,
@@ -163,6 +164,12 @@ para una etapa concreta y `--check` para CI. `doctor.py` informa incoherencias
 entre el índice y los artefactos; su `OK` dice que son coherentes, no que
 cumplen el contrato. Ninguno de los dos sustituye un gate: el contrato lo juzga
 `validate_stage.py`.
+
+`tasks.py pending <stage>` dice qué IDs de tarea siguen sin marcar en
+`TAREAS.md` y sus deltas, sin releer las listas; `--json` para máquinas. Avisa
+si `**Estado:**` declara la lista `implementada`/`auditada` con una tarea sin
+marcar. Proyecta el checkbox y no decide nada: los huecos del contrato siguen
+siendo las líneas `ERROR:` de `validate_stage.py`.
 
 ### Evidencia ejecutable
 
@@ -313,6 +320,7 @@ python3 skills/feature-stages/scripts/test_snapshot.py
 python3 skills/feature-stages/scripts/test_diff_scope.py
 python3 skills/feature-stages/scripts/test_evidence.py
 python3 skills/feature-stages/scripts/test_expres.py
+python3 skills/feature-stages/scripts/test_tasks.py
 python3 skills/feature-stages/scripts/doctor.py \
   skills/feature-stages/evals/fixtures/transiciones
 python3 skills/feature-stages/scripts/validate_stage.py \

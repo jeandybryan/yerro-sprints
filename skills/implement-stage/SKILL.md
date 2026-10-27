@@ -94,7 +94,10 @@ Read the stage through `preflight.py` before opening files: `python3 <skills-roo
 ## Do
 
 1. Set stage `implementando` and task state `en curso`.
-2. Implement only the requested principal/delta list. Preserve existing
+2. Implement only the requested principal/delta list. To see what is still
+   unchecked without re-reading the whole list, run
+   `python3 <skills-root>/feature-stages/scripts/tasks.py pending <stage>`; the
+   file remains the source for the task text. Preserve existing
    invariantes acumulados outside its approved scope. Do not reinterpret a
    historical condición de salida as an invariante acumulado after a later
    approved stage superseded it.

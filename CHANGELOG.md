@@ -51,6 +51,23 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
   commitear. Casos nuevos en `test_diff_scope.py` y `test_snapshot.py`; con la
   base anterior, ambos fallan.
 
+
+- `templates/README.md` vuelve a ser la plantilla del índice de la feature. El catálogo de plantillas queda en `templates.md`.
+
+- `generate-stage-tasks` ya no pide ejecutar el validador estructural antes de
+  escribir `TAREAS.md`: con la conciliación cerrada y sin lista, el contrato
+  falla por diseño. Antes de escribir se confirma la transición con
+  `next_step.py`; el validador se ejecuta después.
+- El validador reconoce el tipo de un CA cuando la línea elige una opción
+  (`[condición de salida]`, `[invariante acumulado]`) o lo declara en prosa
+  (`Salida de etapa`, `Invariante acumulada`). El placeholder con las dos
+  opciones sigue valiendo. Una línea sin esos marcadores sigue avisando.
+- El validador del índice marca una etapa como cerrada solo si la celda
+  **Estado** de su fila contiene `cerrada`. La conciliación puede estar
+  `cerrada` mientras la etapa sigue en `lista`, `implementando` o `auditando`.
+- La fila se identifica por el enlace de **Carpeta** (`](NN-slug/`), así una
+  mención del nombre en **Trabajo activo** de otra fila no cuenta.
+
 ### Añadido
 
 - **Oráculo mínimo en `Test:`.** `validate_stage.py` rechaza el trivio
@@ -173,46 +190,6 @@ avisa, sin bloquear, de una etapa no cerrada cuyas tareas no declaran
 `rulings-excesivos` y `rulings-aceptados`; casos retenidos `S21`–`S23` en
 `EVALUATION.md`.
 
-### Cambiado
-
-- `templates/TAREAS.md` exige `**Archivos:**` bajo cada tarea, derivado del CA y
-  nunca del diff ya producido (B-28).
-- `implement-stage` gana la sección **Rulings — decide and record**: la
-  categoría se decide por lo que cambia, no por la duda; solo la categoría 3 y
-  las paradas incondicionales reabren la conciliación.
-- `templates/AUDIT.md` gana `### Rulings revisados`; `audit-stage` no cierra con
-  una marca sin resolver, y `references/decision-and-questions.md` separa la
-  decisión de baseline (`S-NN`) del ruling de ejecución.
-- El ledger de `AUDIT.md` gana la columna `Sensibilidad`; `TAREAS.md` gana
-  `Sensibilidad:` bajo `Test:`; `CONCILIACION.md` gana `**Runners:**`
-  opcional.
-- El README declara la promesa real: **operar no requiere Python; cerrar con
-  evidencia sí**.
-- El ledger de `AUDIT.md` gana `**Deltas:**` y `**Cruza riesgo:**`;
-  `CONCILIACION.md` gana `**Motivo del presupuesto:**`.
-- `test_snapshot.py` comprueba el gate de aprobación: sin
-  `.yerro/approvals.yml`, con una entrada fuera de alcance o con el archivo mal
-  formado, la etapa no cierra.
-
-### Corregido
-
-- `templates/README.md` vuelve a ser la plantilla del índice de la feature. El catálogo de plantillas queda en `templates.md`.
-
-- `generate-stage-tasks` ya no pide ejecutar el validador estructural antes de
-  escribir `TAREAS.md`: con la conciliación cerrada y sin lista, el contrato
-  falla por diseño. Antes de escribir se confirma la transición con
-  `next_step.py`; el validador se ejecuta después.
-- El validador reconoce el tipo de un CA cuando la línea elige una opción
-  (`[condición de salida]`, `[invariante acumulado]`) o lo declara en prosa
-  (`Salida de etapa`, `Invariante acumulada`). El placeholder con las dos
-  opciones sigue valiendo. Una línea sin esos marcadores sigue avisando.
-- El validador del índice marca una etapa como cerrada solo si la celda
-  **Estado** de su fila contiene `cerrada`. La conciliación puede estar
-  `cerrada` mientras la etapa sigue en `lista`, `implementando` o `auditando`.
-- La fila se identifica por el enlace de **Carpeta** (`](NN-slug/`), así una
-  mención del nombre en **Trabajo activo** de otra fila no cuenta.
-
-### Añadido
 
 - Glosario de los campos canónicos (`Estado`, `Origen`, `Riesgo`, `Test-first`, `Test`, `Verificar`, `Snapshot`, `Trazabilidad`, `Veredicto`, `E-NN`) en el contrato transversal.
 - `doctor.py` rechaza una etapa `lista` o posterior cuya conciliación no está `cerrada`. La fixture `handoff-invalido/` cubre tareas prematuras, tareas sin prueba, auditoría incompleta, cierre sin `coincide` y ese estado incompatible.
@@ -273,6 +250,26 @@ avisa, sin bloquear, de una etapa no cerrada cuyas tareas no declaran
 
 ### Cambiado
 
+- `templates/TAREAS.md` exige `**Archivos:**` bajo cada tarea, derivado del CA y
+  nunca del diff ya producido (B-28).
+- `implement-stage` gana la sección **Rulings — decide and record**: la
+  categoría se decide por lo que cambia, no por la duda; solo la categoría 3 y
+  las paradas incondicionales reabren la conciliación.
+- `templates/AUDIT.md` gana `### Rulings revisados`; `audit-stage` no cierra con
+  una marca sin resolver, y `references/decision-and-questions.md` separa la
+  decisión de baseline (`S-NN`) del ruling de ejecución.
+- El ledger de `AUDIT.md` gana la columna `Sensibilidad`; `TAREAS.md` gana
+  `Sensibilidad:` bajo `Test:`; `CONCILIACION.md` gana `**Runners:**`
+  opcional.
+- El README declara la promesa real: **operar no requiere Python; cerrar con
+  evidencia sí**.
+- El ledger de `AUDIT.md` gana `**Deltas:**` y `**Cruza riesgo:**`;
+  `CONCILIACION.md` gana `**Motivo del presupuesto:**`.
+- `test_snapshot.py` comprueba el gate de aprobación: sin
+  `.yerro/approvals.yml`, con una entrada fuera de alcance o con el archivo mal
+  formado, la etapa no cierra.
+
+
 - La plantilla de `AUDIT.md` reemplaza el identificador informal de
   «commit/working tree» por `**Snapshot:**` y añade `**Riesgo auditado:**`.
   `CONCILIACION.md` declara `**Riesgo:**` y `**Presupuesto de deltas:**`.
@@ -283,7 +280,6 @@ avisa, sin bloquear, de una etapa no cerrada cuyas tareas no declaran
 contrato y **un** modo de validación: `riesgo-ausente` y `ca-tipo` fallan
 siempre, porque describen estados que el contrato rechaza. Las fixtures que
 dependían del modo permisivo pasan a negativas o se retiran.
-
 
 ## [0.1.0] - 2026-09-30
 

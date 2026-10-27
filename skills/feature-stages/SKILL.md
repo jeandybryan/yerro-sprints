@@ -42,9 +42,12 @@ reason for each omission: no silent cut (P11, P14). Without
 phase is in [stage-contract.md](references/stage-contract.md).
 
 `next_step.py` is read-only and returns exactly one public state:
-`trabajando`, `verificando`, `listo` or `necesita-decision`, plus the next
-skill and blockers. `doctor.py` reports structural contradictions. Never guess
-the next skill or replace `necesita-decision` with a default.
+`trabajando`, `verificando`, `declarada-cerrada` or `necesita-decision`, plus
+the next skill and blockers. `declarada-cerrada` means the index and the audit
+declare the stage closed; it does **not** mean the artifact contract passes —
+run `validate_stage.py` for that. `doctor.py` reports structural
+contradictions. Never guess the next skill or replace `necesita-decision` with
+a default.
 
 For audit work, also use:
 

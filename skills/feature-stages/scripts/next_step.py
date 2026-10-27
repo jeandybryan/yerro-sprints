@@ -7,7 +7,7 @@ Solo lee. No escribe archivos, no consume tokens y no decide por el agente:
 lee el estado desde el índice y los artefactos de cada etapa y devuelve el
 siguiente paso que el contrato permite.
 
-Estados públicos: trabajando | verificando | listo | necesita-decision.
+Estados públicos: trabajando | verificando | declarada-cerrada | necesita-decision.
 
 Salida: 0 cuando reporta el estado; 1 cuando el árbol no se puede leer.
 Con --check, 1 cuando el estado es necesita-decision (uso en CI).
@@ -22,7 +22,7 @@ from pathlib import Path
 
 TRABAJANDO = "trabajando"
 VERIFICANDO = "verificando"
-LISTO = "listo"
+DECLARADA_CERRADA = "declarada-cerrada"
 DECISION = "necesita-decision"
 
 CONCILIACION_ABIERTA = ("borrador-corte", "abierta")
@@ -225,7 +225,7 @@ def analyze_stage(feature_root: Path, name: str, row: dict[str, str] | None) -> 
         state, skill = TRABAJANDO, "implement-stage"
     elif tasks_state in ("implementada", "auditada"):
         if verdict == "coincide":
-            state, skill = LISTO, None
+            state, skill = DECLARADA_CERRADA, None
         else:
             state, skill = VERIFICANDO, "audit-stage"
     else:

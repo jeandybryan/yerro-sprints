@@ -22,7 +22,7 @@ HERE = Path(__file__).resolve().parent
 FIXTURES = HERE.parent / "evals" / "fixtures"
 sys.path.insert(0, str(HERE))
 
-from next_step import DECISION, LISTO, TRABAJANDO, VERIFICANDO, FeatureError, analyze  # noqa: E402
+from next_step import DECISION, DECLARADA_CERRADA, TRABAJANDO, VERIFICANDO, FeatureError, analyze  # noqa: E402
 import validate_stage  # noqa: E402
 
 errors: list[str] = []
@@ -33,7 +33,8 @@ CASES = [
     ("transiciones", "01-corte", TRABAJANDO, "conciliate-stage", []),
     ("transiciones", "04-lista", TRABAJANDO, "implement-stage", []),
     ("transiciones", "05-auditando", VERIFICANDO, "audit-stage", []),
-    ("transiciones", "06-cerrada", LISTO, None, []),
+    ("transiciones", "06-cerrada", DECLARADA_CERRADA, None, []),
+    ("cerrada-sin-contrato", None, DECLARADA_CERRADA, None, []),
     ("transiciones", "07-delta", TRABAJANDO, "implement-stage", []),
     ("transiciones", None, VERIFICANDO, "audit-stage", []),
     ("sin-tareas", None, TRABAJANDO, "generate-stage-tasks", []),
@@ -567,12 +568,37 @@ def check_behavioral_materialization() -> None:
         finally:
             shutil.rmtree(work, ignore_errors=True)
 
+def check_declarada_no_valida_el_contrato() -> None:
+    """declarada-cerrada declara cierre; no promete que el contrato de artefactos pase."""
+    global checked
+    root = FIXTURES / "cerrada-sin-contrato"
+    result = analyze(root, None)
+    checked += 1
+    if result["state"] != DECLARADA_CERRADA:
+        fail(
+            f"cerrada-sin-contrato: estado {result['state']!r}, "
+            f"se esperaba {DECLARADA_CERRADA!r}"
+        )
+    contract = run("validate_stage.py", str(root / "01-cerrada"))
+    checked += 1
+    if contract.returncode == 0:
+        fail(
+            "cerrada-sin-contrato: el contrato la acepta; la fixture ya no "
+            "demuestra la diferencia entre declarar cierre y cumplir el contrato"
+        )
+    elif "AUDIT coincide sin **Snapshot:**" not in contract.stdout:
+        fail(
+            "cerrada-sin-contrato: el rechazo no nombra el snapshot ausente: "
+            f"{contract.stdout.strip()[:160]}"
+        )
+
 def main() -> int:
     check_transitions()
     check_doctor()
     check_doctor_structural()
     check_cli()
     check_validate_contract()
+    check_declarada_no_valida_el_contrato()
     check_validate_no_crash()
     check_expres_warning()
     check_rulings_warning()

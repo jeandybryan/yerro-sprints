@@ -155,10 +155,13 @@ python3 <skills-root>/feature-stages/scripts/doctor.py <feature-root>
 ```
 
 `next_step.py` devuelve un estado público (`trabajando`, `verificando`,
-`listo`, `necesita-decision`), la única skill siguiente y los bloqueos con su
-resolución. `--json` para máquinas, `--stage NN-slug` para una etapa concreta y
-`--check` para CI. `doctor.py` informa incoherencias entre el índice y los
-artefactos. Ambos son de solo lectura y no sustituyen ningún gate.
+`declarada-cerrada`, `necesita-decision`), la única skill siguiente y los
+bloqueos con su resolución. `declarada-cerrada` significa que el índice y la
+auditoría declaran la etapa cerrada, no que los artefactos cumplan el contrato:
+para eso está `validate_stage.py`. `--json` para máquinas, `--stage NN-slug`
+para una etapa concreta y `--check` para CI. `doctor.py` informa incoherencias
+entre el índice y los artefactos. Ambos son de solo lectura y no sustituyen
+ningún gate.
 
 ### Evidencia ejecutable
 

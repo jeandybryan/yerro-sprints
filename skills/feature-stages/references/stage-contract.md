@@ -17,7 +17,9 @@ python3 <skills-root>/feature-stages/scripts/approvals.py <repo> --stage NN-slug
 python3 <skills-root>/feature-stages/scripts/diff_scope.py <stage> --repo <repo> [--base REF]
 ```
 
-Estados públicos: `trabajando`, `verificando`, `listo`, `necesita-decision`. `next_step.py` devuelve uno y la skill siguiente; `doctor.py` informa incoherencias entre el índice y los artefactos. Ambos son de solo lectura y no rebajan ningún gate: ante una discrepancia gana el gate más estricto y la discrepancia se registra como bloqueo. `necesita-decision` detiene el ciclo; no se sustituye por un valor por defecto.
+Estados públicos: `trabajando`, `verificando`, `declarada-cerrada`, `necesita-decision`. `next_step.py` devuelve uno y la skill siguiente; `doctor.py` informa incoherencias entre el índice y los artefactos. Ambos son de solo lectura y no rebajan ningún gate: ante una discrepancia gana el gate más estricto y la discrepancia se registra como bloqueo. `necesita-decision` detiene el ciclo; no se sustituye por un valor por defecto.
+
+`declarada-cerrada` dice lo que verifica el router: el índice marca la etapa `cerrada` y su auditoría declara `coincide`. No dice que los artefactos cumplan el contrato —`S-NN`, `Origen:`, `Interfaces:`, `Test-first:`, `**Snapshot:**`—, que es lo que juzga `validate_stage.py`. Antes se llamaba `listo`, y el nombre prometía más de lo comprobado: once etapas reales lo mostraban mientras el validador las rechazaba en todas sus tareas. La diferencia no se cierra en el router: un estado que declara cierre y un contrato que lo verifica son dos preguntas distintas, y el cierre cruzado las une con `validate_stage.py <stage> --repo <repo>` en la auditoría.
 
 ## Estados y baseline
 

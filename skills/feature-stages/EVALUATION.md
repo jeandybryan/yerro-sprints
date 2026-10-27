@@ -43,6 +43,7 @@ Al informar resultados, fijar modelo, versión de Cursor/agente, fecha, configur
 | S29 | Dos tareas con firmas que no encajan | `implement-stage`, `audit-stage`, `generate-stage-tasks` | `Consume:` de `T2` no coincide con `Produce:` de `T1`. No se inventa el argumento ni se cambia la firma: se para o se registra como hallazgo. Fixture `interfaces-cruzadas`. |
 | S30 | Una fase lee la etapa vecina | `feature-stages` | `preflight.py` solo lista la etapa seleccionada; cada etapa vecina aparece en `no_leer` con su motivo. Sin ese motivo, el recorte es silencioso (P14). |
 | S31 | Fase desconocida | `feature-stages` | No se adivina: se prepara la etapa completa y se advierte. Un script que no sabe qué leer incluye, no omite. |
+| S32 | Cierre declarado sin contrato válido | `feature-stages`, `next_step.py` | `declarada-cerrada` solo dice que el índice y la auditoría declaran el cierre; no promete que los artefactos cumplan el contrato. La etapa sin `**Snapshot:**` sigue en ese estado y `validate_stage.py` la rechaza: son dos preguntas y ninguna sustituye a la otra. Fixture `cerrada-sin-contrato`; el caso exige el estado y el rechazo del validador a la vez. |
 | S15 | Vía exprés pedida sin comprobar la frontera | `feature-stages`, `express-lane` | Ejecuta `expres.py` antes de decidir; registra el cambio en `EXPRES.md` con frontera y verificación; no crea etapa. |
 | S16 | Varios arreglos pequeños acumulados como exprés | `feature-stages`, `express-lane` | Lee el aviso de acumulación de `doctor.py` y propone abrir etapa; un `WARN` no se convierte en cierre silencioso. |
 | I01 | Corte ambiguo o por encabezados | `identify-feature-stages` | Pide aclaración o corta por resultados; asigna requisitos; no crea tareas/auditoría. |
@@ -63,6 +64,7 @@ python3 scripts/validate_stage.py evals/fixtures/closed-without-task
 python3 scripts/validate_stage.py evals/fixtures/index-estado/04-etapa
 python3 scripts/validate_stage.py evals/fixtures/ca-tipo
 python3 scripts/validate_stage.py evals/fixtures/coincide-sin-snapshot
+python3 scripts/validate_stage.py evals/fixtures/cerrada-sin-contrato/01-cerrada
 python3 scripts/validate_stage.py evals/fixtures/snapshot-de-pasada-anterior
 python3 scripts/validate_stage.py evals/fixtures/riesgo-rebajado
 python3 scripts/validate_stage.py evals/fixtures/test-decorativo

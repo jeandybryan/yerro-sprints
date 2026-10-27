@@ -1,15 +1,16 @@
 # 11 — Resolución de lo abierto
 
-> Estado: **cerrado** el 2026-10-23. De las 20 preguntas, 17 quedaron resueltas.
-> Q9 espera datos de uso real; Q2 y Q13 siguen diferidas por decisión
-> (B-06). Q1 se ratificó el 2026-10-23 como B-10 con `alto → 1`.
+> Estado: **cerrado** el 2026-10-23, **revisado** el 2026-10-27 cuando Q9
+> encontró su dato. De las 20 preguntas, 18 quedaron resueltas.
+> Q2 y Q13 siguen diferidas por decisión (B-06). Q1 se ratificó el 2026-10-23
+> como B-10 con `alto → 1`; Q9 se cerró al medir seis features reales.
 >
 > Cada bloque conserva **qué cambia** y **qué se pierde**, para que la decisión
 > pueda revisarse con su motivo cuando llegue el momento.
 
 ---
 
-## Estado final: 20 preguntas, 17 cerradas
+## Estado final: 20 preguntas, 18 cerradas
 
 | Pregunta | Cómo quedó | Norma |
 | --- | --- | --- |
@@ -29,14 +30,14 @@
 | Q19 | El auditor revisa con artefactos, no con memoria | B-32 |
 | Q20 | Aviso a partir de cuatro rulings por tarea | B-33 |
 | Q1 | Presupuesto derivado `bajo → 2`, `medio → 1`, `alto → 1`, sobrescribible con motivo | B-10 |
-| Q9 | 📏 **Necesita dato**: `preflight.py` informa antes de fijar un número | — |
+| Q9 | Presupuesto recomendado calibrado sobre trabajo real: `identify`/`audit` 900, `conciliate`/`generate` 300, `implement` 400 | P12, B-15 |
 | Q2 | ⏸ Diferida (B-06) | — |
 | Q13 | ⏸ Diferida (B-06) | — |
 
 **Consecuencia:** ninguna fase está bloqueada por una pregunta sin responder.
-Q9 no se resuelve escribiendo más: se resuelve midiendo, y ya tiene escrita la
-regla de medición. Q1 se ratificó al implementar, con la evidencia del gate
-cruzado (B-10).
+Q9 se resolvió al medir, no al escribir más: el número salió de seis features
+reales y entró como recomendación. Q1 se ratificó al implementar, con la
+evidencia del gate cruzado (B-10).
 
 ## Por qué estas se pudieron cerrar sin elegir nada
 
@@ -105,38 +106,49 @@ decisión, es un hallazgo — y eso convierte B-25 en algo que se paga solo.
 
 ---
 
-## Las que necesitan un dato (no un acuerdo)
+## Las que necesitaban un dato (ya lo tienen)
 
-### Q9: el presupuesto de contexto sale de medir, no de estimar
+Q9 encontró su dato el 2026-10-27. Q1 ya estaba ratificada como B-10.
 
-Hoy P12 propone números (`identify ≤ 400` líneas, etc.) que son **mis
-estimaciones**. Fijarlos antes de medir crea un gate que se incumple para poder
-trabajar.
+### Q9: el presupuesto de contexto se calibró con trabajo real
 
-**Respuesta:** `preflight.py` entra **sin gate**, en modo informe. Se mide una
-semana de uso real. El presupuesto se fija en Fase 3 **con los datos delante**.
+P12 proponía números (`identify ≤ 400` líneas, `audit ≤ 1000`…) que eran
+**estimaciones**. Fijarlos antes de medir crea un gate que se incumple para
+poder trabajar.
 
-**Instrumento listo (2026-10-26):** `preflight.py` mide líneas por fase y
-respeta un `**Presupuesto de contexto:**` solo si la etapa lo declara. Sin
-ese campo no falla, que es lo que impide inventar el número antes de tener
-el dato. Lo que falta ya no es código: es medir.
+**Cómo se hizo:** `preflight.py` entró **sin gate**, en modo informe, y el
+número esperó al dato. El dato llegó en forma de corpus: seis features reales
+—47 etapas, todas implementadas y cerradas con el proceso— medidas fase por
+fase. El máximo observado redondeado a la centena da `identify`/`audit` 900,
+`conciliate`/`generate` 300, `implement` 400.
 
-La pregunta de si es `WARN` o `ERROR` (que plantea gentle-ai, que *rechaza* el
-trabajo que no cabe) se decide **con el mismo dato**: si al fijar el número real
-el 90 % del trabajo cabe, es `ERROR`; si el 40 % no cabe, poner `ERROR` solo
-enseña a saltárselo.
+**Qué corrigió el dato:**
+
+1. `identify ≤ 400` habría rechazado 2 de 6 árboles reales (679 y 824), que el
+   equipo dio por buenos. Un gate que rechaza trabajo aceptado se aprende a
+   saltar.
+2. `identify` con 400 y `audit` con 1000 era incoherente: ambos leen los mismos
+   tres archivos de la etapa y daban el mismo total en las seis features.
+   Cualquier etapa entre 400 y 1000 demostraba que uno de los dos sobraba.
+
+**`WARN` o `ERROR`:** con el 100 % del corpus aceptado dentro del presupuesto,
+un simple aviso no sirve; el gate debe morder cuando una etapa se desborde de
+verdad. Clase `ERROR`.
+
+**Cómo entra:** como **recomendación** en `stage-contract.md`, no como valor por
+defecto. `--check` sigue mirando solo las etapas que declaran
+`**Presupuesto de contexto:**`, así que ningún trabajo en curso queda bloqueado
+retroactivamente por un número que no aceptó.
 
 ### Q1: la tabla riesgo → evidencia se deriva, no se inventa
 
-Hoy P4 propone `bajo → 2`, `medio → 1`, `alto → 0` deltas. Son números míos.
+~~P4 propone `bajo → 2`, `medio → 1`, `alto → 0` deltas. Son números míos.~~
 
-**Respuesta:** no fijarlos por defecto. Primero se miden las etapas reales de
-los repos consumidores: cuántos deltas consume una etapa de cada riesgo. El
-default se calcula de esa distribución y se escribe en el contrato **cité** como
-"derivado de N etapas". Sobrescribir sigue permitido, con motivo.
-
-Si no hay etapas reales para medir, el default es el más conservador de los
-propuestos (`bajo → 1`, no `bajo → 2`), y se revisa tras la primera tanda.
+**Ratificada el 2026-10-23 como B-10** con `bajo → 2`, `medio → 1`,
+`alto → 1`, sobrescribible con `**Motivo del presupuesto:**`. El `alto → 0`
+del borrador se descartó: una etapa de riesgo alto sin corrección posible es
+una etapa que no se cierra, no una que se cierra sin deltas. Queda anotado aquí
+porque esta sección es donde nació la pregunta.
 
 ---
 
@@ -248,12 +260,12 @@ el intercambio real**, y conviene que lo decidas tú, no yo.
 
 Nada de este documento bloquea el plan.
 
-- **Q9** se cierra con datos de uso real, no con más decisiones (Fase 3). El dato que falta es concreto: el `Total:` de `preflight.py` en las cinco fases de la primera etapa real. La muestra sintética no sirve —cuatro features de juguete dan 41–127 líneas frente a las 400–1000 que propone P12—, así que el número se fija cuando exista esa etapa, comparando el trabajo real contra la propuesta: si cabe con holgura el gate no se fija; si una fase lo excede siempre, el número propuesto está mal.
+- **Q9** quedó cerrada el 2026-10-27. El dato no era el `Total:` de una etapa: existía ya en seis features reales del corpus (47 etapas, todas implementadas y cerradas). El máximo por fase, redondeado a la centena, da `identify`/`audit` 900, `conciliate`/`generate` 300, `implement` 400, y entra en `stage-contract.md` como **recomendación**: `--check` sigue mirando solo las etapas que declaran `**Presupuesto de contexto:**`. El dato corrigió dos cosas del borrador: `identify ≤ 400` habría rechazado 2 de 6 árboles reales, y `identify`/`audit` no pueden tener presupuestos distintos porque leen los mismos archivos.
 - **Q2 y Q13** siguen diferidas hasta medir la fricción (B-06).
 - El siguiente trabajo es **implementar**, no seguir diseñando.
 - **Los IDs internos se citan en lo que se distribuye, pero no viajan con él.** `skills/` cita **23 IDs distintos en 107 apariciones** —`B-27` diecisiete veces, `B-26` once, `B-35` nueve, `P17` ocho…— como procedencia de sus reglas, y `npx skills add` copia solo `skills/`: quien instala el paquete no puede resolver ninguno. No es una referencia rota como `PUBLISHING.md` —la frase se entiende sin abrirla— pero sí una dependencia invisible. Decidido 2026-10-27: se anota y no se toca; hacerlos resolubles dentro del paquete o quitarlos es una decisión de producto pendiente.
 
-Y una advertencia sobre el propio método: las diecisiete decisiones de arriba
+Y una advertencia sobre el propio método: las dieciocho decisiones de arriba
 fueron acordadas en conversación, no probadas. Antes de escribir la primera
 regla en `skills/` hay que ver al agente fallar sin ella (B-24) y, sobre todo,
 alfilerar con fixtures que hoy **fallan** con el contrato viejo (B-02). Sin

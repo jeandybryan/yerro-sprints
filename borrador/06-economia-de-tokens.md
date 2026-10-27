@@ -67,7 +67,7 @@ Debería decir `python3 scripts/x.py` o no estar.
 
 ### P11 — `preflight.py`: el contexto se calcula, no se adivina
 
-**Estado:** `implementada` ✅ (2026-10-26; P12 sigue sin número hasta Q9)
+**Estado:** `implementada` ✅ (2026-10-26; P12 fijada por Q9 el 2026-10-27)
 **Relación:** extiende la Política de contexto de `stage-contract.md`; depende de
 P6 (trazabilidad) para saber qué citar.
 
@@ -109,7 +109,7 @@ evita leer lo que no se usa).
 
 ### P12 — Presupuesto de contexto por fase, verificado por script
 
-**Estado:** `abierta`
+**Estado:** `implementada` ✅ (2026-10-27, con los números calibrados por Q9)
 **Relación:** B-11 (el humano declara), P11 (el script mide).
 
 **Qué:** declarar en el contrato un presupuesto máximo de contexto por fase,
@@ -117,12 +117,22 @@ medido en **líneas de archivo leído** (determinista, sin dependencia de
 tokenizador):
 
 ```text
-identify   ≤ 400 líneas
-conciliate ≤ 600
-generate   ≤ 400
-implement  ≤ 800  (+ código tocado, que no cuenta)
-audit      ≤ 1000
+identify / audit       900 líneas  (leen los mismos artefactos: un solo número)
+conciliate / generate  300 líneas
+implement              400 líneas  (+ código tocado, que no cuenta)
 ```
+
+**Calibración (Q9, 2026-10-27):** los números salen de medir seis features
+reales —47 etapas, todas implementadas y cerradas con el proceso— y quedarse
+con el máximo observado redondeado a la centena: 824 → 900, 268 → 300,
+380 → 400. La estimación anterior (400/600/400/800/1000) no era arbitraria,
+pero `identify ≤ 400` habría rechazado 2 de 6 árboles reales (679 y 824), y
+separar `identify` de `audit` con 400 y 1000 contradecía al propio
+instrumento: ambos leen los mismos tres archivos y daban el mismo total en las
+seis features.
+
+Los números entran como **recomendación**, no como valor por defecto: ninguna
+etapa está obligada a declararlos y `--check` solo mira las que lo hacen.
 
 `preflight.py --check` devuelve error si el plan de lectura de la fase excede el
 presupuesto, y sugiere qué recortar. Sin `--check` solo informa.
@@ -238,10 +248,10 @@ computable, el LLM no debe producirlo.
 ### Antes de agregar una instrucción a una skill
 
 ```text
-¿Es una condición?         → script con exit code
-¿Es un valor?              → script que lo emite
+¿Es una condición? → script con exit code
+¿Es un valor? → script que lo emite
 ¿Es una decisión producto? → LLM, con formato de pregunta (Contexto/Pregunta/Propuesta)
-¿Es un juicio de calidad?  → LLM, con humano que firma (P3)
+¿Es un juicio de calidad? → LLM, con humano que firma (P3)
 ```
 
 ### Lo que cambia en el contrato

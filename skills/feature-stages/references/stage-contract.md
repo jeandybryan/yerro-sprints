@@ -152,8 +152,29 @@ Tres reglas lo gobiernan (P14):
 - las **líneas** son la medida reproducible; los tokens son información.
 
 Sin `**Presupuesto de contexto:**` en la conciliación, `preflight.py` solo
-informa. Con él, `--check` devuelve error al excederse (P12). El número no se
-fija hasta medir (Q9): hoy no hay presupuesto declarado en ninguna etapa.
+informa. Con él, `--check` devuelve error al excederse (P12).
+
+Presupuesto recomendado, calibrado el 2026-10-27 sobre seis features reales (47
+etapas, todas implementadas y cerradas con el proceso): se mide la etapa activa
+de cada árbol fase por fase y se toma el máximo observado, redondeado a la
+centena para dejar margen.
+
+| Fase | Máximo observado | Recomendado |
+|---|---|---|
+| identify / audit | 824 | 900 |
+| conciliate / generate | 268 | 300 |
+| implement | 380 | 400 |
+
+`identify` y `audit` comparten número porque leen los mismos tres artefactos de
+la etapa: dos presupuestos distintos para la misma lectura solo pueden
+contradecirse, y con la propuesta anterior —400 y 1000— cualquier etapa entre
+ambos demostraba que uno de los dos no significaba nada.
+
+Son una **recomendación**, no un valor por defecto: ninguna etapa está obligada
+a declararlos y `--check` solo mira las que lo hacen. Calibrar sobre el máximo
+de trabajo aceptado evita el otro extremo: un presupuesto por debajo de 824
+habría rechazado etapas que el equipo dio por buenas, y un gate que rechaza
+trabajo aceptado se aprende a saltar.
 
 ## Glosario
 

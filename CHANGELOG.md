@@ -7,6 +7,10 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+### Añadido
+
+- **El presupuesto de contexto por fase ya tiene número, y salió de medir trabajo real.** `Q9` bloqueaba `P12` desde el principio: los límites (`identify ≤ 400`, `audit ≤ 1000`…) eran estimaciones y fijarlos antes de medir crea un gate que se incumple para poder trabajar. `preflight.py` entró sin gate y el número esperó al dato. El dato apareció al usar el paquete contra seis features reales —47 etapas, todas implementadas y cerradas—: midiendo el plan de lectura de la etapa activa en cada fase, el máximo observado fue 824 (`identify`/`audit`), 268 (`conciliate`/`generate`) y 380 (`implement`). El presupuesto recomendado es el máximo redondeado a la centena —**900, 300 y 400**— porque calibrar por debajo del trabajo aceptado habría rechazado etapas que el equipo dio por buenas. El dato corrigió dos cosas de la propuesta: `identify ≤ 400` rechazaba 2 de 6 árboles reales, e `identify`/`audit` compartían archivos pero no número, así que cualquier etapa entre 400 y 1000 demostraba que uno de los dos no significaba nada. Entra como **recomendación** en `stage-contract.md`: `--check` sigue mirando solo las etapas que declaran `**Presupuesto de contexto:**`, para no imponer un número retroactivamente.
+
 ## [0.2.0] - 2026-10-27
 
 ### Corregido

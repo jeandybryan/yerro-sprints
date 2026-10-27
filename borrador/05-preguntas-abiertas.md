@@ -179,15 +179,17 @@ qué criterio sirve, que es lo único que hoy no comprueba nadie.
 
 ---
 
-## Q9 — ¿Qué presupuesto de contexto por fase es razonable? 📏 `NECESITA DATO`
+## Q9 — ¿Qué presupuesto de contexto por fase es razonable? ✅ `RESUELTA`
 
-> **Estado 2026-10-26:** el instrumento existe (`preflight.py`) y mide. El
-> número sigue sin fijarse: ese es el dato que falta. Ver `11-resolucion-abiertas.md`.
+> **Estado 2026-10-27:** medido sobre seis features reales (47 etapas,
+> implementadas y cerradas con el proceso). Presupuesto recomendado:
+> `identify`/`audit` 900, `conciliate`/`generate` 300, `implement` 400. Es una
+> recomendación, no un valor por defecto. Ver `11-resolucion-abiertas.md`.
 
-**Contexto:** P12 propone límites en líneas (`identify ≤ 400`,
-`conciliate ≤ 600`, `generate ≤ 400`, `implement ≤ 800`, `audit ≤ 1000`). Son
-estimaciones mías basadas en el tamaño actual de las plantillas y referencias;
-no hay medición real de uso.
+**Contexto:** P12 propone límites en líneas. Los originales eran
+`identify ≤ 400`, `conciliate ≤ 600`, `generate ≤ 400`, `implement ≤ 800`,
+`audit ≤ 1000`, estimados sobre el tamaño de las plantillas y sin medición real.
+Q9 los calibró contra seis features reales; ver más abajo.
 
 **Pregunta:** ¿Fijamos estos números, los dejamos sin gate (solo informativos)
 hasta medir, o los calculamos a partir del primer `preflight.py` real?
@@ -206,7 +208,18 @@ sigue en pie, pero el destino no debería ser un simple aviso.
 
 #### Estado de la resolución
 
-`preflight.py` entra sin gate, en modo informe; el número se fija con datos. `WARN` vs `ERROR` se decide con el mismo dato. Ver `11-resolucion-abiertas.md`.
+`preflight.py` entró sin gate, en modo informe, y el número se fijó al medir. `WARN` vs `ERROR` se decidió con ese mismo dato: clase `ERROR`. Ver `11-resolucion-abiertas.md`.
+
+**Resolución (2026-10-27):** el dato existe —seis features reales, 47 etapas,
+todas implementadas y cerradas con el proceso—. Con el `Total:` de
+`preflight.py` por árbol y fase, el máximo observado redondeado a la centena da
+`identify`/`audit` 900, `conciliate`/`generate` 300, `implement` 400. Se enrolan
+como **recomendación** en `stage-contract.md`: `--check` sigue mirando solo las
+etapas que declaran `**Presupuesto de contexto:**`, para no imponer un número
+retroactivamente. Dos correcciones al borrador original: `identify ≤ 400`
+habría rechazado 2 de 6 árboles reales (679 y 824), y `identify`/`audit`
+comparten presupuesto porque leen los mismos tres archivos y daban el mismo
+total en las seis features. Clase `ERROR`: el 100 % del corpus aceptado cabe.
 
 ---
 

@@ -38,7 +38,8 @@ python3 <skills-root>/feature-stages/scripts/doctor.py <feature-root>
 `preflight.py` lists what the phase must read and what it must not, with a
 reason for each omission: no silent cut (P11, P14). Without
 `**Presupuesto de contexto:**` in the conciliation it only reports; with it,
-`--check` fails when the read exceeds the budget.
+`--check` fails when the read exceeds the budget. The recommended budget per
+phase is in [stage-contract.md](references/stage-contract.md).
 
 `next_step.py` is read-only and returns exactly one public state:
 `trabajando`, `verificando`, `listo` or `necesita-decision`, plus the next

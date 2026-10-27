@@ -179,7 +179,7 @@ def analyze_stage(feature_root: Path, name: str, row: dict[str, str] | None) -> 
         block(
             "PRESUPUESTO_DE_DELTAS_AGOTADO",
             f"{len(deltas)} delta(s) usados de {budget} y la auditoría sigue en no coincide",
-            "reabrir la conciliación o aceptar el riesgo residual con owner; no escribir otro delta",
+            "reabrir la conciliación o detener la etapa; no escribir otro delta",
         )
 
     if stage_state == "bloqueada":

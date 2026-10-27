@@ -9,6 +9,7 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Corregido
 
+- **La serie publicada es `0.x`, y el CHANGELOG ya lo dice.** La entrada del import inicial estaba como `## [1.0.0] - 2026-09-30`, mientras `GOVERNANCE.md` declara que la serie publicada es `0.x` mientras el contrato pueda cambiar. Desde ese import el contrato cambió en cosas que rompen compatibilidad —el alcance lee también los deltas, el ledger no se juzga sin pasada, el cierre exige `--repo`—, que es exactamente lo que `0.x` significa. Pasa a `0.1.0`; `[Unreleased]` queda para `0.2.0`. Ningún tag existía, así que no hay release que corregir.
 - **`AGENTS.md` ya no manda a un documento que no existe.** Su primer paso antes de tocar un archivo era «Lee `PUBLISHING.md` si no lo conoces», y ese archivo nunca existió: `git log --all -- PUBLISHING.md` está vacío. El paso que debía orientar al mantenedor apuntaba a la nada, y sobrevivió porque el comprobador de enlaces solo recorría los `SKILL.md` y siete documentos de `references/`, y porque un nombre entre comillas invertidas no era un enlace para nadie. Ahora apunta a `GOVERNANCE.md` y `RELEASE_CHECKLIST.md`, que es donde están esas reglas, y `validate_skill_evals.py` recorre también los documentos de mantenimiento y exige que cada `.md` que nombran exista. Los nombres de patrón (`TAREAS-delta-NN.md`) quedan fuera de la regla a propósito. Caso con las dos direcciones en `test_skill_evals.py`.
 - **La evaluación conductual se puede materializar.** La receta decía «materializar la fixture indicada en un repositorio temporal», y copiar la carpeta entera copia también su `AUDIT.md`, que afirma `coincide` sobre un árbol que no lo cumple: al ejecutar `S28` y `S29` por primera vez, tres de los cuatro casos pararon en `COINCIDE_SIN_CIERRE` antes de medir nada, y hubo que rehacer el montaje a mano. `EVALUATION.md` dice ahora qué se materializa por caso —sin pasada para implementar y revisar la lista, con pasada para auditar, que es su fallo sembrado— y por qué el caso de auditoría se lanza con `audit-stage` en vez de seguir `siguiente`. `test_next_step.py` monta los tres casos y exige `trabajando`; copiar la pasada en uno de implementación lo pone en rojo.
 - **El validador ya no exige el ledger de una etapa que no se ha auditado.** `risk_evidence_gaps()` corría sobre una auditoría vacía, así que una etapa en riesgo `medio` o `alto` sin `AUDIT.md` fallaba con «el ledger no declara un caso límite ni un negativo demostrado». `implement-stage` ejecuta ese validador antes del relevo y tiene prohibido escribir la auditoría: el único modo de callar el error era fabricar la pasada, que es el falso cierre que el paquete persigue. Sin pasada no hay ledger que juzgar y el fondo no se reclama; el gate no se apaga, porque el mismo ledger real, quitándole el caso límite, sigue rechazándose. Fixture `antes-de-auditar` y caso en `test_next_step.py`.
@@ -284,7 +285,7 @@ siempre, porque describen estados que el contrato rechaza. Las fixtures que
 dependían del modo permisivo pasan a negativas o se retiran.
 
 
-## [1.0.0] - 2026-09-30
+## [0.1.0] - 2026-09-30
 
 ### Añadido
 

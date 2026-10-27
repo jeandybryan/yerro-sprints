@@ -248,9 +248,10 @@ el intercambio real**, y conviene que lo decidas tú, no yo.
 
 Nada de este documento bloquea el plan.
 
-- **Q9** se cierra con datos de uso real, no con más decisiones (Fase 3).
+- **Q9** se cierra con datos de uso real, no con más decisiones (Fase 3). El dato que falta es concreto: el `Total:` de `preflight.py` en las cinco fases de la primera etapa real. La muestra sintética no sirve —cuatro features de juguete dan 41–127 líneas frente a las 400–1000 que propone P12—, así que el número se fija cuando exista esa etapa, comparando el trabajo real contra la propuesta: si cabe con holgura el gate no se fija; si una fase lo excede siempre, el número propuesto está mal.
 - **Q2 y Q13** siguen diferidas hasta medir la fricción (B-06).
 - El siguiente trabajo es **implementar**, no seguir diseñando.
+- **Los IDs internos se citan en lo que se distribuye, pero no viajan con él.** `skills/` cita **23 IDs distintos en 107 apariciones** —`B-27` diecisiete veces, `B-26` once, `B-35` nueve, `P17` ocho…— como procedencia de sus reglas, y `npx skills add` copia solo `skills/`: quien instala el paquete no puede resolver ninguno. No es una referencia rota como `PUBLISHING.md` —la frase se entiende sin abrirla— pero sí una dependencia invisible. Decidido 2026-10-27: se anota y no se toca; hacerlos resolubles dentro del paquete o quitarlos es una decisión de producto pendiente.
 
 Y una advertencia sobre el propio método: las diecisiete decisiones de arriba
 fueron acordadas en conversación, no probadas. Antes de escribir la primera

@@ -22,9 +22,10 @@ from approvals import (  # noqa: E402
 )
 from snapshot import SnapshotError, identity, repo_root  # noqa: E402
 from diff_scope import ( # noqa: E402
+    DELTA_NAME_RE,
     ScopeError,
     compare,
-    declared_files,
+    declared_in,
     scope_base,
     stage_base,
     touched_files,
@@ -229,6 +230,51 @@ def checkpoint_approval(repo: Path, stage: Path, snapshot: str) -> bool:
     )
 
 
+def check_task_body(
+    result: Result,
+    task_id: str,
+    body: str,
+    declared: list[str],
+) -> None:
+    """Lo que toda tarea de la etapa declara, sea principal o de delta.
+
+    Un delta cierra un hueco contra el baseline: sus tareas se verifican con
+    las mismas pruebas y el mismo oráculo que las principales. Aplicar el
+    contrato solo a `TAREAS.md` dejaría que la corrección acotada fuera la
+    única tarea sin `Test-first:` ni `Test:`.
+    """
+    result.require(bool(re.search(r"CA-\d+", body)), f"{task_id} no enlaza CA-NN")
+    # B-25: un ruling sin coste oculta la decisión. Las tres partes se
+    # exigen por separado para que el error diga cuál falta.
+    for ruling in RULING_RE.findall(body):
+        parts = [item for item in RULING_SEPARATOR_RE.split(ruling) if item.strip()]
+        result.require(
+            len(parts) >= 3,
+            f"{task_id} tiene un `Ruling:` sin las tres partes "
+            "(<qué> — <por qué> — <qué cuesta>); un ruling sin coste es una decisión oculta",
+        )
+    result.require(bool(TEST_FIRST_RE.search(body)), f"{task_id} no declara Test-first:")
+    result.require(bool(TEST_COMMAND_RE.search(body)), f"{task_id} no declara Test:")
+    for command in TEST_COMMAND_RE.findall(body):
+        result.require(
+            not declarative_command(command),
+            f"{task_id} declara un Test: decorativo ({command.strip()}): no observa comportamiento",
+        )
+        if declared and not is_runner(command, declared):
+            result.warnings.append(
+                f"{task_id}: Test: no empieza por un runner declarado en **Runners:**"
+            )
+    verification = re.search(r"Verificar:\s*(.*)", body, re.I)
+    result.require(bool(verification), f"{task_id} no contiene Verificar:")
+    if verification:
+        value = verification.group(1)
+        result.require(bool(EVIDENCE_RE.search(value)), f"{task_id} no declara nivel")
+        result.require(
+            ";" in value or "oráculo" in value.lower(),
+            f"{task_id} no separa procedimiento y oráculo",
+        )
+
+
 def delta_ids(audit: str) -> list[str]:
     """IDs de delta declarados por la pasada (`**Deltas:** D1, D2`).
 
@@ -387,6 +433,16 @@ def main() -> int:
     conciliation, tasks, audit = (
         read(stage / name) for name in ("CONCILIACION.md", "TAREAS.md", "AUDIT.md")
     )
+    # Un delta es una lista de tareas, no un relato: sus tareas producen
+    # archivos y necesitan la misma declaración que las principales. Leerlos
+    # solo para el alcance dejaría `D01-T1` sin `Test-first:` ni `Test:`,
+    # justo la tarea que la auditoría escribió para cerrar el hueco.
+    delta_lists = [
+        (path.name, read(path))
+        for path in stage.glob("TAREAS-delta-*.md")
+        if DELTA_NAME_RE.match(path.name)
+    ]
+    delta_lists.sort(key=lambda item: int(DELTA_NAME_RE.match(item[0]).group(1)))
     result.require(bool(conciliation), "falta CONCILIACION.md")
     if not conciliation:
         return finish(result)
@@ -428,39 +484,25 @@ def main() -> int:
         result.require(bool(principal), "TAREAS.md no declara Principal: sí")
         for task_id, body in TASK_RE.findall(tasks):
             task_bodies[task_id] = body
-            result.require(bool(re.search(r"CA-\d+", body)), f"{task_id} no enlaza CA-NN")
-            # B-25: un ruling sin coste oculta la decisión. Las tres partes se
-            # exigen por separado para que el error diga cuál falta.
-            for ruling in RULING_RE.findall(body):
-                parts = [item for item in RULING_SEPARATOR_RE.split(ruling) if item.strip()]
-                result.require(
-                    len(parts) >= 3,
-                    f"{task_id} tiene un `Ruling:` sin las tres partes "
-                    "(<qué> — <por qué> — <qué cuesta>); un ruling sin coste es una decisión oculta",
-                )
-            result.require(bool(TEST_FIRST_RE.search(body)), f"{task_id} no declara Test-first:")
-            result.require(bool(TEST_COMMAND_RE.search(body)), f"{task_id} no declara Test:")
-            for command in TEST_COMMAND_RE.findall(body):
-                result.require(
-                    not declarative_command(command),
-                    f"{task_id} declara un Test: decorativo ({command.strip()}): no observa comportamiento",
-                )
-                if declared and not is_runner(command, declared):
-                    result.warnings.append(
-                        f"{task_id}: Test: no empieza por un runner declarado en **Runners:**"
-                    )
-            verification = re.search(r"Verificar:\s*(.*)", body, re.I)
-            result.require(bool(verification), f"{task_id} no contiene Verificar:")
-            if verification:
-                value = verification.group(1)
-                result.require(bool(EVIDENCE_RE.search(value)), f"{task_id} no declara nivel")
-                result.require(
-                    ";" in value or "oráculo" in value.lower(),
-                    f"{task_id} no separa procedimiento y oráculo",
-                )
+            check_task_body(result, task_id, body, declared)
+        # Cada delta se juzga con el mismo contrato que la lista principal:
+        # el delta es la corrección acotada, no una lista de segunda.
+        for name, delta in delta_lists:
+            result.require(bool(delta.strip()), f"{name} está vacío")
+            duplicated = sorted(
+                {task_id for task_id, _ in TASK_RE.findall(delta)} & set(task_bodies)
+            )
+            result.require(
+                not duplicated,
+                f"{name} repite el ID de tarea {', '.join(duplicated)}: "
+                "cada delta numera los suyos como D0N-TN",
+            )
+            for task_id, body in TASK_RE.findall(delta):
+                task_bodies[task_id] = body
+                check_task_body(result, task_id, body, declared)
         # P17: una etapa con varias tareas necesita decir qué firma recibe cada
         # una de las anteriores. Un subagente no debe adivinar nombres.
-        if len(task_bodies) > 1:
+        if len(TASK_RE.findall(tasks)) > 1:
             for task_id, body in task_bodies.items():
                 result.require(
                     bool(CONSUME_RE.search(body)),
@@ -531,9 +573,16 @@ def main() -> int:
                     "ninguna tarea marca como sujeto a revisión",
                 )
         result.require(bool(task_bodies), "TAREAS.md no contiene tareas implementables")
-        result.require(
-            len(task_bodies) == len(set(task_bodies)), "hay IDs de tarea duplicados"
-        )
+        # Los duplicados dentro de una lista se pierden al construir el dict:
+        # se cuentan sobre los artefactos. El cruce principal ↔ delta lo
+        # comprueba el bucle de deltas.
+        for name, source in [("TAREAS.md", tasks), *delta_lists]:
+            ids = [task_id for task_id, _ in TASK_RE.findall(source)]
+            repeated = sorted({task_id for task_id in ids if ids.count(task_id) > 1})
+            result.require(
+                not repeated,
+                f"{name} repite el ID de tarea {', '.join(repeated)}",
+            )
         for ca in ca_ids:
             result.require(
                 any(re.search(rf"\b{re.escape(ca)}\b", body) for body in task_bodies.values()),
@@ -647,7 +696,10 @@ def main() -> int:
             # B-27: el alcance se comprueba en el diff. Un archivo que ninguna tarea
             # declara es superficie nueva y abre necesita-decision.
             try:
-                declared = declared_files(tasks)
+                # El alcance de la etapa son todas sus listas: la principal y
+                # los deltas. Sin los deltas, el archivo que el delta produjo
+                # sería alcance nuevo y la etapa no cerraría nunca.
+                declared = declared_in(stage)
                 # La base es el commit que abrió la etapa, no `HEAD`: quien
                 # commitea su trabajo deja `git diff HEAD` vacío y el gate
                 # aprobaría cualquier archivo (B-27).

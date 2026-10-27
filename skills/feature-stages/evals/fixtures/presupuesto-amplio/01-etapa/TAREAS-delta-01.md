@@ -8,4 +8,6 @@
 ## Listado
 
 - [x] D01-T1 — agregar el caso negativo (CA-01)
+  **Archivos:** `tests/test_criterio.py`
+  Test-first: sí; Test: pytest -q tests/test_criterio.py;
   Verificar: nivel `conductual`; ejecutar test focalizado; oráculo observable: falla inyectada.

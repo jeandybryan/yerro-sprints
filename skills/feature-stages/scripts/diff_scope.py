@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Compara el diff real de git contra el alcance declarado en `TAREAS.md`.
+"""Compara el diff real de git contra el alcance declarado por la etapa.
+
+El alcance son todas las listas de la etapa: `TAREAS.md` y cada
+`TAREAS-delta-NN.md`. Un delta cierra una brecha de la etapa auditada, y sus
+tareas producen archivos igual que las principales.
 
 Uso: diff_scope.py <etapa> --repo <repo> [--base REF] [--json]
 
@@ -55,6 +59,9 @@ TASK_RE = re.compile(
 )
 # `**Archivos:** a, b` o `Archivos: a; b`; las rutas van entre acentos abiertos
 # o desnudas, con comas o punto y coma como separador.
+# `TAREAS-delta-01.md`: un delta es una lista de tareas, no solo un archivo
+# narrativo. Su `**Archivos:**` cuenta tanto como el de `TAREAS.md`.
+DELTA_NAME_RE = re.compile(r"^TAREAS-delta-(\d{2,})\.md$")
 ARCHIVOS_RE = re.compile(r"^\s*\*{0,2}Archivos:?\*{0,2}\s*(.+?)\s*$", re.M | re.I)
 BACKTICK_RE = re.compile(r"`([^`]+)`")
 
@@ -87,6 +94,37 @@ def declared_files(tasks: str) -> dict[str, list[str]]:
         declared[task_id] = [item.strip().strip("`").strip() for item in items if item.strip()]
     return declared
 
+
+
+def stage_lists(stage: Path) -> list[Path]:
+    """Las listas de tareas de la etapa: `TAREAS.md` y sus deltas, en orden.
+
+    Un delta es la lista que el auditor escribió para cerrar la brecha: sus
+    tareas producen archivos, y esos archivos están dentro del alcance aunque
+    la lista principal no los nombre. Leer solo `TAREAS.md` dejaría que un
+    delta no pudiera declarar ni un archivo nuevo, y lo que git vería como
+    alcance nuevo nunca tendría declaración que lo cubriera.
+    """
+    principal = stage / "TAREAS.md"
+    deltas = sorted(
+        (path for path in stage.glob("TAREAS-delta-*.md") if DELTA_NAME_RE.match(path.name)),
+        key=lambda path: int(DELTA_NAME_RE.match(path.name).group(1)),
+    )
+    return ([principal] if principal.exists() else []) + deltas
+
+
+def declared_in(stage: Path) -> dict[str, list[str]]:
+    """Rutas declaradas por la etapa entera, principal y deltas.
+
+    La unión es por ID de tarea: los IDs de delta son `D0N-TN`, así que dos
+    listas nunca chocan. Se fusionan en orden de aparición y la primera
+    declaración de una ruta gana, como en `compare`.
+    """
+    declared: dict[str, list[str]] = {}
+    for path in stage_lists(stage):
+        for task_id, files in declared_files(path.read_text(encoding="utf-8")).items():
+            declared.setdefault(task_id, files)
+    return declared
 
 def _normalize(path: str) -> str:
     """Ruta comparable: sin `./` inicial, separadores POSIX.
@@ -229,8 +267,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"ERROR: no existe {tasks_path}", file=sys.stderr)
         return 2
 
-    declared = declared_files(tasks_path.read_text(encoding="utf-8"))
-    if not declared:
+    # El alcance de la etapa es el de todas sus listas: la principal y los
+    # deltas que la auditoría escribió para cerrar una brecha. La unión es
+    # por ID de tarea (`D0N-TN` no choca con `TN`) y la primera
+    # declaración de una ruta gana, como en `compare`.
+    declared = declared_in(stage)
+    if not declared_files(tasks_path.read_text(encoding="utf-8")):
         print("ERROR: TAREAS.md no contiene tareas", file=sys.stderr)
         return 2
 

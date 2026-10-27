@@ -9,6 +9,7 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Corregido
 
+- **El alcance incluye los deltas, y una tarea de delta se prueba como cualquier otra.** `TAREAS.md` era la única lista que `diff_scope.py` y el cierre de `validate_stage.py` leían: el archivo que producía un `TAREAS-delta-NN.md` salía como «alcance nuevo» y una etapa corregida con un delta que añade archivo no podía cerrar nunca. El alcance es ahora la unión de la lista principal y sus deltas (`declared_in()`), y `validate_stage.py` aplica a `D0N-TN` el mismo contrato que a `TN` (`**Archivos:**`, `Test-first:`, `Test:`, `Verificar:`), porque el delta es la corrección acotada de un hueco, no una lista de segunda. Alinea el template de delta, el contrato y `deltas-and-closure.md`; nuevas fixtures `delta-sin-prueba` y casos en `test_diff_scope.py`, `test_snapshot.py` y `test_next_step.py`. Las fixtures de delta existentes declaran ahora esos campos.
 - **El presupuesto agotado distingue «usado» de «excedido».** La fixture
   `presupuesto-agotado` tenía dos deltas con riesgo `medio`, cuyo presupuesto
   derivado es 1, así que ejercitaba la rama de exceso igual que

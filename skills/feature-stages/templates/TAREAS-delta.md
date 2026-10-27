@@ -14,6 +14,10 @@ la brecha auditada. No reemplaza la lista principal.
 ## Listado
 
 - [ ] D01-T1 — acción mínima para cerrar el hueco (CA-01)
+  **Archivos:** `tests/test_negativo.py` — las rutas que esta tarea produce,
+  derivadas del hueco auditado. El alcance de la etapa incluye las listas delta:
+  sin este campo, el archivo que el delta crea sería alcance nuevo (B-27).
+  Test-first: sí; Test: <comando que debe fallar antes del cambio>;
   Verificar: nivel `…`; procedimiento; oráculo observable.
 
 ## Fuera de este delta
@@ -23,6 +27,12 @@ la brecha auditada. No reemplaza la lista principal.
 
 Use IDs `D01-T1`, `D01-T2`... After implementing the delta, add **Pasada N+1**
 to `AUDIT.md`, still scored against the principal criteria.
+
+A delta task declares `**Archivos:**`, `Test-first:`, `Test:` and `Verificar:`
+exactly like a principal task: `validate_stage.py` applies one contract to
+every list of the stage. The delta is the bounded correction of a gap, not a
+list of second class — a correction that declares no test is the repair nobody
+checked.
 
 The number of deltas is bounded by `**Presupuesto de deltas:**`, derived from
 risk (`bajo → 2`, `medio → 1`, `alto → 1`) unless `**Motivo del presupuesto:**`

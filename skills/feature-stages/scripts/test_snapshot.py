@@ -157,6 +157,22 @@ AUDIT = """# Auditoría
 """
 
 
+DELTA = """# Delta 01 — etapa 02
+
+**Principal:** no
+**Cierra:** AUDIT.md pasada 1; CA-01; E-01
+**Hueco:** falta el caso negativo.
+**Estado:** implementada
+
+## Listado
+
+- [x] D01-T1 — añadir el caso negativo (CA-01)
+  **Archivos:** `negativo.py`
+  Test-first: sí; Test: pytest -q test_focal.py;
+  Verificar: nivel `conductual`; ejecutar test focalizado; oráculo observable: exit 0.
+"""
+
+
 def validate(stage: Path, repo: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [sys.executable, str(HERE / "validate_stage.py"), str(stage), "--repo", str(repo)],
@@ -262,6 +278,60 @@ def check_validate(repo: Path) -> None:
         fail(f"validate --repo: rechazó por otro motivo: {committed_scope.stdout}")
 
 
+def check_delta_scope(repo: Path) -> None:
+    """El archivo que produce un delta pertenece al alcance de la etapa.
+
+    Un delta es la corrección que la auditoría escribió; si su tarea añade un
+    archivo que la lista principal no nombra, ese archivo sigue estando dentro
+    del alcance. Comprobar el cierre solo contra `TAREAS.md` impedía cerrar
+    cualquier etapa corregida con un delta que añade archivo.
+    """
+    global checked
+    stage = repo / "feature" / "02-delta"
+    stage.mkdir(parents=True)
+    (stage / "CONCILIACION.md").write_text(STAGE, encoding="utf-8")
+    (stage / "TAREAS.md").write_text(TASKS, encoding="utf-8")
+    audit = stage / "AUDIT.md"
+    approvals = repo / APPROVALS
+    approvals.parent.mkdir(parents=True, exist_ok=True)
+    approvals.write_text(
+        f"- etapa: 02-delta\n aprobado-por: Ana\n fecha: 2026-10-23\n", encoding="utf-8"
+    )
+    # La etapa se abre y se implementa, como haría un agente ordenado...
+    git(repo, "add", "-A")
+    git(repo, "commit", "-qm", "abrir la etapa 02")
+    (repo / "src.txt").write_text("cuatro\n", encoding="utf-8")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-qm", "implementar la etapa 02")
+    # ...y el delta escribe un archivo que la lista principal no declara.
+    (repo / "negativo.py").write_text("negativo\n", encoding="utf-8")
+    (stage / "TAREAS-delta-01.md").write_text(DELTA, encoding="utf-8")
+    audit.write_text(
+        AUDIT.format(snapshot=identity(repo, (Path("feature"), APPROVALS))),
+        encoding="utf-8",
+    )
+    checked += 1
+    closed = validate(stage, repo)
+    if closed.returncode != 0:
+        fail(
+            "validate --repo: el archivo declarado por un delta bloqueó el cierre "
+            f"como alcance nuevo: {closed.stdout}"
+        )
+    # Un archivo que ningún delta declara sigue siendo alcance nuevo.
+    (repo / "sobrante.py").write_text("de más\n", encoding="utf-8")
+    audit.write_text(
+        AUDIT.format(snapshot=identity(repo, (Path("feature"), APPROVALS))),
+        encoding="utf-8",
+    )
+    checked += 1
+    out_of_scope = validate(stage, repo)
+    if out_of_scope.returncode == 0:
+        fail("validate --repo: un delta absolvió un archivo que ninguna lista declara")
+    elif "sobrante.py" not in out_of_scope.stdout:
+        fail(f"validate --repo: rechazó por otro motivo: {out_of_scope.stdout}")
+    (repo / "sobrante.py").unlink()
+
+
 def check_missing_approval_exclusion(repo: Path) -> None:
     """Un snapshot sin la exclusión de `.yerro/approvals.yml` no coincide.
 
@@ -330,6 +400,7 @@ def main() -> int:
         check_stability(repo)
         check_exclude(repo, bare)
         check_validate(repo)
+        check_delta_scope(repo)
         sin_exclusion = Path(raw) / "sin-exclusion"
         sin_exclusion.mkdir()
         init_repo(sin_exclusion)

@@ -21,7 +21,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-from diff_scope import _normalize, compare, declared_files, stage_base # noqa: E402
+from diff_scope import _normalize, compare, declared_files, declared_in, stage_base # noqa: E402
 
 SCRIPT = HERE / "diff_scope.py"
 errors: list[str] = []
@@ -257,6 +257,77 @@ def check_default_base_is_stage_start() -> None:
         shutil.rmtree(repo, ignore_errors=True)
 
 
+DELTA = """# Delta 01 — etapa 01
+
+**Principal:** no
+**Cierra:** AUDIT.md pasada 1; CA-01; E-01
+**Hueco:** falta el caso negativo.
+**Estado:** pendiente
+
+## Listado
+
+- [ ] D01-T1 — añadir el caso negativo (CA-01)
+**Archivos:** `tests/test_negativo.py`
+Test-first: sí; Test: pytest -q tests/test_negativo.py;
+Verificar: nivel `conductual`; ejecutar el test; oráculo: falla inyectada → rojo.
+"""
+
+
+def check_delta_scope() -> None:
+    """El archivo que produce un delta está dentro del alcance de la etapa.
+
+    La auditoría escribe `TAREAS-delta-NN.md` para cerrar un hueco, y esa
+    tarea puede crear un archivo que la lista principal no nombra. Leer solo
+    `TAREAS.md` reportaba ese archivo como alcance nuevo: una etapa con delta
+    nunca cerraba, aunque el delta declarara exactamente lo que tocó.
+    """
+    global checked
+    repo = Path(tempfile.mkdtemp(prefix="yerro-diffscope-delta-"))
+    try:
+        init_repo(repo)
+        git(repo, "add", "-A")
+        git(repo, "commit", "-qm", "abrir la etapa")
+        stage = repo / "features" / "01-export"
+
+        # La base es el commit que abrió la etapa: un delta escrito después
+        # del archivo quedaría en el mismo diff y taparía el defecto. El
+        # ciclo real escribe el delta en la auditoría y lo implementa después.
+        (repo / "tests" / "test_negativo.py").write_text("negativo\n", encoding="utf-8")
+        git(repo, "add", "-A")
+        git(repo, "commit", "-qm", "colar el archivo sin delta")
+        result = run(repo)
+        checked += 1
+        payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        if payload.get("undeclared") != ["tests/test_negativo.py"]:
+            fail(
+                "diff_scope delta: sin delta, tests/test_negativo.py debería ser "
+                f"alcance nuevo ({payload.get('undeclared')})"
+            )
+
+        (stage / "TAREAS-delta-01.md").write_text(DELTA, encoding="utf-8")
+        merged = declared_in(stage)
+        checked += 1
+        if merged != {
+            "T1": ["src/export.csv", "tests/test_export_csv.py"],
+            "T2": ["docs/export.md"],
+            "D01-T1": ["tests/test_negativo.py"],
+        }:
+            fail(f"declared_in: obtuvo {merged}")
+
+        # Con el delta escrito, el mismo archivo está declarado y la etapa
+        # puede cerrar.
+        result = run(repo)
+        checked += 1
+        payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        if payload.get("undeclared"):
+            fail(
+                "diff_scope delta: el delta declaró el archivo y se reportó "
+                f"({payload.get('undeclared')})"
+            )
+    finally:
+        shutil.rmtree(repo, ignore_errors=True)
+
+
 def check_missing_is_warning(repo: Path) -> None:
     """Declarado y no tocado: advertencia, no bloqueo (B-27 solo veta lo nuevo)."""
     global checked
@@ -349,6 +420,7 @@ def main() -> int:
         check_default_base_is_stage_start()
         check_bad_base(work)
         check_unmigrated(work)
+        check_delta_scope()
     finally:
         shutil.rmtree(work, ignore_errors=True)
 

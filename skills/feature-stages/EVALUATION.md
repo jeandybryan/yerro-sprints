@@ -153,6 +153,17 @@ distintas.
   colado: la base es el commit que abrió la etapa, no `HEAD`, porque con `HEAD`
   el commit vacía el diff y el gate aprobaría (B-44). `test_diff_scope.py`
   comprueba la base por defecto y que una etapa sin commitear cae a `HEAD`.
+- El alcance son todas las listas de la etapa: `TAREAS.md` y cada
+  `TAREAS-delta-NN.md` (`declared_in()` en `diff_scope.py`). `test_diff_scope.py`
+  escribe un delta que declara un archivo nuevo: sin el delta ese archivo es
+  alcance nuevo, con el delta cierra. `test_snapshot.py` repite el caso en el
+  cierre (`validate_stage.py --repo`): un archivo declarado por un delta no
+  bloquea, y uno que ninguna lista declara sigue bloqueando. Sin esta unión,
+  una etapa corregida con un delta que añade archivo no podía cerrar nunca.
+- Un delta se juzga con el contrato de la lista principal: `delta-sin-prueba`
+  (delta con `**Archivos:**` y `Verificar:` pero sin `Test-first:` ni `Test:`)
+  debe fallar con `D01-T1 no declara Test-first`. `test_next_step.py` afirma el
+  mensaje y la suite deja de detectarlo si el bucle de deltas deja de validar.
 
 `rulings-excesivos` (cuatro rulings en una tarea) debe avisar y apuntar a
 `generate-stage-tasks` sin bloquear; `rulings-aceptados` (tres) debe callar.

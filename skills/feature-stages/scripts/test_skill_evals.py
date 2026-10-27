@@ -19,6 +19,7 @@ sys.path.insert(0, str(HERE))
 from validate_skill_evals import (  # noqa: E402
     GATE_TOKENS,
     closing_gate_errors,
+    document_name_errors,
     gate_errors,
     markdown_reference_errors,
     routing_errors,
@@ -133,11 +134,39 @@ def check_broken_fixture_reference() -> None:
         )
 
 
+def check_document_names() -> None:
+    """Un documento que manda a un `.md` inexistente se reporta.
+
+    El caso es real: `AGENTS.md` ordenaba leer `PUBLISHING.md` como primer
+    paso antes de tocar un archivo, y ese documento nunca existió. Los
+    enlaces markdown ya se comprobaban, pero un nombre entre comillas
+    invertidas no era un enlace para nadie.
+
+    El control negativo importa tanto como el positivo: `TAREAS-delta-NN.md`
+    es un nombre de patrón, no un archivo, y una regla que lo exigiera
+    obligaría a crear archivos falsos para callarla.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        doc = root / "AGENTS.md"
+        doc.write_text("1. Lee `PUBLISHING.md` si no lo conoces.\n")
+        reported = document_name_errors(doc, root)
+        check(
+            any("PUBLISHING.md" in item for item in reported),
+            f"documento inexistente no detectado: {reported}",
+        )
+
+        (root / "README.md").write_text("# índice\n")
+        doc.write_text("Ver `TAREAS-delta-NN.md` y `README.md`.\n")
+        reported = document_name_errors(doc, root)
+        check(reported == [], f"un nombre de patrón no puede fallar: {reported}")
+
 def main() -> int:
     check_catalog()
     check_mutations()
     check_unlisted_case_id()
     check_broken_fixture_reference()
+    check_document_names()
     for error in errors:
         print(f"ERROR: {error}")
     if not errors:

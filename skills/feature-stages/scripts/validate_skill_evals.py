@@ -73,6 +73,39 @@ def blocked_gate_errors(skill: str) -> list[str]:
         f"falta el sitio del bloqueo documentado: `{BLOCK_SECTION}` en `CONCILIACION.md`"
     ]
 
+# Documentos de mantenimiento: el agente los lee antes de tocar nada,
+# así que una referencia rota en ellos desvía a un archivo que no existe.
+# `CHANGELOG.md` queda fuera: es un registro histórico, y un nombre que se
+# renombró seguirá siendo correcto en la entrada del día en que existió.
+# Desde el módulo, no desde `ROOT`: un test apunta `ROOT` a una copia en un
+# temporal, y `ROOT.parent.parent` sería `/tmp`, donde los documentos de
+# mantenimiento no existen ni deben existir.
+REPO_ROOT = Path(__file__).resolve().parents[3]
+GUIDE_DOCUMENTS = ("README.md", "CONTRIBUTING.md", "GOVERNANCE.md", "RELEASE_CHECKLIST.md", "AGENTS.md")
+# `NN`, `<` y `…` marcan un nombre de patrón (`TAREAS-delta-NN.md`), que no
+# designa ningún archivo y no se puede resolver.
+PLACEHOLDER = re.compile(r"NN|<|>|…|\*")
+
+
+def document_name_errors(markdown: Path, repo_root: Path) -> list[str]:
+    """Un documento que manda a un `.md` que no está en el repositorio.
+
+    Los enlaces markdown ya se comprobaban; un nombre entre comillas
+    invertidas no era un enlace para nadie. `AGENTS.md` pedía leer
+    `PUBLISHING.md` como primer paso, y ese archivo nunca existió: el
+    paso que debía orientar al mantenedor apuntaba a la nada.
+    """
+    errors: list[str] = []
+    for token in sorted(set(re.findall(r"`([A-Za-z0-9_./-]+\.md)`", markdown.read_text()))):
+        if PLACEHOLDER.search(token):
+            continue
+        if (repo_root / token).exists():
+            continue
+        if any(repo_root.rglob(Path(token).name)):
+            continue
+        errors.append(f"{markdown.name} nombra un documento inexistente: {token}")
+    return errors
+
 def routing_errors(routes: list) -> list[str]:
     errors: list[str] = []
     if len(routes) < 5:
@@ -99,6 +132,13 @@ def main() -> int:
             errors.append(f"falta documento de skill {markdown}")
             continue
         errors.extend(markdown_reference_errors(markdown, ROOT.parent, ROOT))
+    for name in GUIDE_DOCUMENTS:
+        document = REPO_ROOT / name
+        if not document.exists():
+            errors.append(f"falta documento de mantenimiento {name}")
+            continue
+        errors.extend(markdown_reference_errors(document, ROOT.parent, ROOT))
+        errors.extend(document_name_errors(document, REPO_ROOT))
     corpus = "\n".join(path.read_text() for path in [*markdown_files, *DOCUMENTS] if path.exists())
     errors.extend(gate_errors(corpus))
     audit_skill = ROOT.parent / "audit-stage" / "SKILL.md"

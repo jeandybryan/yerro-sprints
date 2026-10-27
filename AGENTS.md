@@ -55,7 +55,8 @@ auditoría.
 
 ## Antes de tocar un archivo
 
-1. Lee `PUBLISHING.md` si no lo conoces.
+1. Lee `GOVERNANCE.md` y `RELEASE_CHECKLIST.md` si no los conoces: las
+   decisiones de licencia, distribución, tags y agentes soportados están ahí.
 2. Identifica qué fase o documento vas a modificar y por qué.
 3. Determina si el cambio es de comportamiento (requiere fixture/caso nuevo) o
    de documentación (requiere mantener la coherencia en README, CONTRIBUTING y

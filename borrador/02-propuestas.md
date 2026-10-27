@@ -295,9 +295,21 @@ que la suite no cubre.
 
 ## P6 — Trazabilidad cruzada como invariante
 
-**Estado:** `abierta`
+**Estado:** `implementada` (2026-10-27)
 **Diagnóstico:** D6
 **Impacto:** medio
+
+**Hecho:** `validate_stage.py` comprueba ahora que cada ID de
+`**Trazabilidad:**` exista en su fuente (T en `TAREAS.md`, E en el ledger de
+esa pasada, CA/S en `CONCILIACION.md`), y que la traza nombre CA, T y E a la
+vez. Antes solo se exigía que el campo apareciera: `CA-01 → T9 → … → E-77`
+pasaba con ambos IDs inexistentes. Fixtures `trazabilidad-t-inexistente` y
+`trazabilidad-e-inexistente`, y `EVALUATION.md` S36.
+
+**Lo que no entra todavía:** el quinto invariante del borrador (`T` retirada
+no se recicla) no tiene hoy ninguna etapa que lo necesite: `TAREAS.md` no
+admite el campo `retirada: sí`, y añadirlo sin un caso real sería inventar
+contrato. Queda anotado.
 
 ### Qué
 

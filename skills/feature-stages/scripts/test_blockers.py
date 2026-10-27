@@ -182,6 +182,44 @@ CASES = [
 ]
 
 
+IN_BAND_MARKERS = (
+    "stage:", "skill", "corregir", "cerrar", "crear", "registrar",
+    "reabrir", "resolver", "dejar", "reauditar", "desbloquear",
+)
+BANDS: dict[str, str] = {}
+
+
+def check_bandas() -> None:
+    """B-20: cada bloqueo se clasifica en una banda, derivada del router.
+
+    La banda no se escribe a mano porque se desactualiza: se deduce de lo que
+    el router ofrece. `in band` nombra a quién o cómo seguir; `out of band`
+    dice qué hacer sin nombrar el camino; `dead end` no tiene salida. Un
+    `dead end` es error estructural, no aviso.
+    """
+    global checked
+    bands: dict[str, str] = {}
+    for fixture, stage, code, _ in CASES:
+        try:
+            resolution = resolution_of(fixture, stage, code)
+        except AssertionError:
+            bands[code] = "dead end"
+            continue
+        if not resolution.strip():
+            bands[code] = "dead end"
+        elif any(marker in resolution for marker in IN_BAND_MARKERS):
+            bands[code] = "in band"
+        else:
+            bands[code] = "out of band"
+
+    checked += 1
+    dead = sorted(code for code, band in bands.items() if band == "dead end")
+    if dead:
+        fail(f"bloqueos dead end (sin salida): {dead}")
+    BANDS.clear()
+    BANDS.update(bands)
+
+
 def check_resolutions() -> None:
     global checked
     for fixture, stage, code, repair in CASES:
@@ -251,10 +289,14 @@ def check_every_code_has_a_case() -> None:
 def main() -> int:
     check_every_code_has_a_case()
     check_resolutions()
+    check_bandas()
     if errors:
         for error in errors:
             print(f"ERROR: {error}")
         return 1
+    out_of_band = sorted(code for code, band in BANDS.items() if band == "out of band")
+    if out_of_band:
+        print(f"INFO: bloqueos out of band (dicen qué hacer, no a quién): {out_of_band}")
     print(f"OK: {checked} comprobaciones de desbloqueo")
     return 0
 

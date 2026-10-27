@@ -236,6 +236,9 @@ VALIDATE_REJECTED = [
     # B-11: la suite de referencia la declara el humano y el cierre la ejecuta.
     ("suite-ausente/01-etapa", "no declara **Suites de referencia:**"),
     ("suite-sin-evidencia/01-etapa", "'npm run lint' no tiene fila E-NN"),
+    # P6: la trazabilidad nombra IDs que no existen.
+    ("trazabilidad-t-inexistente", "la traza nombra T9, que no existe(n) en TAREAS.md"),
+    ("trazabilidad-e-inexistente", "la traza nombra E-77, que no existe(n) en el ledger"),
 ]
 
 VALIDATE_ACCEPTED = [

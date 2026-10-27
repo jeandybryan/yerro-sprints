@@ -228,14 +228,26 @@ continuación que no desbloquea es un defecto, no un texto.
 
 ### B-20 — La evaluación mide también la fricción
 **Fecha:** 2026-10-22
-**Estado:** `propuesta` ⚠
+**Estado:** `acordada` (2026-10-27)
 **Origen:** `07-referencias-gentle-ai.md` C6.
 **Motivo:** el benchmark de gentle-ai clasifica cada bloqueo como *in band*
 (dice qué ejecutar), *out of band* (no dice nada) o *dead end* (no hay salida).
 No mide velocidad "porque depende del proveedor y del día; la fricción es tuya".
 **Consecuencias:** `EVALUATION.md` gana una tercera dimensión, determinista y sin
 tokens: todo bloqueo de fixture debe clasificarse en una de las tres bandas.
-Un `dead end` es error estructural, no un aviso.
+Un `dead end` es error estructural, no un aviso. Acordado al implementar:
+
+- **La banda se deriva, no se escribe.** `test_blockers.py` la deduce de la
+  resolución que el router emite: vacía o ausente, `dead end`; sin nombrar a
+  quién ni cómo, `out of band`; con un camino, `in band`. Una tabla a mano se
+  desactualiza en el siguiente cambio de mensaje.
+- **`dead end` falla; `out of band` informa.** El primero es un bloqueo sin
+  salida y no puede quedar en verde. El segundo dice qué hacer sin nombrar el
+  camino: se imprime para empujar a escribirlo, pero no bloquea, porque la
+  decisión de a quién nombrar es de producto.
+- **Estado actual:** los 11 códigos en `in band`, ninguno `dead end`. Eso lo
+  garantiza `test_blockers.py`, que además prueba que la reparación propuesta
+  desbloquea de verdad (B-19).
 
 ---
 

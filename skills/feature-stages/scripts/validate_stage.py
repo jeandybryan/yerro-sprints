@@ -668,6 +668,43 @@ def main() -> int:
         result.require(bool(TRACE_RE.search(audit)), "AUDIT coincide sin **Trazabilidad:** CA → T → E")
         result.require(bool(re.search(r"\bE-\d+\b", audit)), "AUDIT coincide sin evidencia E-NN")
 
+        # P6: la traza tiene que ser cierta. Hoy solo se exige que el campo
+        # exista, así que `CA-01 → T9 → … → E-77` pasaba con T9 y E-77
+        # inexistentes: la trazabilidad era decorativa.
+        trace_match = TRACE_RE.search(audit)
+        if trace_match:
+            id_sets = {
+                "CA": set(ca_ids),
+                "T": set(task_bodies),
+                "E": {row_id for row_id in re.findall(r"\bE-\d+\b", "\n".join(ledger_rows(audit)))},
+                "S": set(decision_ids),
+            }
+            cited = {
+                "CA": re.findall(r"\bCA-\d+\b", trace_match.group(1)),
+                "T": re.findall(r"\b(?:D\d+-)?T\d+\b", trace_match.group(1)),
+                "E": re.findall(r"\bE-\d+\b", trace_match.group(1)),
+                "S": re.findall(r"\bS-\d+\b", trace_match.group(1)),
+            }
+            for kind, items in cited.items():
+                missing = sorted({item for item in items if item not in id_sets[kind]})
+                if kind == "T":
+                    where = "TAREAS.md"
+                elif kind in ("CA", "S"):
+                    where = "CONCILIACION.md"
+                else:
+                    where = "el ledger de esta pasada"
+                result.require(
+                    not missing,
+                    "la traza nombra "
+                    + ", ".join(missing)
+                    + f", que no existe(n) en {where}",
+                )
+            # Una traza que no nombra nada no traza: es prosa con una flecha.
+            result.require(
+                bool(cited["CA"] and cited["T"] and cited["E"]),
+                "**Trazabilidad:** no nombra CA, T y E a la vez: no demuestra la cadena",
+            )
+
         # B-11: la suite de referencia la declara el humano y el cierre la
         # ejecuta. Sin declararla, `### Verificación global` es narrativa y nadie
         # sabe qué se corrió; declararla y no registrarla deja un comando

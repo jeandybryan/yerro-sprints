@@ -12,8 +12,10 @@ e `indice-sin-tabla/`. Solo stdlib; no consume tokens.
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -506,6 +508,65 @@ def check_budget_branches() -> None:
         fail("presupuesto-excedido: la fixture no excede el presupuesto")
 
 
+# Los casos de `evals/cases/` se materializan en un árbol temporal. Qué
+# archivos de la fixture entran lo decide el caso, no la carpeta: la pasada
+# que trae la fixture es el fallo sembrado del caso de auditoría, y copiarla
+# en los casos de implementación deja la etapa en `COINCIDE_SIN_CIERRE` antes
+# de que el agente escriba una línea.
+BEHAVIORAL = (
+    # fixture, carpeta, estado del índice, ¿copia AUDIT.md?, estado, siguiente
+    ("ruling-y-parada", "03-export", "implementando", False, TRABAJANDO, "implement-stage"),
+    ("interfaces-cruzadas", "04-export", "implementando", False, TRABAJANDO, "implement-stage"),
+    ("interfaces-cruzadas", "04-auditando", "auditando", True, DECISION, None),
+)
+
+
+def check_behavioral_materialization() -> None:
+    """La receta de materialización de `EVALUATION.md` deja el caso ejecutable.
+
+    Una etapa en marcha no tiene pasada: sin `AUDIT.md` el router manda
+    implementar, que es lo que el caso necesita medir. Con la pasada del
+    fixture —que afirma `coincide` sobre un árbol que no lo cumple— el router
+    pide decisión: ese es el fallo sembrado del caso de auditoría, y por eso
+    ese caso se lanza con `audit-stage` de forma explícita, no siguiendo el
+    `siguiente`.
+    """
+    global checked
+    for fixture, folder, estado, con_pasada, esperado, siguiente in BEHAVIORAL:
+        work = Path(tempfile.mkdtemp(prefix="yerro-behavioral-"))
+        try:
+            feature = work / "feature"
+            stage = feature / folder
+            stage.mkdir(parents=True)
+            for path in (FIXTURES / fixture).glob("*.md"):
+                if path.name == "README.md":
+                    continue  # la descripción de la fixture no es el índice
+                if path.name == "AUDIT.md" and not con_pasada:
+                    continue
+                shutil.copy(path, stage / path.name)
+            (feature / "README.md").write_text(
+                "# feature\n\n"
+                "| # | Carpeta | Resultado | Depende de | Conciliación | Estado |"
+                " Trabajo activo | Tareas | Auditoría |\n"
+                "|---|---------|-----------|------------|--------------|--------|"
+                "----------------|--------|-----------|\n"
+                f"| 01 | [{folder}]({folder}/CONCILIACION.md) | r | — | cerrada |"
+                f" {estado} | — | {folder}/TAREAS.md | — |\n",
+                encoding="utf-8",
+            )
+            result = run("next_step.py", str(feature), "--json")
+            checked += 1
+            payload = json.loads(result.stdout) if result.stdout.strip() else {}
+            if payload.get("state") != esperado:
+                fail(f"materialize/{fixture}: estado {payload.get('state')!r}, se esperaba {esperado!r}")
+            if payload.get("siguiente") != siguiente:
+                fail(f"materialize/{fixture}: siguiente {payload.get('siguiente')!r}, se esperaba {siguiente!r}")
+            codes = [item.get("codigo") for item in payload.get("blockers") or []]
+            if con_pasada and "COINCIDE_SIN_CIERRE" not in codes:
+                fail(f"materialize/{fixture}: sin el fallo sembrado, bloqueos {codes}")
+        finally:
+            shutil.rmtree(work, ignore_errors=True)
+
 def main() -> int:
     check_transitions()
     check_doctor()
@@ -516,6 +577,7 @@ def main() -> int:
     check_expres_warning()
     check_rulings_warning()
     check_budget_branches()
+    check_behavioral_materialization()
     for error in errors:
         print(f"ERROR: {error}")
     if not errors:

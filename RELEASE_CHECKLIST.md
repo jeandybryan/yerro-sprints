@@ -23,6 +23,10 @@ No marques una release como lista mientras exista una decisión pendiente en
       cada auditoría conserva `S → CA → T → test → E`.
 - [ ] El riesgo, presupuesto de deltas y desviaciones están explícitos.
 - [ ] No quedan preguntas abiertas ni bloqueos sin decisión.
+- [ ] Si el release modifica una skill o el contrato, se ejecutó el nivel 4 de
+      `EVALUATION.md` sobre los casos retenidos de las skills tocadas, con modelo,
+      versión del host, fecha y commit fijados. Sin esa corrida el cambio es
+      `no verificado` y el release no se publica (P10).
 - [ ] Cada regla nueva o cambiada cita `Baseline:`, `Reps:` (≥5 por variante)
       y `Control:`; si el control no exhibía el fallo, la regla no entró.
 

@@ -40,6 +40,9 @@ exentas.
 - [ ] Las seis fases y sus límites de responsabilidad se preservan.
 - [ ] Ningún gate fue rebajado para que una fixture pase.
 - [ ] Se ejecutaron las validaciones locales (ver README, sección de validación).
+- [ ] Si el cambio modifica una skill o el contrato, ejecuté el nivel 4 de
+      `EVALUATION.md` sobre sus casos retenidos y anoté modelo, host, fecha y
+      commit. Un cambio cuyo comportamiento no se midió queda `no verificado`.
 - [ ] `test_next_step.py` pasa; toda transición, bloqueo o regla estructural nueva tiene su caso en `evals/fixtures/`.
 - [ ] `test_blockers.py` pasa; cada código de bloqueo tiene una continuación que desbloquea de verdad y ninguna queda `dead end`.
 - [ ] `test_tasks.py` pasa; `tasks.py pending` proyecta el checkbox sin decidir el estado y no presenta una lista vacía como terminada.

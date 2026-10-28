@@ -542,7 +542,8 @@ Medio-alto si depende del diff; medio si se limita a campos declarados.
 
 ## P10 — Gate conductual de adopción
 
-**Estado:** `abierta`
+**Estado:** `implementada` (2026-10-28) salvo la
+medición, que depende de un host con agente real
 **Diagnóstico:** D1, D2, D10
 **Impacto:** alto a largo plazo
 
@@ -583,6 +584,28 @@ Alto en ejecución (tokens + modelo fijo); casi nulo en código.
 - Requiere fijar modelo, versión del host y fecha (ya lo pide `EVALUATION.md`).
 - Es la que más se beneficia de la decisión de "hosts soportados" que sigue
   pendiente en `GOVERNANCE.md`.
+
+### Lo implementado
+
+El bloqueo real no era una decisión pendiente: `GOVERNANCE.md` ya fijó los
+hosts **por capacidad, no por lista cerrada**, y un host entra cuando ejecuta la
+suite del `CONTRIBUTING.md`. La condición de release no necesita nombrar un
+host; necesita nombrar qué se ejecutó. El nivel 4 de `EVALUATION.md` pasa a
+requerido para release, y `CONTRIBUTING.md` y `RELEASE_CHECKLIST.md` lo exigen
+con modelo, versión del host, fecha y commit.
+
+De los cinco fallos sembrados que el borrador pedía añadir, tres ya son casos
+retenidos: test decorativo (`S18`/`test-decorativo`), evidencia inventada
+(`S20`), riesgo alto sin mutación (`S22`). Dos más ya existen con otro número:
+suite roja declarada `coincide` es `S35` (`suite-sin-evidencia`) y cierre sin
+aprobación humana es `S21`. Se registran como absorbidos en `EVALUATION.md`
+(S46, S47) en vez de duplicarse: dos casos para el mismo fallo no miden dos
+veces, miden la misma decisión con dos redacciones.
+
+**Lo que no entra, y por qué:** nada automatizado. `test_skill_evals.py` no
+puede verificar que se ejecutó una corrida conductual sin un registro firmado
+por la persona, y el agente lo firmaría él mismo. La verificación es el reporte
+de release, que es donde el borrador ya la ponía.
 
 ---
 

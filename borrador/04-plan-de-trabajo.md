@@ -150,9 +150,11 @@ sin relleno artificial; el contexto de cada fase tiene presupuesto verificado.
 
 ### Fase 4 — Vía exprés y adopción (P8 + P10)
 
-**P8 implementada (2026-10-28).** P10 sigue `abierta`: depende de los hosts
-soportados en `GOVERNANCE.md`, que son una decisión pendiente, no un detalle de
-implementación.
+**P8 implementada (2026-10-28).** **P10 implementada (2026-10-28) salvo la
+medición**: el nivel 4 de `EVALUATION.md` es requisito de release y los hosts ya
+estaban acordados por capacidad en `GOVERNANCE.md`; lo que falta es ejecutar la
+corrida en un host con agente real, y eso ocurre en el próximo release, no en
+este cambio.
 
 Dependencia: B-07, y para P10 los hosts soportados (`GOVERNANCE.md`).
 
@@ -170,7 +172,11 @@ Dependencia: B-07, y para P10 los hosts soportados (`GOVERNANCE.md`).
    reanudación en la frontera exprés.
 3. Casos conductuales nuevos en `EVALUATION.md` para los fallos sembrados de
    Fase 1–3.
+   Hecho: los cinco fallos del borrador ya tenían caso (`S18`, `S20`, `S22`,
+   `S35`, `S21`); S46 y S47 registran los dos absorbidos por escrito.
 4. `RELEASE_CHECKLIST.md`: nivel 3 obligatorio.
+   Hecho: el nivel 3 (RED de regla) lo pide P20 y el nivel 4 (conductual) lo
+   exige P10; el checklist nombra los dos.
 
 **Criterio de salida:** un uso abusivo de la vía exprés no puede seguir sin abrir
 etapa, y una release sin evaluación conductual no se publica.

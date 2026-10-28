@@ -222,7 +222,11 @@ resultado de calidad y coste. Un caso que baja la calidad con menor coste es
 
 ### P15 — Medir el coste de los eval, no solo puntuarlos
 
-**Estado:** `abierta`
+**Estado:** `abierta` — primer trabajo del ciclo 0.4.0
+**Por qué no entró en 0.3.0:** la fila de coste necesita una corrida conductual
+que medir. Escribir las columnas ahora produce un formulario vacío; la primera
+corrida que lo llene es la que el nivel 4 de `EVALUATION.md` exige para publicar
+un cambio de skill, y esa corrida no se ha hecho todavía.
 **Relación:** P10, `EVALUATION.md` nivel 3.
 
 **Qué:** la evaluación conductual hoy puntúa 0/1 por rúbrica. Añadir por caso:

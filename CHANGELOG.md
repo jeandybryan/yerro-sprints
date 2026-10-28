@@ -7,6 +7,8 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-28
+
 ### Añadido
 
 - **Cambiar una skill exige medirlo antes de publicar (P10).** El nivel conductual de `EVALUATION.md` pasa de «bajo demanda» a requisito de release: un cambio que toca una skill o el contrato no se publica sin la corrida sobre los casos retenidos, con modelo, host, fecha y commit fijados. Sin esa corrida el cambio es `no verificado`, no `validado`. `CONTRIBUTING.md` y `RELEASE_CHECKLIST.md` lo exigen y fijan el criterio de hosts, que sigue siendo por capacidad y no por lista cerrada. Los dos fallos sembrados que el borrador pedía añadir —suite roja declarada `coincide` y cierre sin aprobación humana— ya los cubren S35 y S21: se registran como absorbidos por escrito en vez de duplicarse. Nada de esto es un gate automatizado: la corrida consume tokens y un host con agente real, así que el paquete fija la regla y deja la medición al reporte de release.

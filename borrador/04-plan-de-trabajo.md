@@ -181,6 +181,22 @@ Dependencia: B-07, y para P10 los hosts soportados (`GOVERNANCE.md`).
 **Criterio de salida:** un uso abusivo de la vía exprés no puede seguir sin abrir
 etapa, y una release sin evaluación conductual no se publica.
 
+## Cierre del ciclo 0.3.0 (2026-10-28)
+
+Publicado como `v0.3.0`. Entraron Fase 3 (P7, P6, B-20, P13, B-11), Fase 6 (P18,
+P21, P20, P23, P24), Fase 4 (P8, P10) y la calibración de Q9, más dos correcciones
+que no estaban en el plan: `listo` → `declarada-cerrada` y `doctor.py` diciendo
+qué cubre su `OK`.
+
+Quedan abiertas, en este orden:
+
+1. **P15** (coste de los eval): espera la primera corrida conductual que medir.
+2. **P9** (etapa ligera): diferida por B-06 hasta medir la fricción.
+
+Las dos necesitan datos de uso real, no código. Ejecutar la corrida conductual de
+las skills tocadas en 0.3.0 es el paso que desbloquea P15 y, de paso, cumple el
+nivel 4 que esta misma versión hizo obligatorio.
+
 ### Fase 5b — Etapa ligera (P9) — **diferida**
 
 Solo si las fases 1–4 demuestran que la fricción sigue siendo el problema

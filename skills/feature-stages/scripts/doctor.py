@@ -41,11 +41,24 @@ STAGE_DIR_RE = re.compile(r"^\d{2}-[a-z0-9][a-z0-9-]*$")
 NEEDS_TASKS = ("lista", "implementando", "auditando", "cerrada")
 NEEDS_AUDIT = ("auditando", "cerrada")
 AUDIT_COLUMNS = ("Carpeta", "Conciliación", "Estado", "Tareas", "Auditoría")
-EXPRES_COLUMNS = ("#", "Fecha", "Cambio", "Archivos", "CA", "Frontera", "Verificación")
+EXPRES_COLUMNS = (
+    "#", "Fecha", "Cambio", "Archivos", "CA", "Frontera",
+    "Comando", "Resultado", "Confirmado por",
+)
 EXPRES_LIMIT = 3
+EXPRES_COUNTED_STATES = ("lista", "implementando", "auditando")
+EXPRES_TASK_RE = re.compile(
+    r"^[-*]\s*\[[ xX]\]\s*(?:(?:D\d+-)?T\d+)\b(.*?)(?=^[-*]\s*\[|\Z)",
+    re.M | re.S,
+)
+# El resultado tiene que decir que salió. `ok`, `sí` o `verde` no lo dicen:
+# no distinguen «pasó» de «no se ejecutó».
+EXPRES_RESULT_RE = re.compile(r"\bexit\s*=?\s*\d+\b|\b\d+\s+(?:tests?|pruebas?)\b", re.I)
+EXPRES_PROMOTION_RE = re.compile(r"→\s*(\d{2}-[a-z0-9][a-z0-9-]*)")
+EXPRES_EMPTY = ("", "—", "–", "-", "…", "...")
 RULINGS_PER_TASK = 3
 RULING_RE = re.compile(r"^\s*Ruling:", re.M)
-ARCHIVOS_RE = re.compile(r"^\s*\*{0,2}Archivos:\*{0,2}\s*\S", re.M)
+ARCHIVOS_RE = re.compile(r"^\s*\*{0,2}Archivos:\*{0,2}\s*(.+?)\s*$", re.M | re.I)
 TASK_BLOCK_RE = re.compile(
     r"^\s*-\s*\[[ xX]\]\s*((?:D\d+-)?T\d+)\b(.*?)(?=^\s*-\s*\[[ xX]\]|\Z)",
     re.M | re.S,
@@ -79,20 +92,115 @@ def parse_table(text: str, columns: tuple[str, ...]) -> list[dict[str, str]]:
     return rows
 
 
-def check_expres(root: Path, warnings: list[str]) -> None:
-    """Advierte cuando la acumulación delata que el corte estaba mal.
+from diff_scope import BACKTICK_RE, _normalize # noqa: E402
 
-    `EXPRES.md` es un registro, no un gate: nunca produce un error y nunca
-    cambia la transición. Solo avisa, porque tres cambios pequeños sobre el
-    mismo CA o el mismo archivo significan que eso no era pequeño.
+def normalize_path(raw: str) -> str:
+    """Ruta comparable: sin comillas de Markdown, sin `./`, separadores POSIX."""
+    value = raw.strip().strip("`").strip()
+    return _normalize(value) if value and value not in EXPRES_EMPTY else ""
+
+
+def declared_files(tasks: str) -> list[str]:
+    """Rutas que declaran las tareas de una lista, con comillas o sin ellas."""
+    paths: list[str] = []
+    for body in EXPRES_TASK_RE.findall(tasks):
+        match = ARCHIVOS_RE.search(body)
+        if not match:
+            continue
+        raw = match.group(1)
+        items = BACKTICK_RE.findall(raw) or [
+            item for item in re.split(r"[,;]", raw) if item.strip()
+        ]
+        paths.extend(path for path in map(normalize_path, items) if path)
+    return paths
+
+
+def expres_row_errors(row: dict[str, str], stages: set[str]) -> list[str]:
+    """Qué le falta a una fila para ser prueba de que el cambio se probó (P8).
+
+    `Frontera` es el porqué; `Comando`, `Resultado` y `Confirmado por` son la
+    prueba. Sin ellos la fila registra una intención, y el modo más usado del
+    paquete no deja rastro de que se ejecutó nada.
+    """
+    name = row.get("#", "?").strip() or "?"
+    errors: list[str] = []
+    values = {
+        column: row.get(column, "").strip()
+        for column in ("Frontera", "Comando", "Resultado", "Confirmado por")
+    }
+    for column, value in values.items():
+        if value in EXPRES_EMPTY:
+            errors.append(
+                f"EXPRES.md: la fila {name} no declara {column}; una fila exprés "
+                "sin el porqué y sin la prueba no acredita nada"
+            )
+    result = values["Resultado"]
+    if result and result not in EXPRES_EMPTY and not EXPRES_RESULT_RE.search(result):
+        errors.append(
+            f"EXPRES.md: la fila {name} declara Resultado {result!r}; falta el exit "
+            "(exit 0) o el recuento de la prueba, que es lo que distingue «pasó» de "
+            "«no se ejecutó»"
+        )
+    for destination in EXPRES_PROMOTION_RE.findall(values["Confirmado por"]):
+        if destination not in stages:
+            errors.append(
+                f"EXPRES.md: la fila {name} se promueve a {destination!r}, que no "
+                "está en el índice: el trabajo no queda en ninguna etapa"
+            )
+    return errors
+
+
+def open_stage_files(root: Path, by_folder: dict[str, dict[str, str]]) -> dict[str, str]:
+    """Archivo declarado → etapa, para las etapas que están trabajando ahora.
+
+    Una etapa cerrada no es trabajo en curso: sus archivos son histórico. Solo
+    cuentan `lista`, `implementando` y `auditando`, que son los estados en los
+    que un cambio exprés sobre el mismo archivo es trabajo de la etapa.
+    """
+    owners: dict[str, str] = {}
+    for name, row in by_folder.items():
+        if normalize(row.get("Estado")) not in EXPRES_COUNTED_STATES:
+            continue
+        for path in declared_files(read(root / name / "TAREAS.md")):
+            owners.setdefault(path, name)
+    return owners
+
+
+def check_expres(
+    root: Path,
+    by_folder: dict[str, dict[str, str]],
+    errors: list[str],
+    warnings: list[str],
+) -> None:
+    """La vía exprés deja prueba de lo que se probó, o no fue exprés (P8).
+
+    Una fila incompleta es un error: el registro existe para acreditar que el
+    cambio se verificó, y una fila sin comando ni resultado no acredita nada.
+    La acumulación y el cambio sobre el archivo de una etapa abierta son
+    promociones: dejan de ser aviso y pasan a error, porque en los dos casos el
+    corte estaba mal y el trabajo pertenece a una etapa.
     """
     path = root / "EXPRES.md"
     if not path.is_file():
         return
     rows = parse_table(read(path), EXPRES_COLUMNS)
     if not rows:
-        warnings.append("EXPRES.md: no tiene tabla de cambios con sus columnas")
+        errors.append("EXPRES.md: no tiene tabla de cambios con sus columnas")
         return
+
+    stages = set(by_folder)
+    owners = open_stage_files(root, by_folder)
+    for row in rows:
+        errors.extend(expres_row_errors(row, stages))
+        number = row.get("#", "?").strip() or "?"
+        for raw in re.split(r"[,;]", row.get("Archivos", "")):
+            declared = normalize_path(raw)
+            if declared and declared in owners:
+                errors.append(
+                    f"EXPRES.md: el cambio {number} toca {declared!r}, que es archivo "
+                    f"de {owners[declared]}, que está abierta: el cambio pertenece a "
+                    "esa etapa (promover a etapa o cerrarla)"
+                )
 
     for column, label in (("CA", "el mismo CA"), ("Archivos", "el mismo archivo")):
         counts: dict[str, int] = {}
@@ -103,7 +211,7 @@ def check_expres(root: Path, warnings: list[str]) -> None:
                     counts[key] = counts.get(key, 0) + 1
         for key, count in sorted(counts.items()):
             if count >= EXPRES_LIMIT:
-                warnings.append(
+                errors.append(
                     f"EXPRES.md: {count} cambios sobre {label} {key!r}; "
                     "promover a etapa en vez de seguir acumulando"
                 )
@@ -242,7 +350,7 @@ def main(argv: list[str] | None = None) -> int:
     except FeatureError as error:
         errors.append(str(error))
     result = check(root, result, errors, warnings)
-    check_expres(root, warnings)
+    check_expres(root, parse_index(read(root / "README.md"))[1], errors, warnings)
 
     report = {
         "feature_root": str(root),

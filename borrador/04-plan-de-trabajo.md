@@ -150,11 +150,22 @@ sin relleno artificial; el contexto de cada fase tiene presupuesto verificado.
 
 ### Fase 4 — Vía exprés y adopción (P8 + P10)
 
+**P8 implementada (2026-10-28).** P10 sigue `abierta`: depende de los hosts
+soportados en `GOVERNANCE.md`, que son una decisión pendiente, no un detalle de
+implementación.
+
 Dependencia: B-07, y para P10 los hosts soportados (`GOVERNANCE.md`).
 
 1. `EXPRES.md`: `Comando`, `Resultado`, `Confirmado por`.
+   Hecho: `Verificación` se sustituye por `Comando` + `Resultado` (con exit o
+   recuento) + `Confirmado por`; `doctor.py` rechaza la fila incompleta.
 2. `doctor.py`: fila incompleta = `ERROR`; acumulación = `ERROR` con acción
    "abrir etapa".
+   Hecho: además, cambio sobre el archivo de una etapa en `lista`,
+   `implementando` o `auditando`, y promoción `→ NN-slug` a una etapa ausente
+   del índice. Fixtures `expres-sin-verificacion`, `expres-resultado-sin-exit`,
+   `expres-promocion-rota`, `expres-etapa-abierta`, `expres-etapa-cerrada`.
+   B-07 queda `acordada`.
 3. B-17: veto por ítem de riesgo alto (lista numerada de 6) y test de
    reanudación en la frontera exprés.
 3. Casos conductuales nuevos en `EVALUATION.md` para los fallos sembrados de

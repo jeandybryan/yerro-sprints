@@ -202,11 +202,14 @@ confirmación humana, sin criterio de aceptación nuevo y sin cambio de interfaz
 pública. Si el script dice `no cabe`, o no puedes afirmar las dos
 confirmaciones, **abre etapa**: la vía exprés no tiene override.
 
-Si cabe, anota una línea en `EXPRES.md` con el porqué cabía y cómo se verificó.
-Es un registro, no un gate: `next_step.py` no lo lee, no cambia ninguna
-transición y no bloquea ninguna etapa. `doctor.py` avisa cuando tres cambios se
-acumulan sobre el mismo CA o el mismo archivo; esa acumulación significa que el
-corte estaba mal: promueve a etapa y marca la línea `→ NN-slug`.
+Si cabe, anota una línea en `EXPRES.md` con el porqué cabía, el comando que lo
+comprobó, el resultado con su exit y quién confirmó las dos condiciones que el
+diff no puede mostrar. `next_step.py` no lo lee y no cambia ninguna transición,
+pero `doctor.py` rechaza una fila incompleta: un registro sin prueba no
+acredita nada. También rechaza la acumulación (tres cambios sobre el mismo CA o
+archivo), un cambio exprés sobre un archivo de una etapa abierta y una
+promoción `→ NN-slug` a una etapa que no existe. En los tres casos el corte
+estaba mal: promueve a etapa y marca la línea `→ NN-slug`.
 
 ### 1. Corta la especificación
 

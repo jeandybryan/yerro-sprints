@@ -410,7 +410,7 @@ Bajo; el coste real es de disciplina, no de código.
 
 ## P8 — Vía exprés con verificación y promoción automática
 
-**Estado:** `abierta`
+**Estado:** `implementada` (2026-10-28)
 **Diagnóstico:** D8
 **Impacto:** medio
 
@@ -450,6 +450,32 @@ Bajo.
 - El `ERROR` por acumulación puede bloquear trabajo legítimo. Mitigación: la
   promoción es "abrir etapa" con el registro como contexto; no impide
   mergear, impide **seguir sin etapa**.
+
+### Lo implementado
+
+La tabla de `EXPRES.md` gana tres columnas —`Comando`, `Resultado`,
+`Confirmado por`— y pierde `Verificación`, que no distinguía «pasó» de «no se
+ejecutó»: el resultado tiene que nombrar el exit o el recuento de la prueba.
+El `ERROR` lo emite `doctor.py`, que ya es el que lee `EXPRES.md`;
+`next_step.py` sigue sin leerlo, así que la vía exprés no se convierte en una
+etapa encubierta.
+
+De las tres promociones del borrador, dos quedan como estaban en el texto y la
+tercera se acota: «cambio exprés en una ventana en la que ya se abrió etapa
+sobre ese archivo» se implementa cruzando el archivo de `EXPRES.md` con los
+`**Archivos:**` que declaran las tareas de las etapas en `lista`,
+`implementando` y `auditando`. Una etapa cerrada no promueve: sus archivos son
+histórico, y «cualquier etapa alguna vez abierta sobre ese archivo» bloquearía
+para siempre la vía exprés en cualquier repositorio con historia.
+
+Una línea ya promovida (`→ NN-slug`) exige que la etapa exista en el índice.
+Promover a una etapa que no está deja el trabajo en ninguna parte, y era la
+única de las cuatro condiciones que podía fallar en silencio.
+
+Fixtures: `expres-sin-verificacion`, `expres-resultado-sin-exit`,
+`expres-promocion-rota`, `expres-etapa-abierta` (fallan) y
+`expres-etapa-cerrada`, `expres-sano` (pasan). `expres-acumulado` pasa de
+`WARN` a error.
 
 ---
 

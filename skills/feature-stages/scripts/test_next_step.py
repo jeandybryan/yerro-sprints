@@ -457,39 +457,73 @@ EXPRES_EXPECTED = (
 
 
 def check_expres_warning() -> None:
-    """El registro exprés avisa por acumulación, pero nunca bloquea."""
+    """P8: la fila exprés es la prueba; sin ella el registro no acredita nada."""
     global checked
     acumulado = run("doctor.py", str(FIXTURES / "expres-acumulado"), "--json")
     checked += 1
-    if acumulado.returncode != 0:
-        fail(f"doctor/expres-acumulado: salida {acumulado.returncode}, no debe bloquear")
+    if acumulado.returncode != 1:
+        fail(
+            f"doctor/expres-acumulado: salida {acumulado.returncode}, se esperaba 1 "
+            "(la acumulación es promoción, no aviso)"
+        )
         return
     report = json.loads(acumulado.stdout)
-    warnings = " ".join(report["advertencias"])
+    errors = " ".join(report["errores"])
     for expected in EXPRES_EXPECTED:
-        if expected not in warnings:
-            fail(f"doctor/expres-acumulado: no reporta {expected!r} (obtenidos {warnings})")
+        if expected not in errors:
+            fail(f"doctor/expres-acumulado: no reporta {expected!r} (obtenidos {errors})")
     checked += 1
-    if report["errores"]:
-        fail(f"doctor/expres-acumulado: el registro no puede producir errores: {report['errores']}")
+    if report["advertencias"]:
+        fail(f"doctor/expres-acumulado: la acumulación no puede quedarse en aviso: {report['advertencias']}")
 
     sano = run("doctor.py", str(FIXTURES / "expres-sano"), "--json")
     checked += 1
     if sano.returncode != 0:
-        fail(f"doctor/expres-sano: salida {sano.returncode}, se esperaba 0")
+        fail(f"doctor/expres-sano: salida {sano.returncode}: {sano.stdout}")
         return
-    if json.loads(sano.stdout)["advertencias"]:
-        fail("doctor/expres-sano: avisó por debajo del umbral")
+    checked += 1
+    if json.loads(sano.stdout)["errores"]:
+        fail(f"doctor/expres-sano: un registro completo no puede fallar: {sano.stdout}")
 
-    for fixture in ("expres-acumulado", "expres-sano"):
+    # Cada fila inválida falla por su motivo, no por cualquiera.
+    for fixture, expected in (
+        ("expres-sin-verificacion", "no declara Comando"),
+        ("expres-sin-verificacion", "no declara Resultado"),
+        ("expres-sin-verificacion", "no declara Confirmado por"),
+        ("expres-resultado-sin-exit", "falta el exit"),
+        ("expres-promocion-rota", "que no está en el índice"),
+        ("expres-etapa-abierta", "que está abierta"),
+    ):
+        result = run("doctor.py", str(FIXTURES / fixture), "--json")
+        checked += 1
+        if result.returncode != 1:
+            fail(f"doctor/{fixture}: salida {result.returncode}, se esperaba 1: {result.stdout}")
+            continue
+        errors = " ".join(json.loads(result.stdout)["errores"])
+        if expected not in errors:
+            fail(f"doctor/{fixture}: no reporta {expected!r} (obtenidos {errors})")
+
+    # El negativo de la promoción: una etapa cerrada no es trabajo en curso.
+    cerrada = run("doctor.py", str(FIXTURES / "expres-etapa-cerrada"), "--json")
+    checked += 1
+    if cerrada.returncode != 0:
+        fail(f"doctor/expres-etapa-cerrada: salida {cerrada.returncode}: {cerrada.stdout}")
+
+    for fixture in (
+        "expres-acumulado",
+        "expres-sano",
+        "expres-etapa-abierta",
+        "expres-etapa-cerrada",
+    ):
         result = run("next_step.py", str(FIXTURES / fixture), "--json")
         checked += 1
         if result.returncode != 0:
             fail(f"next_step/{fixture}: el registro exprés no debe cambiar la transición")
             continue
         data = json.loads(result.stdout)
-        if data["state"] != TRABAJANDO or data["siguiente"] != "implement-stage":
-            fail(f"next_step/{fixture}: transición {data['state']}/{data['siguiente']} alterada por EXPRES.md")
+        if data["state"] == "necesita-decision":
+            fail(f"next_step/{fixture}: EXPRES.md alteró la transición a {data['state']}")
+
 
 def check_validate_no_crash() -> None:
     """Ninguna fixture puede hacer que el validador se caiga en vez de juzgar."""

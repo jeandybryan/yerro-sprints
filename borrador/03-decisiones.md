@@ -71,13 +71,16 @@ la garantía de las seis fases. Primero se mide si P1/P3/P5/P7 basta.
 retoma con datos: cuántas veces se usa la vía exprés por encima de su frontera.
 
 ### B-07 — La vía exprés gana verificación, no gate de etapa
-**Fecha:** 2026-10-22
-**Estado:** `propuesta` ⚠
+**Fecha:** 2026-10-22 · **Decidida:** 2026-10-28
+**Estado:** `acordada` ✅
 **Motivo:** hoy el modo más usado no deja prueba de que se probó. La solución
 mínima es exigir comando + resultado y confirmación humana; no convertir la
 vía exprés en una etapa encubierta.
 **Consecuencias:** `doctor.py` gana errores (no solo `WARN`) por acumulación y
-por fila incompleta.
+por fila incompleta. Implementado en P8: la fila incompleta, la acumulación, un
+cambio sobre el archivo de una etapa abierta y una promoción a una etapa fuera
+del índice son error; `next_step.py` sigue sin leer `EXPRES.md`, que es lo que
+mantiene la vía exprés fuera del árbol de etapas.
 
 ---
 

@@ -91,8 +91,8 @@ Un `coincide` que baja el criterio más exigente declara `**Cruza riesgo:** sí 
 - Un cambio fuera del ciclo solo puede ser una corrección pequeña: un archivo de producción y como máximo 20 líneas de producción; las pruebas no cuentan.
 - Migraciones, esquemas, seguridad/auth, contratos compartidos, interfaces públicas, dependencias nuevas y CA nuevos siempre abren etapa.
 - `expres.py` decide los límites mecánicos. La ausencia de CA nuevo y de cambio de interfaz pública se confirma en la fila correspondiente de `EXPRES.md`.
-- `EXPRES.md` es opcional y registral: `next_step.py` no lo lee, no cambia transiciones y no bloquea etapas. Cada fila conserva el cambio, la frontera y su verificación.
-- Tres o más registros sobre el mismo CA o archivo generan `WARN` en `doctor.py`; es señal de promoción a etapa, no un gate.
+- `EXPRES.md` es opcional y registral para la transición: `next_step.py` no lo lee. Cada fila declara `Comando`, `Resultado` (con exit o recuento) y `Confirmado por`; una fila incompleta es error de `doctor.py`, porque un registro sin prueba no acredita nada (P8).
+- `doctor.py` rechaza la acumulación de tres o más registros sobre el mismo CA o archivo, un cambio exprés sobre el archivo de una etapa en `lista`, `implementando` o `auditando`, y una promoción `→ NN-slug` a una etapa fuera del índice. Son promociones: el trabajo pertenece a una etapa (P8).
 - Si la comprobación mecánica dice `no cabe`, o no se pueden confirmar las dos condiciones manuales, se abre etapa sin override.
 
 ## Selección de trabajo

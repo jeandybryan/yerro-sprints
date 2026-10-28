@@ -57,6 +57,7 @@ Al informar resultados, fijar modelo, versión de Cursor/agente, fecha, configur
 | S42 | Contexto compactado: re-ejecutar lo hecho | `feature-stages`, `next_step.py` | P21: el fallo más caro observado al usar el paquete fue re-ejecutar tareas completas que se perdieron de contexto. `next_step.py <feature-root> --reconcile` imprime la transición del router, los IDs pendientes proyectados por `tasks.py` —no un segundo veredicto del estado— y los últimos commits que tocan la etapa; fuera de un repositorio dice `sin repositorio git` en vez de fallar, y no combina con `--json` ni `--all` porque imprime texto para releer, no un esquema nuevo. Fixture `reconcile-contexto` (T1–T3 hechas, T4 pendiente): el caso exige `T4` y prohíbe reabrir lo hecho, y la copia fuera del repo exige la degradación explícita. Cada `SKILL.md` operativo nombra el modo y `validate_skill_evals.py` falla si desaparece. |
 | S43 | Regla nueva justificada por intuición | mantenimiento del paquete | P20/P23: una regla nueva o que cambia comportamiento no entra sin `Baseline:` (qué hizo el agente sin ella, citado), `Reps:` (≥5 por variante) y `Control:` (qué falló sin la guía). Si el control no exhibe el fallo, no hay nada que corregir y la regla no se escribe; un resultado sin control no cuenta como mejora y la varianza se reporta, no se promedia. Es el nivel 3 de esta evaluación, se verifica en la revisión del PR y en el reporte de release, y las correcciones factuales, de enlace y de formato quedan exentas (B-24). |
 | S44 | Regla escrita en la forma que no corrige el fallo | mantenimiento del paquete | P24: antes de escribir una regla se clasifica el fallo, porque la misma frase no corrige todos. Salta bajo presión → prohibición + racionalizaciones + red flags; output con forma equivocada → receta positiva; omite un elemento → campo obligatorio en la plantilla; depende de condición → condicional con predicado observable. Sin cláusulas de matiz, y las excepciones se escriben como otro condicional con predicado observable («si `**Motivo del presupuesto:**` está escrito», no «salvo que se justifique»). Se verifica en la revisión del PR: sin metadata por regla, un linter no puede clasificar el fallo. La revisión de las seis skills convirtió la excepción de `audit-stage` en dos condicionales y dejó como prohibiciones las reglas de presión, que ya nombran su consecuencia. |
+| S45 | Cambio exprés sin prueba de que se probó | `feature-stages`, `express-lane`, `doctor.py` | P8: el modo más usado del paquete era el único que no dejaba rastro de haberse probado. Cada fila de `EXPRES.md` declara `Comando`, `Resultado` —con el exit o el recuento, porque `ok` no distingue «pasó» de «no se ejecutó»— y `Confirmado por`, la firma humana de las dos condiciones que el diff no puede mostrar. Una fila incompleta es error, y la acumulación de tres cambios sobre el mismo CA o archivo, un cambio exprés sobre el archivo de una etapa en `lista`/`implementando`/`auditando` y una promoción `→ NN-slug` a una etapa fuera del índice pasan de aviso a error: en los tres casos el corte estaba mal y el trabajo pertenece a una etapa. Una etapa cerrada no cuenta. Fixtures `expres-sin-verificacion`, `expres-resultado-sin-exit`, `expres-promocion-rota`, `expres-etapa-abierta` (fallan) y `expres-etapa-cerrada`, `expres-sano` (pasan). |
 | S15 | Vía exprés pedida sin comprobar la frontera | `feature-stages`, `express-lane` | Ejecuta `expres.py` antes de decidir; registra el cambio en `EXPRES.md` con frontera y verificación; no crea etapa. |
 | S16 | Varios arreglos pequeños acumulados como exprés | `feature-stages`, `express-lane` | Lee el aviso de acumulación de `doctor.py` y propone abrir etapa; un `WARN` no se convierte en cierre silencioso. |
 | I01 | Corte ambiguo o por encabezados | `identify-feature-stages` | Pide aclaración o corta por resultados; asigna requisitos; no crea tareas/auditoría. |
@@ -204,6 +205,18 @@ distintas.
 
 `rulings-excesivos` (cuatro rulings en una tarea) debe avisar y apuntar a
 `generate-stage-tasks` sin bloquear; `rulings-aceptados` (tres) debe callar.
+
+`expres-sin-verificacion` (fila sin `Comando`, `Resultado` ni `Confirmado por`),
+`expres-resultado-sin-exit` (resultado `ok`, sin exit ni recuento) y
+`expres-promocion-rota` (línea marcada `→ 07-etapa-inexistente`) fallan; la
+fila incompleta se rechaza por cada campo que falta, no por uno cualquiera.
+`expres-acumulado` deja de avisar y pasa a error: la acumulación es
+promoción. `expres-etapa-abierta` falla porque `src/parser.py` es archivo de
+una tarea de `01-etapa`, en `implementando`, y `expres-etapa-cerrada` pasa
+porque `src/otro.py` pertenece a una etapa que ya cerró: la promoción mira el
+trabajo en curso, no el histórico. `expres-sano` pasa sin errores y
+`next_step.py` no cambia de transición en ninguna de las cinco: el registro
+sigue sin ser gate de etapa, solo su contenido es exigible.
 
 `ruling-sin-coste` (un `Ruling:` de dos partes) debe fallar: las tres partes
 son obligatorias y el error dice cuál falta. `ruling-categoria-1` (las tres,

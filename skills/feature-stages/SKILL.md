@@ -24,7 +24,9 @@ python3 <skills-root>/feature-stages/scripts/expres.py <repo> [--base REF]
 The express lane permits one production file and at most 20 production lines,
 with no excluded route, new CA or public-interface change. Tests do not count.
 If the result is `no cabe`, or the two human confirmations are unavailable,
-open a normal stage. Record accepted express changes in `EXPRES.md`.
+open a normal stage. Record accepted express changes in `EXPRES.md` with the
+command, its exit and the human confirmation; `doctor.py` rejects an
+incomplete row, an accumulation and a change over an open stage's file.
 See [express-lane.md](references/express-lane.md).
 
 ## Read the contract before acting

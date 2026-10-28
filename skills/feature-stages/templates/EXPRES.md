@@ -1,8 +1,9 @@
 ## `EXPRES.md` (registro de cambios que no abren etapa)
 
-Optional. Create it only when there was at least one express change. It is a
-record, not a gate: `next_step.py` never reads it, it never changes a
-transition and it never blocks a stage.
+Optional to create, mandatory to complete once it exists: `next_step.py`
+never reads it and it never changes a transition, but `doctor.py` treats an
+incomplete row as an error (P8). A row without its command, its result and
+its human confirmation records an intention, not a verification.
 
 ```markdown
 # Registro de cambios exprés
@@ -11,14 +12,18 @@ Cambios que no abren etapa. Una línea por cambio, en orden cronológico.
 Si un cambio deja de cumplir la frontera, se promueve a etapa y esta línea
 se marca `→ NN-slug`.
 
-| # | Fecha | Cambio | Archivos | CA | Frontera | Verificación |
-|---|-------|--------|----------|----|----------|--------------|
-| E-01 | AAAA-MM-DD | … | `ruta.py` | — | 1 archivo, 8 líneas | test focalizado; exit 0 |
+| # | Fecha | Cambio | Archivos | CA | Frontera | Comando | Resultado | Confirmado por |
+|---|-------|--------|----------|----|----------|---------|-----------|----------------|
+| E-01 | AAAA-MM-DD | … | `ruta.py` | — | 1 archivo, 8 líneas | `pytest tests/test_ruta.py` | exit 0 · el mensaje conserva el formato | Ana Ruiz · AAAA-MM-DD |
 ```
 
 La columna **Frontera** es la que evita la regresión: obliga a escribir *por
-qué* el cambio cabía. La columna **Verificación** impide el cambio exprés sin
-ninguna comprobación.
+qué* el cambio cabía. **Comando** y **Resultado** impiden el cambio exprés sin
+ninguna comprobación: el resultado nombre el exit (`exit 0`) o el recuento de
+la prueba, porque `ok` no distingue «pasó» de «no se ejecutó». **Confirmado
+por** es la firma humana de las dos condiciones que `expres.py` no puede leer
+del diff; si el trabajo se promueve, el destino va ahí como `→ NN-slug` y
+`doctor.py` comprueba que esa etapa exista en el índice.
 
 ## La frontera exprés
 
@@ -46,7 +51,10 @@ override.
 
 ### Promoción a etapa
 
-`doctor.py` avisa (nunca bloquea) cuando `EXPRES.md` acumula **3 o más**
-cambios sobre el mismo `CA` o el mismo archivo. Esa acumulación significa que
-la etapa estaba mal cortada: se promueve a etapa y la línea pasa a `→ NN-slug`.
+`doctor.py` rechaza (error, no aviso) cuando `EXPRES.md` acumula **3 o más**
+cambios sobre el mismo `CA` o el mismo archivo, o cuando un cambio toca un
+archivo que declara una tarea de una etapa en `lista`, `implementando` o
+`auditando`. En los dos casos el corte estaba mal: se promueve a etapa y la
+línea pasa a `→ NN-slug`. Una etapa cerrada no cuenta: sus archivos son
+histórico, no trabajo en curso.
 

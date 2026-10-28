@@ -23,6 +23,8 @@ los artefactos.
 - [ ] Ningún gate fue rebajado para que una fixture pase.
 - [ ] Se ejecutaron las validaciones locales (ver README, sección de validación).
 - [ ] `test_next_step.py` pasa; toda transición, bloqueo o regla estructural nueva tiene su caso en `evals/fixtures/`.
+- [ ] `test_blockers.py` pasa; cada código de bloqueo tiene una continuación que desbloquea de verdad y ninguna queda `dead end`.
+- [ ] `test_tasks.py` pasa; `tasks.py pending` proyecta el checkbox sin decidir el estado y no presenta una lista vacía como terminada.
 - [ ] `test_expres.py` pasa; todo cambio de frontera (umbral, ruta excluida, pruebas o archivos sin trackear) tiene su caso.
 - [ ] `test_evidence.py` pasa; la firma es estable, sensible al exit y al output, insensible a lo volátil, y `verify` rechaza una evidencia inventada.
 - [ ] `test-decorativo` y `sin-sensibilidad` siguen fallando; `valid-stage` sigue pasando con la columna `Sensibilidad`.
@@ -67,10 +69,13 @@ los artefactos.
 python3 skills/feature-stages/scripts/validate_skill_evals.py
 python3 skills/feature-stages/scripts/test_skill_evals.py
 python3 skills/feature-stages/scripts/test_next_step.py
+python3 skills/feature-stages/scripts/test_blockers.py
+python3 skills/feature-stages/scripts/test_tasks.py
 python3 skills/feature-stages/scripts/test_snapshot.py
 python3 skills/feature-stages/scripts/test_diff_scope.py
 python3 skills/feature-stages/scripts/test_expres.py
 python3 skills/feature-stages/scripts/test_evidence.py
+python3 skills/feature-stages/scripts/test_preflight.py
 python3 skills/feature-stages/scripts/doctor.py \
   skills/feature-stages/evals/fixtures/transiciones
 python3 skills/feature-stages/scripts/validate_stage.py \

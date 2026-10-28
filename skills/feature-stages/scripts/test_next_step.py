@@ -239,6 +239,13 @@ VALIDATE_REJECTED = [
     # P6: la trazabilidad nombra IDs que no existen.
     ("trazabilidad-t-inexistente", "la traza nombra T9, que no existe(n) en TAREAS.md"),
     ("trazabilidad-e-inexistente", "la traza nombra E-77, que no existe(n) en el ledger"),
+    # Migradas del workflow cuando B-28 retiró `--strict`: solo las ejercitaba
+    # el CI, así que borrar esos pasos sin traerlas aquí las habría dejado sin
+    # gate. Ahora se exige el motivo, no solo el código de salida.
+    ("closed-without-task", "conciliación cerrada sin TAREAS.md"),
+    ("index-estado/04-etapa", "índice marca etapa cerrada sin AUDIT.md con veredicto coincide"),
+    ("ca-tipo", "CA-05 no declara tipo condición de salida/invariante acumulado"),
+    ("riesgo-ausente", "conciliación cerrada sin **Riesgo:**"),
 ]
 
 VALIDATE_ACCEPTED = [
@@ -248,6 +255,7 @@ VALIDATE_ACCEPTED = [
     # juzgar, y pedirlo antes empuja a escribir una auditoría para callar al
     # validador.
     "antes-de-auditar",
+    "index-estado/03-activa",
     "index-estado/05-hecha",
     "riesgo-cruzado-con-motivo",
     "ruling-categoria-1",
@@ -275,14 +283,6 @@ def check_validate_contract() -> None:
             fail(f"validate/{fixture}: salida {result.returncode}, se esperaba 1")
         elif expected not in result.stdout:
             fail(f"validate/{fixture}: no reporta {expected!r} (obtenidos {result.stdout})")
-
-    # B-28: hay un solo contrato. Las fixtures que vivían de la dualidad
-    # `--strict` / aviso ahora describen estados que el contrato rechaza.
-    for fixture in ("riesgo-ausente", "ca-tipo"):
-        result = run("validate_stage.py", str(FIXTURES / fixture))
-        checked += 1
-        if result.returncode != 1:
-            fail(f"validate/{fixture}: salida {result.returncode}, se esperaba 1 sin modo legado")
 
     # El presupuesto derivado del riesgo: escribir un número mayor en la
     # conciliación no amplía el margen mientras falte `**Motivo del presupuesto:**`.

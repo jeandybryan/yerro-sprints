@@ -86,6 +86,37 @@ GUIDE_DOCUMENTS = ("README.md", "CONTRIBUTING.md", "GOVERNANCE.md", "RELEASE_CHE
 # designa ningún archivo y no se puede resolver.
 PLACEHOLDER = re.compile(r"NN|<|>|…|\*")
 
+# La CI es parte del contrato: si invoca un modo retirado o se olvida de una
+# suite, dice verde sobre algo que no ejecutó. Se deriva del módulo por la misma
+# razón que `REPO_ROOT`: un test mueve `ROOT` a un temporal.
+WORKFLOW = REPO_ROOT / ".github" / "workflows" / "validate.yml"
+SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
+
+def workflow_errors(workflow: Path, scripts: Path) -> list[str]:
+    """El workflow que valida el paquete debe ejecutar cada suite vigente.
+
+    No basta con que exista: cuando B-28 retiró `--strict`, el workflow siguió
+    invocándolo y fallaba en cada push; y las suites de bloqueos, alcance,
+    evidencia y preflight nunca se ejecutaron allí. Un workflow desactualizado
+    no protege: miente.
+    """
+    if not workflow.exists():
+        return [f"falta el workflow {workflow}"]
+    text = workflow.read_text(encoding="utf-8")
+    errors: list[str] = []
+    for script in sorted(scripts.glob("test_*.py")):
+        if script.name not in text:
+            errors.append(f"el workflow no ejecuta {script.name}")
+    if "validate_skill_evals.py" not in text:
+        errors.append("el workflow no ejecuta validate_skill_evals.py")
+    for line in text.splitlines():
+        if line.lstrip().startswith("#"):
+            continue
+        if "--strict" in line:
+            errors.append("el workflow invoca `--strict`, un modo retirado (B-28)")
+            break
+    return errors
+
 
 def document_name_errors(markdown: Path, repo_root: Path) -> list[str]:
     """Un documento que manda a un `.md` que no está en el repositorio.
@@ -141,6 +172,7 @@ def main() -> int:
         errors.extend(document_name_errors(document, REPO_ROOT))
     corpus = "\n".join(path.read_text() for path in [*markdown_files, *DOCUMENTS] if path.exists())
     errors.extend(gate_errors(corpus))
+    errors.extend(workflow_errors(WORKFLOW, SCRIPTS))
     audit_skill = ROOT.parent / "audit-stage" / "SKILL.md"
     if audit_skill.exists():
         errors.extend(closing_gate_errors(audit_skill.read_text()))

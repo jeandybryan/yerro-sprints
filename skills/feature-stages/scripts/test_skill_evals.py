@@ -18,11 +18,14 @@ sys.path.insert(0, str(HERE))
 
 from validate_skill_evals import (  # noqa: E402
     GATE_TOKENS,
+    SCRIPTS,
+    WORKFLOW,
     closing_gate_errors,
     document_name_errors,
     gate_errors,
     markdown_reference_errors,
     routing_errors,
+    workflow_errors,
 )
 
 errors: list[str] = []
@@ -161,12 +164,30 @@ def check_document_names() -> None:
         reported = document_name_errors(doc, root)
         check(reported == [], f"un nombre de patrón no puede fallar: {reported}")
 
+def check_workflow() -> None:
+    """Un CI que se queda atrás no protege: dice verde sobre lo que no ejecutó."""
+    real = workflow_errors(WORKFLOW, SCRIPTS)
+    check(real == [], f"workflow real: {real}")
+    with tempfile.TemporaryDirectory() as tmp:
+        base = WORKFLOW.read_text(encoding="utf-8")
+        missing = Path(tmp) / "sin-suite.yml"
+        missing.write_text(base.replace("test_tasks.py", "tareas.py"), encoding="utf-8")
+        reported = workflow_errors(missing, SCRIPTS)
+        check(any("test_tasks.py" in item for item in reported), f"suite ausente no detectada: {reported}")
+
+        strict = Path(tmp) / "con-strict.yml"
+        strict.write_text(base.replace("test_expres.py", "test_expres.py --strict"), encoding="utf-8")
+        reported = workflow_errors(strict, SCRIPTS)
+        check(any("--strict" in item for item in reported), f"modo retirado no detectado: {reported}")
+
+
 def main() -> int:
     check_catalog()
     check_mutations()
     check_unlisted_case_id()
     check_broken_fixture_reference()
     check_document_names()
+    check_workflow()
     for error in errors:
         print(f"ERROR: {error}")
     if not errors:

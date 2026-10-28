@@ -23,6 +23,8 @@ No marques una release como lista mientras exista una decisión pendiente en
       cada auditoría conserva `S → CA → T → test → E`.
 - [ ] El riesgo, presupuesto de deltas y desviaciones están explícitos.
 - [ ] No quedan preguntas abiertas ni bloqueos sin decisión.
+- [ ] Cada regla nueva o cambiada cita `Baseline:`, `Reps:` (≥5 por variante)
+      y `Control:`; si el control no exhibía el fallo, la regla no entró.
 
 ## Publicación
 
@@ -31,6 +33,9 @@ No marques una release como lista mientras exista una decisión pendiente en
 - [ ] Política de tags/versionado acordada.
 - [ ] Agentes/hosts soportados acordados.
 - [ ] Owner y aprobadores de la release acordados.
+- [ ] El reporte de release declara, por cambio de skill, el control sin la
+      guía, las repeticiones y la varianza: un resultado sin control no cuenta
+      como evidencia de mejora (P23).
 - [ ] Changelog actualizado después de validar, no antes.
 - [ ] El commit/árbol auditado está identificado y el árbol de trabajo está
       limpio.

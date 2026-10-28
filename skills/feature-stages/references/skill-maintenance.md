@@ -19,6 +19,20 @@ Una regla nueva o que cambia comportamiento trae además su **baseline**: qué h
 el agente sin ella, en una frase, con la cita del comportamiento observado. Sin
 baseline y sin fixture, la regla solo ocupa contexto.
 
+```text
+Regla: <texto que se añade>
+Baseline: <qué hizo el agente sin la regla; cita verbatim>
+Reps: <n ≥ 5 por variante>
+Control: <qué falló sin la guía>
+```
+
+Si el control no exhibe el fallo, **no hay nada que corregir**: la regla no se
+escribe. Cinco repeticiones que producen cinco interpretaciones dicen que la
+redacción no obliga, aunque cada una parezca razonable: la varianza se reporta,
+no se promedia (P23). Las correcciones factuales, de enlace y de formato quedan
+exentas (B-24); sin esa acotación el proceso de mantenimiento se vuelve
+inoperable.
+
 ## Evidencia antes que transcripción
 
 Lo que cierra una etapa es una observación, no un relato. `Test:` se rechaza si

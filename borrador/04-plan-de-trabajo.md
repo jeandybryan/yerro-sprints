@@ -278,6 +278,9 @@ release.
 3. P24: forma de la regla según el tipo de fallo; revisar skills existentes.
 4. P20 + P23: baseline y control negativo en `EVALUATION.md`,
    `CONTRIBUTING.md` y `AGENTS.md`.
+   Hecho 2026-10-28: nivel 3 «RED de regla», forma
+   `Regla:/Baseline:/Reps:/Control:`, varianza en la rúbrica y en el reporte
+   de release.
 
 **Criterio de salida:** no se puede cerrar una etapa sin veredicto de calidad,
 y no se acepta una regla nueva sin baseline.

@@ -16,6 +16,24 @@ los artefactos.
 - Todo cambio de comportamiento debe añadir o actualizar una fixture o caso
   retenido que demuestre el comportamiento esperado.
 
+## Reglas nuevas: baseline y control
+
+Una regla nueva o que cambia comportamiento entra con la evidencia de que el
+agente falla sin ella (B-24, P20):
+
+```text
+Regla: <texto que se añade>
+Baseline: <qué hizo el agente sin la regla; cita verbatim>
+Reps: <n ≥ 5 por variante>
+Control: <qué falló sin la guía>
+```
+
+Si el control no exhibe el fallo, no hay nada que corregir y la regla no se
+escribe. Un resultado sin control no cuenta como mejora, y la varianza se
+reporta: cinco repeticiones con cinco interpretaciones dicen que la redacción
+no obliga (P23). Las correcciones factuales, de enlace y de formato están
+exentas.
+
 ## Checklist antes de abrir un PR
 
 - [ ] No se introdujeron reglas de dominio ni referencias a un consumidor.
@@ -61,6 +79,11 @@ los artefactos.
 - [ ] Cualquier cambio de descripción revisa los casos de activación positivos
       y negativos.
 - [ ] Cualquier cambio de flujo, plantilla o validador añadió una prueba de regresión.
+- [ ] Una regla nueva o que cambia comportamiento cita `Baseline:`, `Reps:`
+      (≥5 por variante) y `Control:`; si el control no exhibía el fallo, la
+      regla no entró (B-24, P20).
+- [ ] `next_step.py --reconcile` es la forma de retomar una etapa: ninguna
+      skill manda re-ejecutar tareas para descubrir qué faltaba (P21).
 - [ ] Se revisaron [GOVERNANCE.md](GOVERNANCE.md) y [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md); las decisiones de licencia, distribución, tags y hosts no se inventaron.
 
 ## Validación local

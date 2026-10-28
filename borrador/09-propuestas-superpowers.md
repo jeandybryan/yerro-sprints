@@ -177,7 +177,7 @@ alcance declarado). Alto en redacción, porque cambia la política.
 
 ## P20 — Toda regla nueva necesita su baseline (RED antes de escribir)
 
-**Estado:** `abierta`
+**Estado:** `implementada` (2026-10-28)
 **Origen:** O5, O7. `writing-skills` (superpowers).
 **Relación:** B-24, `EVALUATION.md`, `CONTRIBUTING.md`, `AGENTS.md`.
 
@@ -200,6 +200,13 @@ Y la regla dura:
 
 Esto ataca directamente el riesgo de que el paquete crezca sin que cada regla
 demuestre servir. Complementa el nivel conductual de `EVALUATION.md`.
+
+**Hecho:** `EVALUATION.md` gana el nivel 3 «RED de regla» antes del conductual,
+con la forma `Regla:/Baseline:/Reps:/Control:`; `CONTRIBUTING.md`, `AGENTS.md`,
+`RELEASE_CHECKLIST.md` y `references/skill-maintenance.md` la exigen como
+criterio de PR y de release. Es regla de proceso, no gate de fixture, y la
+exención para correcciones factuales, de enlace y de formato (B-24) está
+escrita en los cuatro documentos.
 
 ### Dónde toca
 
@@ -305,7 +312,7 @@ Bajo: es corrección de doctrina y de una tabla.
 
 ## P23 — El control negativo y la varianza en la evaluación
 
-**Estado:** `abierta`
+**Estado:** `implementada` (2026-10-28)
 **Origen:** O7.
 **Relación:** P10, P15, P20.
 
@@ -326,6 +333,17 @@ Un resultado sin control no cuenta como evidencia de mejora.
 
 ### Cómo se verifica
 En el reporte de release: cada cambio de skill cita control, reps y varianza.
+
+**Hecho:** el nivel 3 de `EVALUATION.md` exige el control, las cinco
+repeticiones y la varianza reportada; la rúbrica conductual dice que no se
+promedia ni se elige la repetición que conviene; `RELEASE_CHECKLIST.md` lo
+pide por cambio de skill en el reporte de release. Un resultado sin control
+no cuenta como evidencia de mejora.
+
+**Lo que no entra todavía:** nada automatiza las repeticiones. Ejecutar cinco
+veces un caso conductual consume tokens y necesita un host con agente real;
+el paquete fija la regla y deja la medición al reporte, que es donde el
+borrador la pedía.
 
 ### Coste
 Medio en ejecución. **Beneficio:** impide declarar mejoras que solo son azar.

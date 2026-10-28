@@ -34,6 +34,10 @@ auditoría.
   otro árbol ni rebajes el riesgo; ambos son gates del validador.
 - `**Presupuesto de deltas:**` acota la corrección. Agotarlo es
   `necesita-decision`, no un delta más.
+- Una regla nueva o que cambia comportamiento trae `Baseline:`, `Reps:` (≥5
+  por variante) y `Control:`. Si el control no exhibe el fallo, la regla no se
+  escribe; un resultado sin control no cuenta como mejora y la varianza se
+  reporta, no se promedia. Es criterio de PR, no un gate de fixture.
 - Un gate nuevo no deja modo legado. Hay **un** contrato y **un** modo de
   validación: si un cambio necesita convivencia, se implementa como feature de
   una versión con fecha de retirada, nunca como parámetro eterno (`--strict`,

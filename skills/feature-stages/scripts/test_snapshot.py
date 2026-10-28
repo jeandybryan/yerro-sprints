@@ -114,6 +114,12 @@ STAGE = """# Etapa 01 — snapshot
 **Estado:** cerrada
 **Suites de referencia:** `pytest`
 **Riesgo:** medio
+**Presupuesto no funcional:**
+- Latencia: no aplica (etapa de snapshot sin superficie de servicio)
+- Memoria: no aplica (sin proceso residente)
+- Tamaño/artefacto: no aplica (sin artefacto entregable)
+- Dependencias nuevas: 0
+- Rendimiento de operación crítica: no aplica (sin operación crítica)
 
 ## Aclaraciones
 

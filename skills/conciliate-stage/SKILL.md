@@ -84,7 +84,10 @@ Lee solo lo que lista y no leas lo que justifica omitir; si crees que falta algo
    `**Presupuesto de deltas:**` is derived from that risk (`bajo → 2`,
    `medio → 1`, `alto → 1`); write a different value only with
    `**Motivo del presupuesto:**`, because without the motive the derived value
-   wins.
+   wins. Write `**Presupuesto no funcional:**` in the same close: latency,
+   memory, artifact size, new dependencies and critical-operation
+   performance, each with a threshold or `no aplica (motivo)`. The validator
+   checks that the five answers exist; the number is yours.
 7. Move resolved questions out of **Preguntas abiertas**.
 8. Keep **No entra** honest: later stages or out of V1 stay named.
 9. Close (`cerrada`) only when the user agrees, dependencies are `cerrada`

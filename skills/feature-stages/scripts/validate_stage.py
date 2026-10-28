@@ -70,6 +70,19 @@ AUDIT_PASS_RE = re.compile(r"^##\s+Pasada\b.*?$(.*?)(?=^##\s+Pasada\b|\Z)", re.M
 RUNNERS_RE = re.compile(r"^\s*\*\*Runners:\*\*\s*(.+?)\s*$", re.M | re.I)
 SUITES_RE = re.compile(r"^\s*\*\*Suites de referencia:\*\*\s*(.+?)\s*$", re.M | re.I)
 SENSITIVITY_RE = re.compile(r"(?:\||^)\s*Sensibilidad\s*(?:\||$)", re.I | re.M)
+# P7: el presupuesto no funcional es un campo, no una sección opcional. El
+# validador comprueba que las cinco líneas tengan respuesta; no juzga el
+# número, que lo acuerda el humano en la conciliación.
+NONFUNCTIONAL_HEADER_RE = re.compile(r"^\s*\*\*Presupuesto no funcional:\*\*", re.M | re.I)
+NONFUNCTIONAL_FIELDS = (
+    "Latencia",
+    "Memoria",
+    "Tamaño/artefacto",
+    "Dependencias nuevas",
+    "Rendimiento de operación crítica",
+)
+NO_APLICA_RE = re.compile(r"^no aplica\b\s*(?:\(([^)]*)\))?", re.I)
+PLACEHOLDER_VALUE = "…"
 # B-25: `Ruling: <qué> — <por qué> — <qué cuesta>`. Las tres partes son
 # obligatorias; dos guiones largos separan tres tramos no vacíos. Se acepta
 # también `--` porque un agente puede escribir ASCII en un archivo markdown.
@@ -388,6 +401,46 @@ def suite_motivo(conciliation: str) -> bool:
     return re.search(r"^\s*\*\*Motivo de la suite:\*\*\s*\S", conciliation, re.M | re.I) is not None
 
 
+def nonfunctional_gaps(conciliation: str) -> list[str]:
+    """P7: cada línea del presupuesto no funcional se rellena o se motiva.
+
+    Sin el bloque, `no aplica` no se distingue de «nadie lo pensó». El
+    validador exige la respuesta, no el número: el umbral lo acuerda el humano
+    y la auditoría lo mide.
+    """
+    if not NONFUNCTIONAL_HEADER_RE.search(conciliation):
+        return [
+            "CONCILIACION.md no declara **Presupuesto no funcional:** "
+            "(cada una de las cinco líneas se rellena o se marca `no aplica (motivo)`)"
+        ]
+    gaps: list[str] = []
+    for field in NONFUNCTIONAL_FIELDS:
+        match = re.search(
+            rf"^\s*[-*]\s*{re.escape(field)}:\s*(.*?)\s*$", conciliation, re.M | re.I
+        )
+        if not match:
+            gaps.append(f"**Presupuesto no funcional:** no declara `{field}:`")
+            continue
+        value = match.group(1).strip()
+        if not value:
+            gaps.append(f"**Presupuesto no funcional:** `{field}:` queda vacío")
+            continue
+        if PLACEHOLDER_VALUE in value:
+            gaps.append(
+                f"**Presupuesto no funcional:** `{field}:` conserva la plantilla "
+                "(`…`): escribir el umbral o `no aplica (motivo)`"
+            )
+            continue
+        no_aplica = NO_APLICA_RE.match(value)
+        if no_aplica:
+            motive = (no_aplica.group(1) or "").strip()
+            if not motive or motive.lower() == "motivo":
+                gaps.append(
+                    f"**Presupuesto no funcional:** `{field}:` dice `no aplica` "
+                    "sin motivo: sustituir `motivo` por la razón"
+                )
+    return gaps
+
 def reference_suites(conciliation: str) -> list[str] | None:
     """Comandos de `**Suites de referencia:**`, o None si el campo no está.
 
@@ -518,6 +571,12 @@ def main() -> int:
             f"{ca} no enlaza una decisión S-NN mediante Origen:",
         )
         result.require(bool(EVIDENCE_RE.search(line)), f"{ca} no declara nivel de evidencia")
+
+    # P7: un presupuesto que nadie escribió no restringe nada. Se exige en toda
+    # conciliación, no solo al cerrar: es un campo del corte, y descubrirlo en
+    # la auditoría lo convierte en papeleo de última hora.
+    for gap in nonfunctional_gaps(conciliation):
+        result.require(False, gap)
 
     task_bodies: dict[str, str] = {}
     declared = declared_runners(conciliation)

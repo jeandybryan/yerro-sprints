@@ -13,6 +13,13 @@ fuera de la lista negra del validador solo avisa)
 **Presupuesto de deltas:** <derivado del riesgo: bajo 2 | medio 1 | alto 1; otro
 valor exige **Motivo del presupuesto:** aquí>
 **Motivo del presupuesto:** <solo si el valor escrito no es el derivado>
+**Presupuesto no funcional:** <las cinco líneas se rellenan o se marcan `no
+aplica (motivo)`; el validador exige la respuesta, no el número>
+- Latencia: <p95 ≤ … ms | no aplica (motivo)>
+- Memoria: <≤ … MB | no aplica (motivo)>
+- Tamaño/artefacto: <≤ … | no aplica (motivo)>
+- Dependencias nuevas: <0 | justificadas>
+- Rendimiento de operación crítica: <… | no aplica (motivo)>
 **Spec:** [<SPEC>.md](../<SPEC>.md) §…
 
 ## Resultado observable

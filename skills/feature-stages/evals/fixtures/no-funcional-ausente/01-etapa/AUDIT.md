@@ -1,0 +1,20 @@
+# Auditoría
+
+## Pasada 1
+
+**Snapshot:** head=0000000000000000000000000000000000000000 tree=1111111111111111111111111111111111111111 dirty=no exclude=ninguno
+**Riesgo auditado:** medio
+**Trazabilidad:** CA-01 → T1 → test_focal.py → E-01, E-02
+
+| Criterio | Afirmaciones auditadas | Tareas | Resultado | Evidencia reproducible | Limitaciones |
+|----------|-------------------------|--------|-----------|-------------------------|--------------|
+| CA-01 | salida y negativo | T1 | cumple | E-01, E-02 | ninguna |
+
+### Ledger de evidencia
+
+| ID | CA | Procedimiento/comando | Sensibilidad | Esperado | Observado/exit | Entorno y timestamp | Artefacto/log | Limitación |
+|----|----|------------------------|--------------|----------|----------------|---------------------|---------------|------------|
+| E-01 | CA-01 | pytest test_focal.py | revertir → rojo → restaurar; caso límite: entrada vacía → rechazo | verde | verde/0 | local; 2026-09-30 | log | ninguna |
+| E-02 | CA-01 | npm run lint | revertir → rojo → restaurar; caso límite: archivo sin declarar → error | verde | verde/0 | local; 2026-09-30 | log | ninguna |
+
+**Veredicto:** coincide

@@ -346,9 +346,22 @@ Bajo. Es parsing sobre lo que ya se lee.
 
 ## P7 — Presupuesto no funcional en la conciliación
 
-**Estado:** `abierta`
+**Estado:** `implementada` (2026-10-27)
 **Diagnóstico:** D7
 **Impacto:** medio
+
+**Hecho:** el bloque de cinco líneas entró en `templates/CONCILIACION.md` y
+`validate_stage.py` lo exige en toda conciliación con CA, no solo al cerrar.
+Cada línea se rellena o se marca `no aplica (motivo)`; el `…` de la plantilla y
+el motivo literal `motivo` no cuentan como respuesta. El validador no juzga el
+número, como pedía la propuesta. Fixtures `no-funcional-ausente`,
+`no-funcional-sin-motivo` y `no-funcional-presente`; `EVALUATION.md` S40.
+
+**Lo que no entra todavía:** nadie comprueba que el umbral declarado aparezca
+en el `Verificar:` de la tarea ni que la auditoría lo compare. Hoy el gate
+comprueba que el humano haya respondido, que es lo que la propuesta pedía;
+cruzar umbral ↔ `Verificar:` ↔ ledger sería un gate nuevo y necesita su propio
+caso con una etapa real que lo incumpla.
 
 ### Qué
 

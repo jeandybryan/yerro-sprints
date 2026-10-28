@@ -128,6 +128,9 @@ Dependencia: B-11 para "suite de referencia".
 
 1. `Suites de referencia:` y `Comandos de calidad:` en `CONCILIACION.md`.
 2. Bloque `Presupuesto no funcional` obligatorio (o `no aplica` con motivo).
+   Hecho 2026-10-27: fixtures `no-funcional-ausente`,
+   `no-funcional-sin-motivo` y `no-funcional-presente` (los nombres
+   previstos aquí eran `sin-presupuesto-no-funcional`).
 3. Verificación global del `AUDIT.md` con suite, lint y diff.
 4. `scripts/diff_scope.py`: cruce diff ↔ CA ↔ tarea.
 5. Trazabilidad cruzada en `validate_stage.py` (P6, cinco sub-casos).

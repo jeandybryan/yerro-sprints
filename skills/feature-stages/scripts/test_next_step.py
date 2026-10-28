@@ -236,6 +236,10 @@ VALIDATE_REJECTED = [
     # B-11: la suite de referencia la declara el humano y el cierre la ejecuta.
     ("suite-ausente/01-etapa", "no declara **Suites de referencia:**"),
     ("suite-sin-evidencia/01-etapa", "'npm run lint' no tiene fila E-NN"),
+    # P7: el presupuesto no funcional es un campo del corte. Marcar
+    # `no aplica` sin motivo es dejar la línea vacía con más palabras.
+    ("no-funcional-ausente/01-etapa", "no declara **Presupuesto no funcional:**"),
+    ("no-funcional-sin-motivo/01-etapa", "dice `no aplica` sin motivo"),
     # P6: la trazabilidad nombra IDs que no existen.
     ("trazabilidad-t-inexistente", "la traza nombra T9, que no existe(n) en TAREAS.md"),
     ("trazabilidad-e-inexistente", "la traza nombra E-77, que no existe(n) en el ledger"),
@@ -264,6 +268,8 @@ VALIDATE_ACCEPTED = [
     "riesgo-bajo-con-test-first-sin-revision-independiente",
     # B-11 positiva: declara dos suites y el ledger tiene una fila por comando.
     "suite-con-evidencia/01-etapa",
+    # P7 positiva: las cinco líneas responden con umbral o con motivo.
+    "no-funcional-presente/01-etapa",
 ]
 
 

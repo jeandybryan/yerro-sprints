@@ -23,3 +23,4 @@ pasada nadie lo marcó, porque la categoría 3 lo dejó fuera del alcance. Es el
 estado inicial del caso conductual, antes de que el agente trabaje sobre él.
 
 **Veredicto:** coincide
+**Veredicto (calidad):** aceptable

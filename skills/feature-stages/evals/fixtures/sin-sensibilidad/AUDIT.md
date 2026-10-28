@@ -17,3 +17,4 @@
 | E-01 | CA-01 | pytest | no demostrada | verde | verde/0 | local; 2026-09-30 | log | ninguna |
 
 **Veredicto:** coincide
+**Veredicto (calidad):** aceptable

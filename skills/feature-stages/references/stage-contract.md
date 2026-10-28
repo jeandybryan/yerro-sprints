@@ -37,6 +37,8 @@ Cada tarea principal `Tn` enlaza al menos un CA y contiene `Verificar:` con nive
 
 Un `AUDIT.md` que cierre una etapa conserva cada pasada. El veredicto `coincide` requiere todos los CA principales `cumple`, verificaciones aplicables ejecutadas, controles globales correctos y ningún desvío bloqueante. La evidencia se registra como `E-NN` con procedimiento, **sensibilidad demostrada**, esperado, observado/exit, entorno/timestamp, artefacto y limitación. Un `coincide` sin columna `Sensibilidad` no cierra: el ledger demuestra que el test pasó, no que pudiera fallar.
 
+El cierre exige **dos veredictos** (P18, B-38). `**Veredicto:** coincide | no coincide` mide conformidad con la especificación. `**Veredicto (calidad):** aceptable | con hallazgos | bloqueante` responde solo por cuatro cosas del cambio: duplicación introducida, abstracción que nada pide (YAGNI), manejo de errores ausente en el camino nuevo y tests que prueban mocks en lugar del código. Solo `aceptable` cierra; `con hallazgos` se corrige con un delta dentro del presupuesto y se reaudita, y `bloqueante` no cabe en un delta: reabre la conciliación. El gate juzga la pasada que cierra, no las anteriores: una pasada `no coincide` no necesita veredicto de calidad.
+
 ## Riesgo, snapshot y presupuesto
 
 - `**Riesgo:** bajo | medio | alto` se congela al cerrar la conciliación. `alto` nombra los ítems concretos: datos, seguridad, contratos compartidos, concurrencia, entrega o huecos de prueba. El auditor puede subirlo en `AUDIT.md`; bajarlo reabre la conciliación.
@@ -193,6 +195,7 @@ trabajo aceptado se aprende a saltar.
 - **Snapshot:** identidad del árbol auditado: `head`, `tree`, `dirty` y `exclude`.
 - **Trazabilidad:** cadena `S-NN → CA-NN → T-NN → test → E-NN`.
 - **Veredicto:** resultado de una pasada: `coincide` o `no coincide`.
+- **Veredicto (calidad):** resultado de la pasada que cierra sobre las cuatro comprobaciones de calidad: `aceptable`, `con hallazgos` o `bloqueante`.
 - **E-NN:** evidencia reproducible registrada en el ledger de la pasada.
 
 ## Evidencia, oráculo y sensibilidad

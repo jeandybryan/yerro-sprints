@@ -70,7 +70,8 @@ before opening files; everything it omits is listed with its reason.
    evidence, not evidence.
 5. Write one immutable audit pass with fresh reproducible evidence. Append; do
    not erase failed or superseded passes.
-6. Run the validator again before writing `**Veredicto:** coincide`.
+6. Run the validator again before writing `**Veredicto:** coincide` and
+   `**Veredicto (calidad):** aceptable`.
 7. With the `coincide` verdict written, run the close cross:
 
    ```bash
@@ -87,9 +88,18 @@ scope or acceptance change reopens conciliation; it is not a delta.
 
 ## Verdict
 
-- `coincide` only when every principal CA is `cumple`, task methods and global
-  checks have evidence, traceability is complete and no blocking deviation
-  remains.
+Two verdicts, and both must be positive to close (B-38).
+
+- `**Veredicto:**` is specification conformance. `coincide` only when every
+  principal CA is `cumple`, task methods and global checks have evidence,
+  traceability is complete and no blocking deviation remains.
+- `**Veredicto (calidad):**` answers only four questions about the change:
+  duplication introduced by it (not the pre-existing kind), abstractions
+  nothing asks for (YAGNI), missing error handling on the new path, and tests
+  that exercise mocks instead of code. `aceptable` is the only verdict that
+  closes, and a finding names which of the four it is. `con hallazgos` is
+  corrected with a delta inside the frozen budget and re-audited;
+  `bloqueante` does not fit in a delta and reopens conciliation.
 - Every `**Sujeto a revisión R-NN:**` in `TAREAS.md` is resolved in
   `### Rulings revisados` under the same ID: either `aceptado` or `hallazgo`.
   Read the artifacts and

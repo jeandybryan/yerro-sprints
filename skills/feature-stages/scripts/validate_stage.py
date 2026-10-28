@@ -66,6 +66,11 @@ RISK_RE = re.compile(r"^\s*\*\*Riesgo:\*\*\s*(bajo|medio|alto)\b", re.M | re.I)
 AUDITED_RISK_RE = re.compile(r"^\s*\*\*Riesgo auditado:\*\*\s*(bajo|medio|alto)\b", re.M | re.I)
 RISK_RANK = {"bajo": 0, "medio": 1, "alto": 2}
 VERDICT_RE = re.compile(r"^\s*\*\*Veredicto:\*\*\s*(.+?)\s*$", re.I | re.M)
+# P18/B-38: dos veredictos. `coincide` mide conformidad con el CA; el de
+# calidad responde solo por cuatro cosas del cambio y el único que cierra es
+# `aceptable`.
+QUALITY_VERDICT_RE = re.compile(r"^\s*\*\*Veredicto \(calidad\):\*\*\s*(.+?)\s*$", re.M | re.I)
+QUALITY_VERDICTS = ("aceptable", "con hallazgos", "bloqueante")
 AUDIT_PASS_RE = re.compile(r"^##\s+Pasada\b.*?$(.*?)(?=^##\s+Pasada\b|\Z)", re.M | re.S | re.I)
 RUNNERS_RE = re.compile(r"^\s*\*\*Runners:\*\*\s*(.+?)\s*$", re.M | re.I)
 SUITES_RE = re.compile(r"^\s*\*\*Suites de referencia:\*\*\s*(.+?)\s*$", re.M | re.I)
@@ -702,6 +707,35 @@ def main() -> int:
         last_verdict = found[-1] if found else ""
         if last_verdict == "coincide":
             coincide_passes.append(body)
+    # B-38: la pasada que cierra no solo cumple el CA: dice si el cambio
+    # duplica, sobre-abstrae, calla errores o prueba mocks. `con hallazgos` se
+    # corrige con un delta; `bloqueante` reabre la conciliación.
+    if last_verdict == "coincide":
+        quality = [item.strip().lower() for item in QUALITY_VERDICT_RE.findall(passes[-1])]
+        if not quality:
+            result.require(
+                False,
+                "AUDIT coincide sin **Veredicto (calidad):** "
+                "aceptable|con hallazgos|bloqueante: cumplir el CA no demuestra "
+                "que el cambio no duplique, sobre-abstraiga o calle errores (B-38)",
+            )
+        else:
+            unknown = sorted(item for item in quality if item not in QUALITY_VERDICTS)
+            result.require(
+                not unknown,
+                "**Veredicto (calidad):** «"
+                + ", ".join(unknown)
+                + "» no es aceptable|con hallazgos|bloqueante",
+            )
+            result.require(
+                quality[-1] == "aceptable",
+                "AUDIT coincide con **Veredicto (calidad):** "
+                + quality[-1]
+                + ": un hallazgo se corrige con un delta dentro del presupuesto "
+                "y se reaudita; `bloqueante` no cabe en un delta y reabre la "
+                "conciliación. Solo `aceptable` cierra (B-38)",
+            )
+
     if audit and has_coincide:
         result.require(bool(tasks), "AUDIT coincide sin lista principal")
         for ca in ca_ids:

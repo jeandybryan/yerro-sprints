@@ -50,9 +50,22 @@ Bajo. **Beneficio:** alto; sin esto, un subagente tiene que inventar nombres.
 
 ## P18 — Veredicto doble: conformidad con la especificación y calidad
 
-**Estado:** `abierta`
+**Estado:** `implementada` (2026-10-27)
 **Origen:** C9.
-**Relación:** B-22, `audit-stage`, `templates/AUDIT.md`, P10.
+**Relación:** B-22, B-38, `audit-stage`, `templates/AUDIT.md`, P10.
+
+**Hecho:** `AUDIT.md` conserva `**Veredicto:** coincide | no coincide` para la
+especificación y gana `**Veredicto (calidad):** aceptable | con hallazgos |
+bloqueante`. `validate_stage.py` juzga la pasada que cierra: exige el segundo
+veredicto y solo acepta `aceptable`. `audit-stage/SKILL.md` y la plantilla
+llevan la sección de cuatro comprobaciones, y un hallazgo que no nombra cuál es
+queda fuera por revisión. Fixtures `calidad-ausente`, `calidad-con-hallazgos`,
+`calidad-bloqueante` y `calidad-aceptable`; `EVALUATION.md` S41.
+
+**Lo que no entra todavía:** el validador no comprueba que el hallazgo nombre
+uno de los cuatro puntos. Ese cruce sería un gate que nunca puede fallar solo
+—un veredicto distinto de `aceptable` ya no cierra—, así que la disciplina vive
+en la skill y en la revisión, no en un error que no cambia el resultado.
 
 ### Qué
 

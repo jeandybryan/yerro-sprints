@@ -536,12 +536,19 @@ umbral.
 
 ### B-22 — Cumplir el CA no es suficiente para cerrar
 **Fecha:** 2026-10-22
-**Estado:** `propuesta` ⚠
-**Origen:** C9.
+**Estado:** `acordada` ✅ (P18, 2026-10-27)
+**Origen:** C9, Q16, B-38.
 **Motivo:** "spec compliance **AND** task quality are both required". Hoy un
 cambio puede ser correcto y a la vez duplicado, sobre-abstracto o sin manejo
 de errores.
-**Consecuencias:** `AUDIT.md` tiene dos veredictos; el cierre exige ambos.
+**Consecuencias:** `AUDIT.md` tiene dos veredictos y el cierre exige ambos.
+`**Veredicto:** coincide | no coincide` sigue midiendo conformidad con la
+especificación —conservar el vocabulario evita que `cumple` signifique dos
+cosas, el criterio y el cierre— y se añade `**Veredicto (calidad):**
+aceptable | con hallazgos | bloqueante`. Solo `aceptable` cierra: `con
+hallazgos` se corrige con un delta dentro del presupuesto y se reaudita, y
+`bloqueante` reabre la conciliación. El gate juzga la pasada que cierra, no
+reescribe las anteriores.
 
 ### B-23 — Test-first no se negocia; la revisión sí
 **Fecha:** 2026-10-22

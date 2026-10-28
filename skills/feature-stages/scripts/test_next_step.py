@@ -240,6 +240,11 @@ VALIDATE_REJECTED = [
     # `no aplica` sin motivo es dejar la línea vacía con más palabras.
     ("no-funcional-ausente/01-etapa", "no declara **Presupuesto no funcional:**"),
     ("no-funcional-sin-motivo/01-etapa", "dice `no aplica` sin motivo"),
+    # P18/B-38: cumplir el CA no dice nada del cambio. El segundo veredicto
+    # cierra solo en `aceptable`.
+    ("calidad-ausente/01-etapa", "sin **Veredicto (calidad):**"),
+    ("calidad-con-hallazgos/01-etapa", "con hallazgos: un hallazgo se corrige"),
+    ("calidad-bloqueante/01-etapa", "bloqueante: un hallazgo se corrige"),
     # P6: la trazabilidad nombra IDs que no existen.
     ("trazabilidad-t-inexistente", "la traza nombra T9, que no existe(n) en TAREAS.md"),
     ("trazabilidad-e-inexistente", "la traza nombra E-77, que no existe(n) en el ledger"),
@@ -270,6 +275,9 @@ VALIDATE_ACCEPTED = [
     "suite-con-evidencia/01-etapa",
     # P7 positiva: las cinco líneas responden con umbral o con motivo.
     "no-funcional-presente/01-etapa",
+    # P18 positiva: una pasada `no coincide` sin veredicto de calidad no se
+    # reescribe; el gate juzga la pasada que cierra.
+    "calidad-aceptable/01-etapa",
 ]
 
 

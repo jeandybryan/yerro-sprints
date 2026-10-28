@@ -19,3 +19,4 @@
 **Cruza riesgo:** sí — la verificación global no se ejecutó completa
 **Motivo del presupuesto:** el usuario aceptó cerrar sin la suite global; queda como delta acotado.
 **Veredicto:** coincide
+**Veredicto (calidad):** aceptable

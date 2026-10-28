@@ -22,3 +22,4 @@
   el CA no fija un número.
 
 **Veredicto:** coincide
+**Veredicto (calidad):** aceptable

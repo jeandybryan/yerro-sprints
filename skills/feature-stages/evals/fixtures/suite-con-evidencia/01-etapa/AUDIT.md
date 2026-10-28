@@ -18,3 +18,4 @@
 | E-02 | CA-01 | npm run lint | revertir → rojo → restaurar; caso límite: archivo sin declarar → error | verde | verde/0 | local; 2026-09-30 | log | ninguna |
 
 **Veredicto:** coincide
+**Veredicto (calidad):** aceptable

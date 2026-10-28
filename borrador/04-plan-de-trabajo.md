@@ -264,9 +264,13 @@ fixture depende de `--strict`.
 
 ### Fase 6 — Calidad y mantenimiento del paquete (P18 + P20 + P21 + P23 + P24)
 
-Dependencia: P10, Q16, Q17.
+Dependencia: Q16 y Q17 resueltas (B-38, B-24). P10 sigue `abierta`: condiciona
+la medición conductual de P23, no la regla que P23 escribe en el reporte de
+release.
 
 1. P18: veredicto doble en `AUDIT.md` y en el validador.
+   Hecho 2026-10-27: `**Veredicto (calidad):** aceptable | con hallazgos |
+   bloqueante`; solo `aceptable` cierra y se juzga la pasada que cierra.
 2. P21: `next_step.py --reconcile` y regla de reconciliación.
 3. P24: forma de la regla según el tipo de fallo; revisar skills existentes.
 4. P20 + P23: baseline y control negativo en `EVALUATION.md`,
@@ -285,7 +289,7 @@ Fase 1b (P11, P14) ─── independiente, en paralelo ───┐
 Fase 1 (P1, P2) ──> Fase 2 (P3, P4) ──> Fase 3 (P5, P6, P7, P12, P13) ──> Fase 4 (P8, P10, P15)
 │
 ├──> Fase 5 (P19 [Modelo C], P22, P17)      ← desbloqueada: Q15 resuelta
-└──> Fase 6 (P18, P20, P21, P23, P24)       ← espera Q16 y Q17
+└──> Fase 6 (P18, P20, P21, P23, P24)       ← desbloqueada: Q16 y Q17 resueltas
      │
      └── Fase 5b (P9, etapa ligera) diferida hasta medir fricción (B-06)
 ```

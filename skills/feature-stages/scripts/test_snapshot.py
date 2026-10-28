@@ -161,6 +161,7 @@ AUDIT = """# Auditoría
 | E-01 | CA-01 | pytest | revertir → rojo → restaurar; caso límite: entrada vacía → rechazo | verde | verde/0 | local; 2026-10-19 | log | ninguna |
 
 **Veredicto:** coincide
+**Veredicto (calidad):** aceptable
 """
 
 

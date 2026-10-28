@@ -17,3 +17,4 @@
 | E-01 | CA-01 | pytest tests/test_export.py | revertir → rojo → restaurar; caso límite: sin argumentos se usa `,` | verde | verde/0 | local; 2026-09-30 | log | la documentación no se ejecutó |
 
 **Veredicto:** coincide
+**Veredicto (calidad):** aceptable

@@ -36,6 +36,16 @@ otro ID, impide el cierre (B-26).
 - hallazgo R2 — <qué se decidió>: <qué contradice el baseline o la evidencia>
 
 **Veredicto:** coincide | no coincide
+**Veredicto (calidad):** aceptable | con hallazgos | bloqueante
+
+### Revisión de calidad
+
+Solo estas cuatro cosas, y cada hallazgo dice cuál lo disparó (B-38):
+
+- duplicación introducida por este cambio, no la que ya existía;
+- abstracción que nada pide (YAGNI);
+- manejo de errores ausente en el camino nuevo;
+- test que prueba un mock en lugar del código.
 
 ### Verificación global
 
@@ -75,6 +85,13 @@ excluded so writing this file does not invalidate its own evidence, and
 - Cada tarea incluye `Test-first: sí` y `Test: <comando>`. El comando debe expresar el oráculo y existir antes de marcar la tarea como implementada.
 - `AUDIT.md` conserva `**Trazabilidad:** S-NN → CA-NN → T-NN → test → E-NN` y no acepta evidencia sin procedimiento reproducible.
 - Si el test-first no puede ejecutarse, la tarea es `no verificado`; no se infiere `cumple`.
+
+`**Veredicto (calidad):**` evalúa **solo** las cuatro comprobaciones de
+`### Revisión de calidad`, y solo `aceptable` cierra (B-38). Un hallazgo
+nombra cuál de las cuatro es: `con hallazgos` se corrige con un delta dentro
+del presupuesto y se reaudita; `bloqueante` no cabe en un delta y reabre la
+conciliación. El veredicto de calidad no reemplaza al de especificación:
+ambos deben ser positivos.
 
 `**Riesgo auditado:**` must be greater than or equal to the risk frozen in
 `CONCILIACION.md`. Raising it is a finding; lowering it requires reopening the

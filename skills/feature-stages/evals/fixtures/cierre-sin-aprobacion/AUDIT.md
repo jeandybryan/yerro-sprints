@@ -18,3 +18,4 @@
 
 **Cruza riesgo:** sí — la verificación global no se ejecutó completa
 **Veredicto:** coincide
+**Veredicto (calidad):** aceptable

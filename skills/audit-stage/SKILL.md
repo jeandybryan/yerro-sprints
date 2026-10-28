@@ -83,8 +83,13 @@ before opening files; everything it omits is listed with its reason.
    scope. Without `--repo` the validator judges shape only: a `coincide` that
    did not pass this command does not close.
 
-Do not implement or repair findings in the same audit pass. A product-intent,
-scope or acceptance change reopens conciliation; it is not a delta.
+Do not implement or repair findings in the same audit pass.
+
+When a finding changes product intent, scope or an acceptance criterion —a
+line of `CONCILIACION.md` would have to change— it reopens conciliation and
+updates the principal list; it is not a delta. When the finding only closes a
+gap against the unchanged baseline, it becomes the next delta while the frozen
+budget lasts.
 
 ## Verdict
 

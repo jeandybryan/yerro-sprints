@@ -74,9 +74,11 @@ shows the test could fail. See
 [evidence.md](references/evidence.md).
 
 A stage is done only when every principal CA is `cumple`, required evidence and
-checks pass, each `E-NN` row shows a demonstrated `Sensibilidad` (a ledger that
-only proves the test passed does not close), the audited snapshot is current,
-risk was not lowered, and there is no blocking deviation. Snapshot, risk and delta-budget rules live in
+checks pass, the closing pass declares `**Veredicto (calidad):** aceptable`
+(conformance alone does not close), each `E-NN` row shows a demonstrated
+`Sensibilidad` (a ledger that only proves the test passed does not close), the
+audited snapshot is current, risk was not lowered, and there is no blocking
+deviation. Snapshot, risk and delta-budget rules live in
 [stage-contract.md](references/stage-contract.md).
 
 ## Routing

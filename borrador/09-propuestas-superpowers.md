@@ -352,7 +352,7 @@ Medio en ejecución. **Beneficio:** impide declarar mejoras que solo son azar.
 
 ## P24 — La forma de la regla depende del tipo de fallo
 
-**Estado:** `abierta`
+**Estado:** `implementada` (2026-10-28)
 **Origen:** O8.
 **Relación:** redacción de todas las skills.
 
@@ -382,6 +382,20 @@ Y dos prohibiciones de redacción:
 ### Cómo se verifica
 Caso en `test_skill_evals.py`: una regla de forma escrita como prohibición
 para un fallo de forma se marca como aviso en el catálogo.
+
+**Hecho:** la tabla fallo → forma y las dos prohibiciones de redacción están en
+`references/skill-maintenance.md`, y la revisión de las seis skills encontró
+dos defectos reales: la excepción de `audit-stage` iba pegada a su prohibición
+y ahora son dos condicionales con predicado observable, y `feature-stages` no
+nombraba el veredicto de calidad entre los gates de cierre. `EVALUATION.md`
+S44.
+
+**Lo que no entra, y por qué se retira:** el caso en `test_skill_evals.py`. El
+linter no puede saber si una regla responde a un fallo de forma o de
+disciplina sin metadata por regla (`Fallo:`, `Forma:`), y añadirla obligaría a
+declarar dos campos en cada regla de las seis skills. Un caso que no puede
+fallar no se escribe: la verificación es la revisión del PR, como el propio
+borrador admitía para P20.
 
 ### Coste
 Bajo. **Beneficio:** las reglas existentes empiezan a funcionar donde hoy no.

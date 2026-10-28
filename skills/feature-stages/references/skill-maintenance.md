@@ -33,6 +33,33 @@ no se promedia (P23). Las correcciones factuales, de enlace y de formato quedan
 exentas (B-24); sin esa acotación el proceso de mantenimiento se vuelve
 inoperable.
 
+## La forma de la regla depende del fallo
+
+La misma frase no corrige todos los fallos. Antes de escribir una regla,
+clasifica qué falla y usa la forma que ese fallo pide (P24):
+
+| Fallo | Forma correcta |
+| --- | --- |
+| Salta la regla bajo presión | prohibición + tabla de racionalizaciones + red flags |
+| Output con forma equivocada | receta positiva: el output **es** esto, en orden |
+| Omite un elemento | campo obligatorio en la plantilla |
+| Depende de condición | condicional con predicado observable |
+
+Dos prohibiciones de redacción:
+
+1. **Sin cláusulas de matiz.** «No hagas X salvo que importe» reabre la
+   negociación, y bajo presión siempre se encuentra que importa.
+2. **Las excepciones no se escriben como cláusulas**, sino como otro
+   condicional con predicado observable: «salvo que el riesgo lo justifique»
+   no se comprueba; «si `**Motivo del presupuesto:**` está escrito» sí.
+
+La forma se juzga en la revisión del PR, no con un linter: el catálogo no
+puede saber si una regla responde a un fallo de forma o de disciplina sin
+metadata por regla, y añadirla obligaría a declarar `Fallo:` y `Forma:` en
+cada regla de las seis skills. La revisión comprueba dos cosas: que una
+regla de forma no esté escrita como prohibición, y que toda excepción nombre
+su predicado.
+
 ## Evidencia antes que transcripción
 
 Lo que cierra una etapa es una observación, no un relato. `Test:` se rechaza si

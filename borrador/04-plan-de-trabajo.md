@@ -276,11 +276,19 @@ release.
    de la etapa, regla en los seis `SKILL.md` y gate en
    `validate_skill_evals.py`; fixture `reconcile-contexto`.
 3. P24: forma de la regla según el tipo de fallo; revisar skills existentes.
+   Hecho 2026-10-28: tabla y prohibiciones en `skill-maintenance.md`; la
+   revisión corrigió `audit-stage` y el gate de calidad de `feature-stages`.
+   El caso de linter se retira: sin metadata por regla no puede clasificar.
 4. P20 + P23: baseline y control negativo en `EVALUATION.md`,
    `CONTRIBUTING.md` y `AGENTS.md`.
    Hecho 2026-10-28: nivel 3 «RED de regla», forma
    `Regla:/Baseline:/Reps:/Control:`, varianza en la rúbrica y en el reporte
    de release.
+
+Los cuatro ítems están hechos al 2026-10-28. El criterio de salida se cumple en
+los gates: `validate_stage.py` exige `**Veredicto (calidad):** aceptable` para
+cerrar, y `CONTRIBUTING.md` / `AGENTS.md` / `RELEASE_CHECKLIST.md` rechazan una
+regla nueva sin `Baseline:`, `Reps:` y `Control:`.
 
 **Criterio de salida:** no se puede cerrar una etapa sin veredicto de calidad,
 y no se acepta una regla nueva sin baseline.

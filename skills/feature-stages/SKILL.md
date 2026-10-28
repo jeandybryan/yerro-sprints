@@ -100,3 +100,11 @@ Do not guess product intent, scope, evidence level, risk, owner or a closed
 decision. Reply visibly with **Contexto**, **Pregunta** and **Propuesta** before
 asking for a choice. AskQuestion is only the option picker. See
 [decision-and-questions.md](references/decision-and-questions.md).
+
+## After compaction
+
+Context does not survive compaction. Re-read the state from `README.md`,
+`TAREAS.md` and `git log`; do not remember it. Run
+`next_step.py <feature-root> --reconcile` before acting: it prints the pending
+tasks and the commits that touch the stage, so you do not re-execute work that
+is already done.

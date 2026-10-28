@@ -625,6 +625,47 @@ def check_declarada_no_valida_el_contrato() -> None:
             f"{contract.stdout.strip()[:160]}"
         )
 
+def check_reconcile() -> None:
+    """P21: tras compactar, el estado se relee; no se reabre lo hecho."""
+    global checked
+    root = FIXTURES / "reconcile-contexto"
+    result = run("next_step.py", str(root), "--reconcile")
+    checked += 1
+    if result.returncode != 0:
+        fail(f"reconcile: salida {result.returncode}: {result.stdout}{result.stderr}")
+        return
+    checked += 1
+    if "Siguiente: implement-stage" not in result.stdout:
+        fail(f"reconcile: no indica la transición: {result.stdout}")
+    checked += 1
+    if "Pendientes: 1 de 4" not in result.stdout:
+        fail(f"reconcile: no resume los pendientes: {result.stdout}")
+    done = [
+        line.strip(" -").split(":")[0]
+        for line in result.stdout.splitlines()
+        if line.startswith(" - T")
+    ]
+    checked += 1
+    if done != ["T4"]:
+        fail(f"reconcile: pendientes {done}, se esperaba solo T4: {result.stdout}")
+    checked += 1
+    if "Commits:" not in result.stdout:
+        fail(f"reconcile: no informa los commits que tocan la etapa: {result.stdout}")
+    # Fuera de un repositorio no hay commits que leer: el resumen lo dice en
+    # vez de fallar o inventar una lista vacía.
+    with tempfile.TemporaryDirectory() as tmp:
+        loose = Path(tmp) / "feature"
+        shutil.copytree(root, loose)
+        outside = run("next_step.py", str(loose), "--reconcile")
+    checked += 1
+    if "Commits: sin repositorio git" not in outside.stdout:
+        fail(f"reconcile fuera de un repo: no degrada: {outside.stdout}")
+    conflict = run("next_step.py", str(root), "--reconcile", "--json")
+    checked += 1
+    if conflict.returncode != 2:
+        fail(f"reconcile --json: salida {conflict.returncode}, se esperaba 2")
+
+
 def main() -> int:
     check_transitions()
     check_doctor()
@@ -637,6 +678,7 @@ def main() -> int:
     check_rulings_warning()
     check_budget_branches()
     check_behavioral_materialization()
+    check_reconcile()
     for error in errors:
         print(f"ERROR: {error}")
     if not errors:

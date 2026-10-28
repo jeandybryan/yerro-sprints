@@ -272,6 +272,9 @@ release.
    Hecho 2026-10-27: `**Veredicto (calidad):** aceptable | con hallazgos |
    bloqueante`; solo `aceptable` cierra y se juzga la pasada que cierra.
 2. P21: `next_step.py --reconcile` y regla de reconciliación.
+   Hecho 2026-10-28: pendientes vía `tasks.py`, cinco commits del directorio
+   de la etapa, regla en los seis `SKILL.md` y gate en
+   `validate_skill_evals.py`; fixture `reconcile-contexto`.
 3. P24: forma de la regla según el tipo de fallo; revisar skills existentes.
 4. P20 + P23: baseline y control negativo en `EVALUATION.md`,
    `CONTRIBUTING.md` y `AGENTS.md`.

@@ -113,3 +113,11 @@ Two verdicts, and both must be positive to close (B-38).
 
 The audit never lowers risk, reuses an obsolete snapshot or changes the
 conciliated baseline to make code pass.
+
+## After compaction
+
+Context does not survive compaction. Re-read the state from `README.md`,
+`TAREAS.md` and `git log`; do not remember it. Run
+`next_step.py <feature-root> --reconcile` before acting: it prints the pending
+tasks and the commits that touch the stage, so you do not re-execute work that
+is already done.

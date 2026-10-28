@@ -21,6 +21,7 @@ from validate_skill_evals import (  # noqa: E402
     SCRIPTS,
     WORKFLOW,
     closing_gate_errors,
+    reconcile_errors,
     document_name_errors,
     gate_errors,
     markdown_reference_errors,
@@ -70,6 +71,13 @@ def check_mutations() -> None:
     check(
         closing_gate_errors("validate_stage.py <stage> --repo <repo>") == [],
         "el cierre cruzado no debe fallar",
+    )
+
+    # P21: sin la regla, el agente que perdió el contexto re-ejecuta lo hecho.
+    check(bool(reconcile_errors("documento sin la regla")), "un skill sin --reconcile no se detecta")
+    check(
+        reconcile_errors("next_step.py <feature-root> --reconcile") == [],
+        "un skill con --reconcile no debe fallar",
     )
 
     ambiguous = routing_errors(

@@ -8,6 +8,7 @@ El estado no se recuerda ni se negocia: se lee de los artefactos.
 
 ```bash
 python3 <skills-root>/feature-stages/scripts/next_step.py <feature-root> [--stage NN-slug] [--json]
+python3 <skills-root>/feature-stages/scripts/next_step.py <feature-root> --reconcile
 python3 <skills-root>/feature-stages/scripts/doctor.py <feature-root>
 python3 <skills-root>/feature-stages/scripts/snapshot.py <repo> --exclude <feature-root> --exclude .yerro/approvals.yml
 python3 <skills-root>/feature-stages/scripts/expres.py <repo> [--base REF]
@@ -20,6 +21,8 @@ python3 <skills-root>/feature-stages/scripts/diff_scope.py <stage> --repo <repo>
 Estados públicos: `trabajando`, `verificando`, `declarada-cerrada`, `necesita-decision`. `next_step.py` devuelve uno y la skill siguiente; `doctor.py` informa incoherencias entre el índice y los artefactos. Ambos son de solo lectura y no rebajan ningún gate: ante una discrepancia gana el gate más estricto y la discrepancia se registra como bloqueo. `necesita-decision` detiene el ciclo; no se sustituye por un valor por defecto.
 
 `declarada-cerrada` dice lo que verifica el router: el índice marca la etapa `cerrada` y su auditoría declara `coincide`. No dice que los artefactos cumplan el contrato —`S-NN`, `Origen:`, `Interfaces:`, `Test-first:`, `**Snapshot:**`—, que es lo que juzga `validate_stage.py`. Antes se llamaba `listo`, y el nombre prometía más de lo comprobado: once etapas reales lo mostraban mientras el validador las rechazaba en todas sus tareas. La diferencia no se cierra en el router: un estado que declara cierre y un contrato que lo verifica son dos preguntas distintas, y el cierre cruzado las une con `validate_stage.py <stage> --repo <repo>` en la auditoría.
+
+El contexto no sobrevive a la compactación (P21). Un agente que retoma una etapa relee `README.md`, `TAREAS.md` y `git log`, y ejecuta `next_step.py <feature-root> --reconcile` antes de actuar: imprime la transición del router, los IDs de tarea pendientes —proyectados por `tasks.py`, no un segundo veredicto del estado— y los últimos commits que tocan la etapa. Fuera de un repositorio git lo dice en vez de fallar. El modo imprime texto y no combina con `--json` ni `--all`: existe para releer el estado, no para alimentar un esquema nuevo. Re-ejecutar tareas que ya estaban hechas es el fallo más caro observado al usar el paquete contra trabajo real.
 
 ## Estados y baseline
 

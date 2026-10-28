@@ -52,3 +52,11 @@ protocol in `conciliate-stage`.
 ## After
 
 Tell the user the cut is a draft. Next skill: `conciliate-stage` starting at `01-…`.
+
+## After compaction
+
+Context does not survive compaction. Re-read the state from `README.md`,
+`TAREAS.md` and `git log`; do not remember it. Run
+`next_step.py <feature-root> --reconcile` before acting: it prints the pending
+tasks and the commits that touch the stage, so you do not re-execute work that
+is already done.

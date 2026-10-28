@@ -220,9 +220,24 @@ no para correcciones de redacción ni fixes factuales.
 
 ## P21 — Regla de reconciliación tras compactación
 
-**Estado:** `abierta`
+**Estado:** `implementada` (2026-10-28)
 **Origen:** C10.
 **Relación:** `TAREAS.md`, `next_step.py`, P13, P21.
+
+**Hecho:** los seis `SKILL.md` llevan la regla «el contexto no sobrevive a
+la compactación» y `next_step.py <feature-root> --reconcile` resume la
+transición, los IDs pendientes y los últimos cinco commits que tocan la
+etapa. Reutiliza `tasks.py` para los pendientes —un segundo veredicto del
+estado habría sido un segundo contrato— y degrada a `sin repositorio git`
+fuera de un repo en vez de fallar. `validate_skill_evals.py` exige el modo
+en cada skill operativa. Fixture `reconcile-contexto` (T1–T3 hechas, T4
+pendiente) y `EVALUATION.md` S42.
+
+**Interpretación de «los commits desde el último registro»:** se imprimen
+los últimos cinco commits que tocan el directorio de la etapa, no un rango
+desde un registro guardado. El paquete no escribe marcadores de progreso y
+añadirlos habría sido un artefacto nuevo; el log del directorio responde la
+misma pregunta sin estado extra.
 
 ### Qué
 

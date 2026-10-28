@@ -46,6 +46,18 @@ def markdown_reference_errors(markdown: Path, skills_root: Path, feature_root: P
 def gate_errors(corpus: str) -> list[str]:
     return [f"falta gate crítico documentado: {token}" for token in GATE_TOKENS if token not in corpus]
 
+# P21: el contexto no sobrevive a la compactación. Un skill que no nombra el
+# modo que resume pendientes y commits deja al agente re-ejecutando trabajo
+# que ya estaba hecho, el fallo más caro observado en el corte real.
+RECONCILE_GATE = "--reconcile"
+def reconcile_errors(skill: str) -> list[str]:
+    if RECONCILE_GATE in skill:
+        return []
+    return [
+        "falta la regla de reconciliación tras compactación: "
+        f"`next_step.py <feature-root> {RECONCILE_GATE}`"
+    ]
+
 CLOSING_GATE = "validate_stage.py <stage> --repo <repo>"
 def closing_gate_errors(skill: str) -> list[str]:
     """El skill que escribe el veredicto debe invocar el cierre cruzado.
@@ -172,6 +184,12 @@ def main() -> int:
         errors.extend(document_name_errors(document, REPO_ROOT))
     corpus = "\n".join(path.read_text() for path in [*markdown_files, *DOCUMENTS] if path.exists())
     errors.extend(gate_errors(corpus))
+    for markdown in markdown_files:
+        if markdown.exists():
+            errors.extend(
+                f"{markdown.parent.name}/{markdown.name}: {error}"
+                for error in reconcile_errors(markdown.read_text())
+            )
     errors.extend(workflow_errors(WORKFLOW, SCRIPTS))
     audit_skill = ROOT.parent / "audit-stage" / "SKILL.md"
     if audit_skill.exists():

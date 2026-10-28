@@ -153,13 +153,17 @@ Antes de elegir un paso, léelo desde los artefactos en vez de recordarlo:
 python3 <skills-root>/feature-stages/scripts/next_step.py <feature-root>
 python3 <skills-root>/feature-stages/scripts/doctor.py <feature-root>
 python3 <skills-root>/feature-stages/scripts/tasks.py pending <stage>
+python3 <skills-root>/feature-stages/scripts/next_step.py <feature-root> --reconcile
 ```
 
 `next_step.py` devuelve un estado público (`trabajando`, `verificando`,
 `declarada-cerrada`, `necesita-decision`), la única skill siguiente y los
 bloqueos con su resolución. `declarada-cerrada` significa que el índice y la
 auditoría declaran la etapa cerrada, no que los artefactos cumplan el contrato:
-para eso está `validate_stage.py`. `--json` para máquinas, `--stage NN-slug`
+para eso está `validate_stage.py`. `--reconcile` resume, en pocas líneas, lo
+que falta y los commits que tocan la etapa: es lo que se ejecuta al retomar
+trabajo después de una compactación de contexto, en vez de re-ejecutar tareas
+que ya estaban hechas. `--json` para máquinas, `--stage NN-slug`
 para una etapa concreta y `--check` para CI. `doctor.py` informa incoherencias
 entre el índice y los artefactos; su `OK` dice que son coherentes, no que
 cumplen el contrato. Ninguno de los dos sustituye un gate: el contrato lo juzga

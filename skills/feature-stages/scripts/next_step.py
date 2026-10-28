@@ -2,6 +2,7 @@
 """Devuelve la única transición válida de un árbol de feature por etapas.
 
 Uso: next_step.py <feature-root> [--stage NN-slug] [--json] [--all] [--check]
+     next_step.py <feature-root> --reconcile
 
 Solo lee. No escribe archivos, no consume tokens y no decide por el agente:
 lee el estado desde el índice y los artefactos de cada etapa y devuelve el
@@ -17,8 +18,11 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
+
+from tasks import pending as pending_tasks
 
 TRABAJANDO = "trabajando"
 VERIFICANDO = "verificando"
@@ -345,6 +349,54 @@ def render_text(result: dict, all_stages: bool) -> str:
         )
     return "\n".join(lines)
 
+RECONCILE_TASKS = 10
+RECONCILE_COMMITS = 5
+
+
+def stage_commits(stage: Path, limit: int = RECONCILE_COMMITS) -> list[str] | None:
+    """Los últimos commits que tocan la etapa, o None si no hay repositorio."""
+    try:
+        done = subprocess.run(
+            ["git", "-C", str(stage), "log", "--oneline", f"-n{limit}", "--", "."],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return None
+    if done.returncode != 0:
+        return None
+    return [line for line in done.stdout.splitlines() if line.strip()]
+
+
+def render_reconcile(result: dict, tasks_info: dict, commits: list[str] | None, has_tasks: bool) -> str:
+    """Qué falta y qué se hizo, para un agente que perdió el contexto (P21).
+
+    Reutiliza el texto del router y la proyección de `tasks.py`: un segundo
+    veredicto del estado sería un segundo contrato.
+    """
+    lines = render_text(result, all_stages=False).splitlines()
+    pendientes = tasks_info["pendientes"]
+    if not has_tasks:
+        lines.append("Pendientes: sin TAREAS.md todavía")
+    elif pendientes:
+        lines.append(f"Pendientes: {len(pendientes)} de {tasks_info['total']}")
+        shown = pendientes[:RECONCILE_TASKS]
+        lines.extend(f" - {item['id']}: {item['titulo']}" for item in shown)
+        if len(pendientes) > len(shown):
+            lines.append(f" - … y {len(pendientes) - len(shown)} más")
+    else:
+        lines.append(f"Pendientes: ninguno ({tasks_info['hechas']} hecha(s))")
+    for item in tasks_info["incoherencias"]:
+        lines.append(
+            f"INCOHERENCIA: {item['archivo']} declara **Estado:** {item['estado']} "
+            f"y deja sin marcar {', '.join(item['sin_marcar'])}"
+        )
+    lines.append("Commits: " + ("sin repositorio git" if commits is None else str(len(commits))))
+    lines.extend(f" - {line}" for line in commits or [])
+    return "\n".join(lines)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("feature_root", type=Path)
@@ -352,7 +404,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--json", action="store_true", help="salida legible por máquina")
     parser.add_argument("--all", action="store_true", help="listar también las demás etapas")
     parser.add_argument("--check", action="store_true", help="salir con 1 si el estado es necesita-decision")
+    parser.add_argument("--reconcile", action="store_true", help="resumen tras compactación: qué falta y qué commits tocaron la etapa")
     args = parser.parse_args(argv)
+    if args.reconcile and (args.json or args.all):
+        print(
+            "ERROR: --reconcile imprime texto para releer el estado; no combina con --json ni --all",
+            file=sys.stderr,
+        )
+        return 2
 
     try:
         result = analyze(args.feature_root.resolve(), args.stage)
@@ -360,7 +419,17 @@ def main(argv: list[str] | None = None) -> int:
         print(f"ERROR: {error}", file=sys.stderr)
         return 1
 
-    if args.json:
+    if args.reconcile:
+        stage = args.feature_root.resolve() / result["etapa"]
+        print(
+            render_reconcile(
+                result,
+                pending_tasks(stage),
+                stage_commits(stage),
+                (stage / "TAREAS.md").exists(),
+            )
+        )
+    elif args.json:
         print(json.dumps(result, ensure_ascii=False, indent=2))
     else:
         print(render_text(result, args.all))

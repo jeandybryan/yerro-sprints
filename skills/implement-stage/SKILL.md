@@ -133,3 +133,11 @@ the stage looks blocked for no reason. Do not mark incomplete work done.
 - Modify acceptance criteria to match implementation.
 - Create `AUDIT.md` or close the stage.
 - Generate a delta before an audit identifies a gap.
+
+## After compaction
+
+Context does not survive compaction. Re-read the state from `README.md`,
+`TAREAS.md` and `git log`; do not remember it. Run
+`next_step.py <feature-root> --reconcile` before acting: it prints the pending
+tasks and the commits that touch the stage, so you do not re-execute work that
+is already done.

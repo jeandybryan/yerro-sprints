@@ -139,6 +139,44 @@ def check_clean(repo: Path) -> None:
         fail(f"diff_scope limpio: salida {result.returncode}: {result.stdout}{result.stderr}")
 
 
+def check_local_secrets_ignored(repo: Path) -> None:
+    """B-46: un secreto local sin versionar no es alcance nuevo.
+
+    El operador deja sus credenciales de demo en un `.env` local que nunca se
+    versiona. El gate no puede confundirlo con código: pedirle a una tarea que
+    declare una credencial empuja a escribirla en el árbol de la etapa. Se
+    excluye por **forma** (`*.env*`, `*.local`), nunca por el nombre de un
+    archivo del consumidor.
+    """
+    global checked
+    (repo / "console").mkdir(exist_ok=True)
+    secret = repo / "console" / ".env.demo.local"
+    secret.write_text("TOKEN=secreto\n", encoding="utf-8")
+
+    checked += 1
+    result = run(repo)
+    payload = json.loads(result.stdout) if result.stdout.strip() else {}
+    if result.returncode != 0 or payload.get("undeclared"):
+        fail(
+            "diff_scope: un .env local sin versionar no es alcance nuevo "
+            f"({result.returncode}, {payload.get('undeclared')})"
+        )
+
+    # Un `.env.example` versionado sí es contrato: se documenta en una tarea.
+    (repo / "console" / ".env.example").write_text("TOKEN=\n", encoding="utf-8")
+    checked += 1
+    result = run(repo)
+    payload = json.loads(result.stdout) if result.stdout.strip() else {}
+    if payload.get("undeclared") != ["console/.env.example"]:
+        fail(
+            "diff_scope: .env.example es contrato y debe bloquear si no se "
+            f"declara (obtuvo {payload.get('undeclared')})"
+        )
+
+    (repo / "console" / ".env.example").unlink()
+    secret.unlink()
+
+
 def check_undeclared(repo: Path) -> None:
     """Un archivo que ninguna tarea declara es alcance nuevo: exit 1."""
     global checked
@@ -257,6 +295,51 @@ def check_default_base_is_stage_start() -> None:
         shutil.rmtree(repo, ignore_errors=True)
 
 
+def check_base_is_task_list_start() -> None:
+    """B-45: la base es el commit que abre la etapa, no la primera ruta.
+
+    Una etapa puede dejar su `CONCILIACION.md` en un commit de hace semanas,
+    junto a otras etapas, y empezar a implementarse mucho después. Si la base
+    es esa primera aparición, el diff arrastra todo lo que las otras etapas
+    commitearon entre medias y el gate se vuelve un falso positivo de cientos
+    de archivos. La etapa abre cuando nace su `TAREAS.md`.
+    """
+    global checked
+    repo = Path(tempfile.mkdtemp(prefix="yerro-diffscope-apertura-"))
+    try:
+        init_repo(repo)
+        git(repo, "add", "-A")
+        git(repo, "commit", "-qm", "inicial")
+
+        stage = repo / "features" / "03-tarde"
+        stage.mkdir(parents=True)
+        (stage / "CONCILIACION.md").write_text("# Conciliación\n", encoding="utf-8")
+        (repo / "src" / "otra-a.py").write_text("a\n", encoding="utf-8")
+        git(repo, "add", "-A")
+        git(repo, "commit", "-qm", "conciliación de pasada, con otras etapas")
+
+        # Otras etapas commitean entre medias: no es de esta etapa.
+        for index in range(2):
+            (repo / "src" / f"otra-{index}.py").write_text(f"{index}\n", encoding="utf-8")
+            git(repo, "add", "-A")
+            git(repo, "commit", "-qm", f"otra etapa {index}")
+
+        (stage / "TAREAS.md").write_text(TASKS, encoding="utf-8")
+        (stage / "delta-choca.md").write_text("no\n", encoding="utf-8")
+        git(repo, "add", "-A")
+        git(repo, "commit", "-qm", "cerrar conciliación y abrir la etapa")
+        apertura = git(repo, "rev-parse", "HEAD").stdout.strip()
+
+        checked += 1
+        derived = stage_base(repo, stage)
+        if derived != apertura:
+            fail(
+                "stage_base: debe ser el commit que añade TAREAS.md, obtuvo "
+                f"{str(derived)[:8]} y se esperaba {apertura[:8]}"
+            )
+    finally:
+        shutil.rmtree(repo, ignore_errors=True)
+
 DELTA = """# Delta 01 — etapa 01
 
 **Principal:** no
@@ -358,6 +441,84 @@ def check_evidence_ignored(repo: Path) -> None:
         fail(f"diff_scope evidence: la evidencia contó como código ({tocados})")
 
 
+def check_foreign_attribution() -> None:
+    """B-50: una ruta de otra etapa se atribuye, no se cuenta como propia.
+
+    En un repositorio con una rama por etapa, medir el alcance desde la
+    apertura de esta etapa arrastra todo lo que las otras commitearon. Sin
+    atribución, el cierre se vuelve rojo con cientos de rutas que ningún
+    agente de esta etapa escribió, y el auditor no sabe de dónde vienen.
+    Una ruta de un commit que toca una etapa hermana se informa con su
+    commit; una que viene de un commit sin etapa (esta implementación) sigue
+    bloqueando, y un commit mixto también: la ambigüedad no absuelve (B-27).
+    """
+    global checked
+    repo = Path(tempfile.mkdtemp(prefix="yerro-diffscope-ajenas-"))
+    try:
+        init_repo(repo)
+        mine = repo / "features" / "01-mia"
+        other = repo / "features" / "02-ajena"
+        mine.mkdir(parents=True)
+        other.mkdir(parents=True)
+        (mine / "TAREAS.md").write_text(TASKS, encoding="utf-8")
+        (other / "CONCILIACION.md").write_text("# Otra etapa\n", encoding="utf-8")
+        git(repo, "add", "-A")
+        git(repo, "commit", "-qm", "abrir las dos etapas")
+
+        # Otra etapa produce un archivo de código y su propia evidencia.
+        (other / "AUDIT.md").write_text("# Auditoría ajena\n", encoding="utf-8")
+        (repo / "src" / "ajena.py").write_text("otra etapa\n", encoding="utf-8")
+        git(repo, "add", "-A")
+        git(repo, "commit", "-qm", "avanzar la etapa ajena")
+
+        result = run(repo, "features/01-mia")
+        checked += 1
+        payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        if result.returncode != 0:
+            fail(
+                "atribución: una ruta de otra etapa bloqueó el cierre "
+                f"({result.returncode}, {payload.get('undeclared')})"
+            )
+        if payload.get("undeclared"):
+            fail(f"atribución: undeclared debía quedar vacío ({payload.get('undeclared')})")
+        foreign = payload.get("foreign") or {}
+        if "src/ajena.py" not in foreign:
+            fail(f"atribución: no atribuyó src/ajena.py a otra etapa ({foreign})")
+        elif foreign["src/ajena.py"].get("subject") != "avanzar la etapa ajena":
+            fail(f"atribución: no nombró el commit de origen ({foreign.get('src/ajena.py')})")
+
+        # Un commit que no toca ninguna etapa es esta implementación: bloquea.
+        (repo / "src" / "mia.py").write_text("mi etapa\n", encoding="utf-8")
+        git(repo, "add", "-A")
+        git(repo, "commit", "-qm", "implementar la etapa propia")
+        result = run(repo, "features/01-mia")
+        checked += 1
+        payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        if result.returncode != 1 or payload.get("undeclared") != ["src/mia.py"]:
+            fail(
+                "atribución: un commit sin etapa no bloqueó como propio "
+                f"({result.returncode}, {payload.get('undeclared')})"
+            )
+
+        # Un commit mixto toca las dos etapas: su ruta de código es ambigua y
+        # cuenta como propia; lo que vive en el árbol ajeno sigue siendo ajeno.
+        (mine / "AUDIT.md").write_text("# Auditoría mía\n", encoding="utf-8")
+        (other / "NOTA.md").write_text("nota\n", encoding="utf-8")
+        (repo / "src" / "compartido.py").write_text("mixto\n", encoding="utf-8")
+        git(repo, "add", "-A")
+        git(repo, "commit", "-qm", "commit que toca las dos etapas")
+        result = run(repo, "features/01-mia")
+        checked += 1
+        payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        if payload.get("undeclared") != ["src/compartido.py", "src/mia.py"]:
+            fail(
+                "atribución: un commit mixto absolvió una ruta "
+                f"({result.returncode}, {payload.get('undeclared')})"
+            )
+    finally:
+        shutil.rmtree(repo, ignore_errors=True)
+
+
 def check_bad_base(repo: Path) -> None:
     """Una base inexistente es error de lectura (2), no un falso limpio."""
     global checked
@@ -413,11 +574,14 @@ def main() -> int:
         # añaden una ruta no declarada y luego la retiran.
         check_clean(work)
         check_evidence_ignored(work)
+        check_local_secrets_ignored(work)
         check_undeclared(work)
         check_untracked(work)
         check_committed_change_is_seen()
         check_missing_is_warning(work)
         check_default_base_is_stage_start()
+        check_base_is_task_list_start()
+        check_foreign_attribution()
         check_bad_base(work)
         check_unmigrated(work)
         check_delta_scope()

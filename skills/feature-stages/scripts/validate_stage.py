@@ -22,8 +22,10 @@ from approvals import (  # noqa: E402
 )
 from snapshot import SnapshotError, identity, repo_root  # noqa: E402
 from diff_scope import ( # noqa: E402
+    ARCHIVOS_RE,
     DELTA_NAME_RE,
     ScopeError,
+    attribute,
     compare,
     declared_in,
     scope_base,
@@ -36,6 +38,25 @@ DECISION_RE = re.compile(r"^\s*-\s*\*\*(S-\d+)\s+—", re.M)
 CA_ORIGIN_RE = re.compile(r"\bOrigen:\s*(S-\d+)", re.I)
 TEST_FIRST_RE = re.compile(r"^\s*Test-first:\s*(.+)$", re.I | re.M)
 TEST_COMMAND_RE = re.compile(r"(?:^|;\s*)Test:\s*([^;\n]+)", re.I | re.M)
+# `--test-name-pattern "x" test/f.mjs` filtra por nombre. Si el patrón no casa
+# ningún caso del archivo, el runner sale 0 con cero pruebas ejecutadas: el
+# `Test:` no puede fallar y la tarea cierra en verde sin haber probado nada.
+# Pasó en tres tareas de una etapa real (T2, T7, T9): el patrón nombraba casos
+# que vivían en otro archivo, y `node --test` respondió `pass 1, fail 0`.
+NAME_PATTERN_RE = re.compile(
+    r"--(?:test-)?name-pattern[=\s]+(?:[\"'](?P<quoted>[^\"']+)[\"']|(?P<bare>[^\s\"']+))", re.I
+)
+TEST_FILE_RE = re.compile(
+    r"([\w./-]+\.(?:test|spec)\.[mc]?js|[\w./-]+\.test\.ts|test_[\w]+\.py|[\w]+_test\.py)"
+)
+# Nombres de caso por familia de runner. Basta con leer los literales: el
+# validador no ejecuta nada y no adivina construcciones dinámicas.
+CASE_NAME_RES = (
+    re.compile(r"\b(?:test|it|describe)\(\s*[\"'`]([^\"'`]+)[\"'`]"),
+    re.compile(r"^\s*def\s+(test_\w+)", re.M),
+    re.compile(r"\bfunc\s+(Test\w+)\s*\(", re.M),
+)
+SEARCH_SKIP = {"node_modules", ".git", "dist", ".nuxt", ".output", "__pycache__"}
 TRACE_RE = re.compile(r"^\s*\*\*Trazabilidad:\*\*\s*(.+)$", re.I | re.M)
 E_COMMAND_RE = re.compile(r"\|\s*E-\d+\s*\|.*?\|\s*([^|]+?)\s*\|.*?\|")
 TASK_RE = re.compile(
@@ -172,9 +193,11 @@ SNAPSHOT_PARTS_RE = re.compile(
 def snapshot_mismatch(recorded: str, current: str) -> str:
     """Explica la diferencia en vez de mandar a reauditar sin salida.
 
-    El validador excluye siempre `.yerro/approvals.yml`; si la pasada no lo
-    excluyó, la lista de exclusiones no coincide aunque el árbol sea el mismo.
-    Decir "reauditar" ahí manda a repetir una pasada que fallaría igual.
+    El validador excluye siempre `.yerro/approvals.yml` y el índice del panel
+    de la etapa; si la pasada no los excluyó, la identidad no coincide aunque
+    el árbol sea el mismo. Decir "reauditar" ahí manda a repetir una pasada
+    que fallaría igual, y recomendar una exclusión que la pasada ya tiene
+    esconde el motivo real.
     """
     before = SNAPSHOT_PARTS_RE.search(recorded)
     after = SNAPSHOT_PARTS_RE.search(current)
@@ -182,23 +205,91 @@ def snapshot_mismatch(recorded: str, current: str) -> str:
         return f"la pasada auditó {recorded} y el árbol actual es {current}; reauditar"
     same_tree = before.group("head", "tree", "dirty") == after.group("head", "tree", "dirty")
     same_excludes = before.group("exclude").lower() == after.group("exclude").lower()
+    declared = {
+        item for item in before.group("exclude").lower().split(",") if item and item != "ninguno"
+    }
+    missing_approvals = str(DEFAULT_APPROVALS).lower() not in declared
     command = (
         "`snapshot.py <repo> --exclude <feature-root> "
         f"--exclude {DEFAULT_APPROVALS}`"
     )
-    if same_tree and not same_excludes:
+    if same_tree and not same_excludes and missing_approvals:
         return (
             f"el snapshot grabado {recorded} no excluye {DEFAULT_APPROVALS}, que el "
             "validador excluye siempre. El árbol auditado es el mismo, así que no hace "
             f"falta reauditar: vuelve a tomar el snapshot con {command}"
         )
-    if same_tree or same_excludes:
+    if same_tree:
         return f"la pasada auditó {recorded} y el árbol actual es {current}; reauditar"
+    if missing_approvals:
+        return (
+            f"la pasada auditó {recorded} y el árbol actual es {current}; el árbol cambió, "
+            f"así que hay que reauditar, y el snapshot nuevo debe excluir {DEFAULT_APPROVALS} "
+            f"(el validador lo excluye siempre): {command}"
+        )
     return (
-        f"la pasada auditó {recorded} y el árbol actual es {current}; el árbol cambió, "
-        f"así que hay que reauditar, y el snapshot nuevo debe excluir {DEFAULT_APPROVALS} "
-        f"(el validador lo excluye siempre): {command}"
+        f"la pasada auditó {recorded} y el árbol actual es {current}; la identidad no "
+        "coincide: cambió el contenido del árbol o la lista de exclusiones de contrato "
+        "(el índice del panel de la etapa se excluye por contrato, B-49). Hay que reauditar."
     )
+
+
+def find_test_file(stage: Path, relative: str) -> Path | None:
+    """Localiza el archivo de pruebas que nombra un `Test:`.
+
+    El comando suele encadenar `cd console &&`, así que la ruta es relativa a
+    un subdirectorio que el validador no ejecuta. Se busca primero junto a la
+    etapa, después en sus ancestros y por último por sufijo en el repositorio,
+    sin entrar en `node_modules` ni en artefactos de build. Si no aparece, la
+    regla no opina: una fixture no tiene por qué traer el árbol de pruebas.
+    """
+    candidates = [stage / relative]
+    for ancestor in stage.parents:
+        candidates.append(ancestor / relative)
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate
+    root = stage.parent
+    for current in [stage, *stage.parents]:
+        if (current / ".git").exists():
+            root = current
+            break
+    for base, dirs, files in __import__("os").walk(root):
+        dirs[:] = [item for item in dirs if item not in SEARCH_SKIP]
+        for name in files:
+            found = Path(base) / name
+            if found.as_posix().endswith("/" + relative.replace("\\", "/")):
+                return found
+    return None
+
+
+def case_names(path: Path) -> list[str]:
+    text = read(path)
+    names: list[str] = []
+    for pattern in CASE_NAME_RES:
+        names.extend(pattern.findall(text))
+    return names
+
+
+def check_pattern_has_cases(result: Result, task_id: str, command: str, stage: Path) -> None:
+    """Un `Test:` filtrado por nombre tiene que casar al menos un caso."""
+    pattern = NAME_PATTERN_RE.search(command)
+    if not pattern:
+        return
+    for relative in TEST_FILE_RE.findall(command):
+        found = find_test_file(stage, relative)
+        if found is None:
+            continue
+        name = pattern.group("quoted") or pattern.group("bare")
+        names = case_names(found)
+        if names and not any(name in case for case in names):
+            result.errors.append(
+                f"{task_id} filtra `Test:` con el patrón «{name}», que no casa ningún caso de "
+                f"{relative}: el runner saldría 0 sin ejecutar nada. Apunta el patrón a un caso "
+                "de ese archivo o cambia el archivo"
+            )
+        return
+
 
 def declarative_command(command: str) -> bool:
     """¿El comando es trivio disfrazado? Se mira cada parte encadenada."""
@@ -254,6 +345,7 @@ def check_task_body(
     task_id: str,
     body: str,
     declared: list[str],
+    stage: Path,
 ) -> None:
     """Lo que toda tarea de la etapa declara, sea principal o de delta.
 
@@ -274,11 +366,21 @@ def check_task_body(
         )
     result.require(bool(TEST_FIRST_RE.search(body)), f"{task_id} no declara Test-first:")
     result.require(bool(TEST_COMMAND_RE.search(body)), f"{task_id} no declara Test:")
+    # B-48: `**Archivos:**` no es opcional. `diff_scope` atribuye con esa
+    # lista, y una tarea que no la escribe deja su parte sin declarar. El aviso
+    # «etapa sin migrar» de `diff_scope.py` solo se ve cuando ya hay diff; aquí
+    # se exige en la tarea, antes de medir nada.
+    result.require(
+        bool(ARCHIVOS_RE.search(body)),
+        f"{task_id} no declara `**Archivos:**`; derívalo de su CA, "
+        "nunca del diff ya producido",
+    )
     for command in TEST_COMMAND_RE.findall(body):
         result.require(
             not declarative_command(command),
             f"{task_id} declara un Test: decorativo ({command.strip()}): no observa comportamiento",
         )
+        check_pattern_has_cases(result, task_id, command, stage)
         if declared and not is_runner(command, declared):
             result.warnings.append(
                 f"{task_id}: Test: no empieza por un runner declarado en **Runners:**"
@@ -592,7 +694,7 @@ def main() -> int:
         result.require(bool(principal), "TAREAS.md no declara Principal: sí")
         for task_id, body in TASK_RE.findall(tasks):
             task_bodies[task_id] = body
-            check_task_body(result, task_id, body, declared)
+            check_task_body(result, task_id, body, declared, stage)
         # Cada delta se juzga con el mismo contrato que la lista principal:
         # el delta es la corrección acotada, no una lista de segunda.
         for name, delta in delta_lists:
@@ -607,7 +709,7 @@ def main() -> int:
             )
             for task_id, body in TASK_RE.findall(delta):
                 task_bodies[task_id] = body
-                check_task_body(result, task_id, body, declared)
+                check_task_body(result, task_id, body, declared, stage)
         # P17: una etapa con varias tareas necesita decir qué firma recibe cada
         # una de las anteriores. Un subagente no debe adivinar nombres.
         if len(TASK_RE.findall(tasks)) > 1:
@@ -907,7 +1009,19 @@ def main() -> int:
             except (ScopeError, SnapshotError) as error:
                 result.warnings.append(f"no se pudo comprobar el alcance del diff: {error}")
             else:
-                for path in compare(declared, touched)["undeclared"]:
+                undeclared = compare(declared, touched)["undeclared"]
+                try:
+                    foreign = attribute(root, scope_base(root, stage), stage, undeclared)
+                except ScopeError:
+                    foreign = {}
+                for path in undeclared:
+                    if path in foreign:
+                        source = foreign[path]
+                        result.warnings.append(
+                            f"{path} lo cambió {source['commit']} «{source['subject']}», otra "
+                            f"etapa; no es alcance de {stage.name}"
+                        )
+                        continue
                     result.require(
                         False,
                         f"{path} cambió y ninguna tarea declara `**Archivos:**` con esa ruta: "

@@ -50,6 +50,7 @@ CASES = [
     ("sin-conciliacion", None, DECISION, None, ["CONCILIACION_AUSENTE"]),
     ("conciliacion-invalida", None, DECISION, None, ["CONCILIACION_INVALIDA"]),
     ("sin-principal", None, DECISION, None, ["TAREA_NO_PRINCIPAL"]),
+("estado-tareas-desconocido", None, DECISION, None, ["TAREAS_ESTADO_DESCONOCIDO"]),
     ("presupuesto-agotado", None, DECISION, None, ["PRESUPUESTO_DE_DELTAS_AGOTADO"]),
     ("presupuesto-excedido", None, DECISION, None, ["PRESUPUESTO_DE_DELTAS_AGOTADO"]),
     ("presupuesto-excedido-coincide", None, DECISION, None, ["PRESUPUESTO_DE_DELTAS_AGOTADO"]),
@@ -255,6 +256,18 @@ VALIDATE_REJECTED = [
     ("index-estado/04-etapa", "índice marca etapa cerrada sin AUDIT.md con veredicto coincide"),
     ("ca-tipo", "CA-05 no declara tipo condición de salida/invariante acumulado"),
     ("riesgo-ausente", "conciliación cerrada sin **Riesgo:**"),
+    # Un `Test:` filtrado por `--test-name-pattern` puede salir 0 sin ejecutar
+    # nada cuando el patrón no casa ningún caso del archivo: la tarea cierra en
+    # verde sin haber probado. El caso reproduce el patrón real (T2, T7 y T9 de
+    # una etapa) y su gemela con un patrón que sí casa pasa.
+    ("test-patron-vacio", "no casa ningún caso de tests/salida.test.mjs"),
+    # `**Archivos:**` no es opcional: sin él, la parte de la tarea queda sin
+    # declarar y `diff_scope` no puede atribuirle nada. Con el contrato viejo
+    # esta etapa valida en verde, porque solo `diff_scope` avisaba.
+    (
+        "tarea-sin-archivos",
+        "T1 no declara `**Archivos:**`; derívalo de su CA, nunca del diff ya producido",
+    ),
 ]
 
 VALIDATE_ACCEPTED = [
@@ -278,6 +291,10 @@ VALIDATE_ACCEPTED = [
     # P18 positiva: una pasada `no coincide` sin veredicto de calidad no se
     # reescribe; el gate juzga la pasada que cierra.
     "calidad-aceptable/01-etapa",
+    # Positiva del gate anterior: mismo archivo y misma forma de comando, con un
+    # patrón que casa un caso real. Sin ella el gate podría rechazar cualquier
+    # patrón y nadie lo notaría.
+    "test-patron-con-casos",
 ]
 
 

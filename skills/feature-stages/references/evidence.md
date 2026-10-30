@@ -142,4 +142,14 @@ que ejecutase tests propios sería un gate que miente cuando el entorno no está
 preparado; la evidencia ya exige procedimiento reproducible.
 
 Lo que sí puede ser ejecutable es la **captura**: `evidence.py run` deja la firma
-del output para que nadie transcriba a mano un resultado que no ocurrió.
+del output para que nadie transcriba a mano un resultado que no ocurrió. La fila
+es una línea de shell y se reejecuta con `/bin/sh -c`, así que `cd console && npm
+test` y un argumento citado (`--test-name-pattern "panel chat"`) viajan al ledger
+tal como se escribieron. Sobre un `AUDIT.md` con varias pasadas, `verify`
+reejecuta la última: las anteriores son historia y relanzarlas repetiría
+procedimientos de sistema que ya ocurrieron.
+
+La celda del comando es una celda de tabla: un `|` crudo la corta y `verify`
+ejecutaría un fragmento con un `exit` que nadie corrió. `run` escribe `\|`,
+el parser lo devuelve al reejecutar, y una fila escrita a mano con el `|` crudo
+se nombra como partida en vez de ejecutarse (B-47).

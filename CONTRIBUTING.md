@@ -64,9 +64,15 @@ exentas.
       fallando: el mutante se juzga por el resultado observado (`rojo`), no
       por la palabra, y un mutante que sobrevive no cierra.
 - [ ] `test_diff_scope.py` pasa; un archivo no declarado sigue siendo alcance
-      nuevo (error) y uno declarado sin tocar sigue siendo advertencia.
+      nuevo (error) y uno declarado sin tocar sigue siendo advertencia. Una
+      ruta cuyo commit toca otra etapa se atribuye con su hash y su asunto y
+      solo avisa; un commit sin etapa, del árbol de trabajo o mixto bloquea.
 - [ ] `test_snapshot.py` sigue comprobando aprobación: sin `.yerro/approvals.yml`,
       con entrada fuera de alcance o con el archivo ausente, la etapa no cierra.
+      Editar el `README.md` del panel no cambia la identidad del árbol auditado;
+      editar la etapa sí.
+- [ ] Una tarea sin `**Archivos:**` no valida: la fixture `tarea-sin-archivos`
+      falla con el mensaje que prohíbe derivar las rutas del diff ya producido.
 - [ ] `doctor.py` avisa con cuatro rulings en una tarea y calla con tres; toda
       etapa no cerrada sin `**Archivos:**` aparece como pendiente de migrar.
 - [ ] `ruling-sin-coste` y `ruling-categoria-2-sin-revision` siguen fallando;

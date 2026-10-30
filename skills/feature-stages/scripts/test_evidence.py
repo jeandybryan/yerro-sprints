@@ -12,6 +12,7 @@ Solo stdlib; no consume tokens.
 """
 from __future__ import annotations
 
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -23,6 +24,8 @@ sys.path.insert(0, str(HERE))
 from evidence import ( # noqa: E402
     EvidenceError,
     ledger_row,
+    parse_ledger,
+    truncated_rows,
     normalize,
     run_command,
     signature,
@@ -63,6 +66,12 @@ def check_signature() -> None:
         "la firma incluye lo volátil (timestamp, pid, ruta temporal)",
     )
     check("2026-10-22" not in normalize(first), "normalize no sustituye el timestamp")
+# Tiempos de `node --test`: cambian en cada corrida correcta y no son
+# observación. Sin normalizarlos, la firma de un test verde nunca reproduce.
+slow = "ok caso (12.345678ms)\nℹ duration_ms 95288.974833"
+fast = "ok caso (0.128ms)\nℹ duration_ms 120.5"
+check(signature(0, slow, "") == signature(0, fast, ""), "la firma incluye el tiempo de cada caso")
+check("ms)" not in normalize(slow), "normalize no sustituye el tiempo por caso")
 
 
 def check_run() -> None:
@@ -81,8 +90,10 @@ def check_run() -> None:
         pass
 
 
-def audit_with(command: list[str], digest: str, exit_code: int) -> str:
-    row = ledger_row("E-01", command, exit_code, digest)
+def audit_with(
+    command: list[str] | str, digest: str, exit_code: int, ca: str = "CA-…"
+) -> str:
+    row = ledger_row("E-01", command, exit_code, digest).replace("| CA-… |", f"| {ca} |", 1)
     return (
         "# Auditoría\n\n### Ledger de evidencia\n\n"
         "| ID | CA | Procedimiento/comando | Sensibilidad | Esperado | Observado/exit | Entorno y timestamp | Artefacto/log | Limitación |\n"
@@ -117,6 +128,123 @@ def check_verify() -> None:
         pass
 
 
+def check_pipe_in_command() -> None:
+    """Una fila con `|` en el comando se parte al pegarla en el ledger.
+
+    La celda de comando es una celda de tabla markdown: un `|` crudo la corta,
+    `verify` lee un fragmento, lo ejecuta y reporta un `exit` que nadie corrió.
+    `run` escapa el `|` como `\|` y el parser lo devuelve al ejecutar; una fila
+    escrita a mano con el `|` crudo se detecta y se nombra, en vez de ejecutar
+    basura.
+    """
+    command = "printf 'a|b\\n' | wc -l"
+    row = ledger_row("E-42", command, 0, "abc123def456")
+    check("\\|" in row, f"ledger_row no escapó el `|` del comando: {row}")
+
+    audit = (
+        "| ID | CA | Procedimiento/comando | Sensibilidad | Esperado | Observado/exit | "
+        "Entorno | Artefacto | Limitación |\n"
+        "|----|----|------------------------|--------------|----------|----------------|"
+        "--------|-----------|------------|\n"
+        + row
+        + "\n"
+    )
+    entries = parse_ledger(audit)
+    check(len(entries) == 1, f"parse_ledger no leyó la fila escapada: {entries}")
+    if entries:
+        check(
+            entries[0][1] == command,
+            f"parse_ledger no devolvió el comando original: {entries[0][1]!r}",
+        )
+    check(not truncated_rows(audit), f"una fila escapada se leyó como partida: {audit}")
+
+    # La fila escapada se reejecuta de verdad.
+    directory = Path(tempfile.mkdtemp(prefix="yerro-evidence-pipe-"))
+    try:
+        (directory / "AUDIT.md").write_text(audit.replace("abc123def456", ""), encoding="utf-8")
+        problems = verify((directory / "AUDIT.md").read_text(encoding="utf-8"))
+        check(not problems, f"verify no reejecutó una fila con `|`: {problems}")
+    finally:
+        shutil.rmtree(directory, ignore_errors=True)
+
+    # Una fila con el `|` crudo declara más celdas que el encabezado: se nombra.
+    cruda = row.replace("\\|", "|")
+    check(
+        bool(truncated_rows(audit.replace(row, cruda))),
+        "una fila con `|` crudo no se detectó como partida",
+    )
+
+
+def check_reproducible_rows() -> None:
+    """La fila que `run` emite tiene que poder reejecutarse tal cual."""
+    # Un argumento con espacio no puede perder las comillas al escribirse en el
+    # ledger: `--test-name-pattern "panel chat"` se leía como dos argumentos y
+    # la fila dejaba de reproducirse.
+    spaced = [sys.executable, "-c", "print('con espacio')"]
+    exit_code, stdout, stderr = run_command(spaced)
+    digest = signature(exit_code, stdout, stderr)
+    text = audit_with(spaced, digest, exit_code)
+    check(
+        verify(text) == [],
+        "verify rechazó una fila con un argumento citado (el ledger perdió las comillas): "
+        f"{verify(text)}",
+    )
+
+    # Una línea de shell con `cd … && …`, la forma de `**Suites de referencia:**`.
+    with tempfile.TemporaryDirectory() as tmp:
+        (Path(tmp) / "marca.txt").write_text("dentro\n", encoding="utf-8")
+        line = f"cd {tmp} && tail -n 1 marca.txt"
+        try:
+            exit_code, stdout, stderr = run_command(line)
+        except EvidenceError as error:
+            fail(f"la línea de shell no se pudo ejecutar: {error}")
+            exit_code, stdout, stderr = 1, "", str(error)
+        check(
+            exit_code == 0 and stdout.strip() == "dentro",
+            f"la línea de shell no se ejecutó en su directorio: {exit_code} {stdout!r} {stderr!r}",
+        )
+        digest = signature(exit_code, stdout, stderr)
+        audit = audit_with(line, digest, exit_code)
+        check(verify(audit) == [], f"verify rechazó una línea de shell: {verify(audit)}")
+
+    # La celda `CA` escrita con coma no es el comando: manda el encabezado.
+    command = [sys.executable, "-c", "print('otra')"]
+    exit_code, stdout, stderr = run_command(command)
+    digest = signature(exit_code, stdout, stderr)
+    typed = audit_with(command, digest, exit_code, ca="CA-01, CA-03")
+    check(verify(typed) == [], f"verify leyó la celda CA como comando: {verify(typed)}")
+
+
+def check_last_pass() -> None:
+    """`verify` reejecuta la pasada que decide, no el histórico."""
+    command = [sys.executable, "-c", "print('cierre')"]
+    exit_code, stdout, stderr = run_command(command)
+    digest = signature(exit_code, stdout, stderr)
+    current = audit_with(command, digest, exit_code)
+    row = next(line for line in current.splitlines() if line.startswith("| E-01"))
+    stale = (
+        "| E-01 | CA-01 | `/herramienta/que/ya/no/existe --bandera` | "
+        "revertir → rojo → restaurar | verde | exit=0 firma=000000000000 | local | ninguno | ninguna |"
+    )
+    history = (
+        "# Auditoría\n\n## Pasada 1 — 2026-09-30\n\n"
+        "| ID | CA | Procedimiento/comando | Sensibilidad | Esperado | Observado/exit | Entorno y timestamp | Artefacto/log | Limitación |\n"
+        "|----|----|------------------------|--------------|----------|----------------|---------------------|---------------|------------|\n"
+        f"{stale}\n\n## Pasada 2 — 2026-10-01\n\n"
+        "| ID | CA | Procedimiento/comando | Sensibilidad | Esperado | Observado/exit | Entorno y timestamp | Artefacto/log | Limitación |\n"
+        "|----|----|------------------------|--------------|----------|----------------|---------------------|---------------|------------|\n"
+        f"{row}\n"
+    )
+    problems = verify(history)
+    check(
+        problems == [],
+        "verify relanzó una pasada anterior (`/herramienta/que/ya/no/existe`): "
+        f"{problems}",
+    )
+    broken = history.replace(f"firma={digest}", "firma=000000000000", 1)
+    check(bool(verify(broken)), "verify no reporta una firma falsa de la última pasada")
+
+
 def check_cli() -> None:
     run = subprocess.run(
         [sys.executable, str(HERE / "evidence.py"), "run", "--label", "E-02", "--json",
@@ -139,6 +267,9 @@ def main() -> int:
     check_signature()
     check_run()
     check_verify()
+    check_reproducible_rows()
+    check_pipe_in_command()
+    check_last_pass()
     check_cli()
     for error in errors:
         print(f"ERROR: {error}")

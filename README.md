@@ -264,8 +264,11 @@ Pídele: **"audita la etapa NN"**.
 - Cada pasada registra `**Snapshot:**` (identidad del código auditado, vía
   `scripts/snapshot.py`) y `**Riesgo auditado:**`. Un `coincide` solo vale para
   ese snapshot: si el árbol cambió, se reaudita. El snapshot excluye el árbol
-  de la feature y `.yerro/approvals.yml`; con menos exclusiones la identidad
-  no coincide aunque el código sea el mismo.
+  de la feature, `.yerro/approvals.yml` y el índice del panel de la etapa (el
+  `README.md` donde se anota su estado): editar esa celda no invalida la
+  pasada, porque lo auditado es el árbol de la etapa y el índice se juzga por
+  su contenido. Con menos exclusiones la identidad no coincide aunque el
+  código sea el mismo.
 - El ledger exige **`Sensibilidad`**: la prueba de que el test pudo fallar
  (`revertir → rojo → restaurar`, un mutante que produce rojo o una regresión
  contra `HEAD`). Un ledger que solo dice que el test pasó no cierra.

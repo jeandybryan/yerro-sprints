@@ -18,8 +18,8 @@ more than one task, and `Consume: ninguna` is a valid answer.
 
 - [ ] T1 — … (CA-01; Origen: S-01; spec §…)
   **Archivos:** `src/modulo.py`, `tests/test_modulo.py` — las rutas que esta tarea
-  produce. Se derivan del CA, **nunca del diff** ya producido (B-28). Sin este
-  campo la etapa no está migrada y el alcance no se puede comprobar.
+  produce. Se derivan del CA, **nunca del diff** ya producido (B-28). El campo
+  es obligatorio: `validate_stage.py` rechaza la tarea que no lo declare (B-48).
   Ruling: <qué decido> — <por qué> — <qué cuesta si me equivoco>
   Interfaces:
     Consume: <firma exacta de una tarea anterior> | ninguna

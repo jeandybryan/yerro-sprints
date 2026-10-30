@@ -28,8 +28,9 @@ Lee primero el plan de contexto: `python3 <skills-root>/feature-stages/scripts/p
    - one implementable action
    - pointer to one or more `CA-NN` and spec/conciliation source
    - **Archivos:** the paths this task will produce, derived from its CA and
-     never from a diff already written (B-28). Without it the stage cannot
-     prove its scope and the close cross-check has nothing to compare.
+     never from a diff already written (B-28). Required, not optional:
+     `validate_stage.py` rejects a task without it (B-48), because the close
+     cross-check has nothing to compare.
    - `Interfaces:` with `Consume:` and `Produce:` when the stage has more than
      one task (`Consume: ninguna` when nothing is received)
    - compact applicable impact: modules/contracts, data/migration, config,

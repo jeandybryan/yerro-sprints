@@ -51,6 +51,11 @@ before opening files; everything it omits is listed with its reason.
    python3 <skills-root>/feature-stages/scripts/approvals.py <repo> --stage <NN-slug>
    ```
 
+   `snapshot.py` adds the stage's panel index (`docs/…/README.md`) to
+   `exclude=` on its own (B-49): its status row is written when closing, and
+   counting it would force a new pass for one cell. Paste the output as-is; do
+   not strip that exclusion.
+
    The approval lives in `.yerro/approvals.yml`, a versioned file the person
    edits. Never write it: a signature the agent can type is not a signature.
    Without an entry covering this stage and snapshot, the stage does not close.
@@ -65,8 +70,12 @@ before opening files; everything it omits is listed with its reason.
 4. Re-run every declared `Test:` and `Verificar:` method independently. Add
    negative, boundary or fault-injection checks proportional to risk. Record
    each result with `evidence.py run -- <command>` so the ledger carries the
-   exit code and the output signature, then `evidence.py verify <stage>/AUDIT.md`
-   before the verdict: a signature that does not reproduce is invented
+   exit code and the output signature. Pass the command as a single shell line
+   (`evidence.py run -- 'cd console && npm test'`, `--test-name-pattern "panel chat"`);
+   the row is re-executed as written. Then run
+   `evidence.py verify <stage>/AUDIT.md` before the verdict: it re-executes the
+   last pass only — earlier passes are history and their system procedures are
+   not repeated — and a signature that does not reproduce is invented
    evidence, not evidence.
 5. Write one immutable audit pass with fresh reproducible evidence. Append; do
    not erase failed or superseded passes.

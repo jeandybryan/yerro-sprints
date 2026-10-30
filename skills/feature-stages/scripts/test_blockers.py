@@ -140,6 +140,7 @@ EXERCISED = {
     "PREGUNTAS_ABIERTAS": "resolver o diferir",
     "PRESUPUESTO_DE_DELTAS_AGOTADO": "reabrir la conciliación",
     "TAREA_NO_PRINCIPAL": "corregir la lista principal",
+  "TAREAS_ESTADO_DESCONOCIDO": "corregir **Estado:** de TAREAS.md",
     "VARIAS_ETAPAS_ACTIVAS": "dejar una en implementando/auditando",
 }
 
@@ -148,6 +149,17 @@ def fix_principal(root: Path) -> None:
     """TAREA_NO_PRINCIPAL: corregir la lista principal."""
     stage = next(p for p in sorted(root.iterdir()) if p.is_dir())
     edit(stage / "TAREAS.md", "# Tareas", "# Tareas\n\n**Principal:** sí")
+
+
+def fix_tasks_state(root: Path) -> None:
+    """TAREAS_ESTADO_DESCONOCIDO: corregir **Estado:** de TAREAS.md."""
+    stage = next(p for p in sorted(root.iterdir()) if p.is_dir())
+    path = stage / "TAREAS.md"
+    text = path.read_text(encoding="utf-8")
+    path.write_text(
+        re.sub(r"\*\*Estado:\*\*\s*\S+", "**Estado:** en curso", text, count=1),
+        encoding="utf-8",
+    )
 
 
 def name_one_stage(root: Path) -> None:
@@ -178,6 +190,7 @@ CASES = [
     ("abierta", None, "PREGUNTAS_ABIERTAS", answer_questions),
     ("presupuesto-agotado", None, "PRESUPUESTO_DE_DELTAS_AGOTADO", accept_residual_risk),
     ("sin-principal", None, "TAREA_NO_PRINCIPAL", fix_principal),
+    ("estado-tareas-desconocido", None, "TAREAS_ESTADO_DESCONOCIDO", fix_tasks_state),
     ("ambiguo", None, "VARIAS_ETAPAS_ACTIVAS", name_one_stage),
 ]
 

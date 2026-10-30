@@ -109,6 +109,59 @@ def check_exclude(repo: Path, bare: Path) -> None:
         fail("snapshot: una ruta inexistente no produce SnapshotError")
 
 
+def check_panel_index_excluded(repo: Path) -> None:
+    """El índice del panel no forma parte del árbol auditado.
+
+    Escribir la fila de estado de una etapa en el índice es el último paso del
+    cierre; si el índice cuenta en el snapshot, esa celda obliga a una pasada
+    nueva de auditoría (`tree=` cambia). Se excluye por forma —un `README.md`
+    con carpetas de etapa hermanas— y no por nombre: el paquete no conoce las
+    etapas de ningún consumidor.
+    """
+    global checked
+    panel = repo / "docs" / "ai-review-console"
+    (panel / "01-export").mkdir(parents=True)
+    (panel / "01-export" / "AUDIT.md").write_text("pasada 1\n", encoding="utf-8")
+    (panel / "README.md").write_text("| etapa | estado |\n| 01-export | activa |\n", encoding="utf-8")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-qm", "panel")
+
+    before = identity(panel / "01-export")
+    checked += 1
+    if "README.md" not in before:
+        fail(f"snapshot: el índice del panel no viaja en exclude=: {before!r}")
+
+    (panel / "README.md").write_text(
+        "| etapa | estado |\n| 01-export | cerrada |\n", encoding="utf-8"
+    )
+    after = identity(panel / "01-export")
+    checked += 1
+    if before != after:
+        fail(
+            "snapshot: editar el índice del panel cambió la identidad del árbol "
+            f"auditado ({before!r} → {after!r})"
+        )
+
+    (panel / "01-export" / "AUDIT.md").write_text("pasada 1\npasada 2\n", encoding="utf-8")
+    changed_code = identity(panel / "01-export")
+    checked += 1
+    if changed_code == before:
+        fail("snapshot: excluir el índice cegó también la etapa")
+
+    # Un `README.md` suelto, sin carpetas de etapa hermanas, no es un panel:
+    # sigue contando, y su cambio sí rompe la identidad.
+    plain_root = repo / "lib"
+    plain_root.mkdir()
+    (plain_root / "README.md").write_text("docs\n", encoding="utf-8")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-qm", "modulo")
+    plain = identity(repo / "lib")
+    (plain_root / "README.md").write_text("docs v2\n", encoding="utf-8")
+    checked += 1
+    if identity(repo / "lib") == plain:
+        fail("snapshot: un README.md que no es índice de panel se excluyó por error")
+
+
 STAGE = """# Etapa 01 — snapshot
 
 **Estado:** cerrada
@@ -407,6 +460,7 @@ def main() -> int:
         init_repo(repo)
         check_stability(repo)
         check_exclude(repo, bare)
+        check_panel_index_excluded(repo)
         check_validate(repo)
         check_delta_scope(repo)
         sin_exclusion = Path(raw) / "sin-exclusion"

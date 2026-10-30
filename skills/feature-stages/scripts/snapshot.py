@@ -14,6 +14,12 @@ cambiar mientras se escribe el veredicto, y el snapshot debe identificar el
 código, no el archivo que lo describe. Sin exclusiones, cualquier escritura en
 `AUDIT.md` invalidaría su propia evidencia.
 
+B-49: el índice del panel (`README.md` junto a las carpetas de etapa) se excluye por
+forma, sin nombrar etapas: su fila de estado se escribe justo al cerrar la
+etapa que documenta, y mantenerla dentro obliga a una pasada nueva para
+cambiar una celda. Lo que se audita es el árbol de la etapa; el índice se
+juzga por su contenido (estado y veredicto de la fila), no por identidad.
+
 Salida canónica, apta para pegar después de `**Snapshot:**`:
 
     head=<sha> tree=<sha> dirty=<si|no> exclude=<ninguno|a,b>
@@ -25,6 +31,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -32,6 +39,8 @@ import tempfile
 from pathlib import Path
 
 EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+# Una carpeta de etapa dentro del panel: `07-agente-chat`, `01-export`.
+STAGE_DIR_RE = re.compile(r"^\d{2,}-[a-z0-9][a-z0-9-]*$", re.I)
 
 
 class SnapshotError(Exception):
@@ -70,11 +79,55 @@ def _relative(root: Path, path: Path) -> str:
         raise SnapshotError(f"{path} queda fuera del repositorio {root}") from error
 
 
+def panel_index(path: Path) -> Path | None:
+    """Índice del panel al que pertenece una etapa, si lo hay.
+
+    El índice es el `README.md` de la carpeta que tiene, como hermanas,
+    carpetas de etapa (`NN-nombre`). Se reconoce por la forma del nombre y por
+    la vecindad, nunca por una ruta de un consumidor: el paquete no conoce sus
+    etapas. Solo se mira la propia carpeta y su padre, para no confundir
+    cualquier `README.md` de un antepasado ajeno con un índice de panel.
+    """
+    start = path.resolve()
+    if not start.is_dir():
+        return None
+    for directory in (start, start.parent):
+        candidate = directory / "README.md"
+        if not candidate.is_file():
+            continue
+        siblings = [
+            child
+            for child in directory.iterdir()
+            if child.is_dir() and STAGE_DIR_RE.match(child.name)
+        ]
+        if siblings:
+            return candidate
+    return None
+
+
 def identity(path: Path, excludes: tuple[Path, ...] = ()) -> str:
     """Identidad canónica del árbol de trabajo en `path`."""
     if not path.exists():
         raise SnapshotError(f"{path} no existe")
     root = repo_root(path)
+    # B-49: el índice del panel de una etapa se excluye con ella. El cierre
+    # toma el snapshot desde la raíz del repo con `--exclude <etapa>`; tomar
+    # el snapshot de la etapa directamente es el mismo caso. Se reconocen por
+    # forma (`NN-nombre`): ni el paquete ni el snapshot conocen los nombres de
+    # las etapas de un consumidor.
+    stages = [
+        absolute
+        for absolute in (
+            path.resolve() if path.is_dir() else path.resolve().parent,
+            *(item if item.is_absolute() else root / item for item in excludes),
+        )
+        if absolute.is_dir() and STAGE_DIR_RE.match(absolute.name)
+    ]
+    panel_excludes = [
+        index for index in (panel_index(stage) for stage in stages) if index is not None
+    ]
+    if panel_excludes:
+        excludes = (*excludes, *panel_excludes)
     head = _run(root, ["rev-parse", "--verify", "HEAD"])
     head_sha = head.stdout.strip() if head.returncode == 0 else "sin-head"
     head_tree = None

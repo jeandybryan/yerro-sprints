@@ -31,6 +31,11 @@ DECISION = "necesita-decision"
 
 CONCILIACION_ABIERTA = ("borrador-corte", "abierta")
 ETAPA_ACTIVA = ("conciliando", "implementando", "auditando")
+# El `**Estado:**` de `TAREAS.md` es un valor público cerrado. Un valor fuera de
+# esta lista no es "un estado nuevo": el router no supo leerlo y lo trataba como
+# pendiente, así que la etapa saltaba a `audit-stage` con tareas sin marcar.
+# Pasó escribiendo `implementada` en vez de `implementando` en una etapa real.
+TAREAS_ESTADOS = ("pendiente", "en curso", "implementando", "implementada", "auditada")
 ETAPA_ELEGIBLE = ("borrador", "lista")
 
 INDEX_COLUMNS = ("Carpeta", "Conciliación", "Estado", "Tareas", "Auditoría")
@@ -204,6 +209,13 @@ def analyze_stage(feature_root: Path, name: str, row: dict[str, str] | None) -> 
             "COINCIDE_SIN_CIERRE",
             "la última auditoría coincide pero el índice no marca la etapa cerrada",
             "cerrar la etapa en el índice con la pasada que lo demuestra",
+        )
+
+    if tasks and tasks_state and tasks_state not in TAREAS_ESTADOS:
+        block(
+            "TAREAS_ESTADO_DESCONOCIDO",
+            f"TAREAS.md declara un estado que el contrato no conoce: {tasks_state}",
+            "corregir **Estado:** de TAREAS.md a " + " | ".join(TAREAS_ESTADOS),
         )
 
     if conc_state == "cerrada" and tasks and not re.search(r"\*\*Principal:\*\*\s*sí", tasks, re.I):

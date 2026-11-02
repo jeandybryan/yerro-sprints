@@ -55,6 +55,9 @@ CASES = [
     ("presupuesto-excedido", None, DECISION, None, ["PRESUPUESTO_DE_DELTAS_AGOTADO"]),
     ("presupuesto-excedido-coincide", None, DECISION, None, ["PRESUPUESTO_DE_DELTAS_AGOTADO"]),
     ("presupuesto-amplio", None, VERIFICANDO, "audit-stage", []),
+    # La pasada que reabre no pide delta ni rutea a auditar: pide re-conciliar.
+    ("reapertura-auditoria", None, TRABAJANDO, "conciliate-stage", []),
+    ("presupuesto-excedido-reabierto", None, DECISION, None, ["PRESUPUESTO_DE_DELTAS_AGOTADO"]),
 ]
 
 def fail(message: str) -> None:
@@ -717,6 +720,61 @@ def check_reconcile() -> None:
         fail(f"reconcile --json: salida {conflict.returncode}, se esperaba 2")
 
 
+def check_reopening() -> None:
+    """P12: una pasada que reabre el alcance no pide delta ni hereda el `coincide`.
+
+    Casos:
+    - positiva: la última pasada declara `**Reapertura:**` con veredicto
+      `no coincide`; el router manda a `conciliate-stage`, sin bloquear el
+      presupuesto (la reapertura no es un delta) y sin `COINCIDE_SIN_CIERRE`
+      (el `coincide` de la pasada 1 pertenecía a otro árbol);
+    - negativa de presupuesto: el mismo `AUDIT.md` sin `**Reapertura:**` sigue
+      bloqueando con el presupuesto agotado, así que la exención se debe a la
+      reapertura y no a que la última pasada diga `no coincide`;
+    - negativa de cierre: el índice sigue en `cerrada`; `doctor.py` lee la última
+      pasada y rechaza el cierre, en vez de darse por bueno con la pasada 1.
+    """
+    global checked
+    root = FIXTURES / "reapertura-auditoria"
+    result = analyze(root, None)
+    checked += 1
+    if not result.get("reabierta"):
+        fail("reapertura-auditoria: el router no lee **Reapertura:** de la última pasada")
+    checked += 1
+    if "COINCIDE_SIN_CIERRE" in {item["codigo"] for item in result["blockers"]}:
+        fail(
+            "reapertura-auditoria: el `coincide` de la pasada 1 se reutiliza para "
+            "exigir el cierre sobre un árbol que la pasada 2 reabrió"
+        )
+    checked += 1
+    if "Reapertura: " not in run("next_step.py", str(root)).stdout:
+        fail("reapertura-auditoria: la salida no declara el motivo ni la salida del ciclo")
+
+    without = run("next_step.py", str(FIXTURES / "presupuesto-excedido-reabierto"), "--json")
+    checked += 1
+    codes_negative = {
+        item["codigo"] for item in json.loads(without.stdout).get("blockers") or []
+    }
+    if "PRESUPUESTO_DE_DELTAS_AGOTADO" not in codes_negative:
+        fail(
+            "presupuesto-excedido-reabierto: sin **Reapertura:** el presupuesto "
+            f"agotado no bloquea (bloqueos {sorted(codes_negative)})"
+        )
+
+    closed = run("doctor.py", str(FIXTURES / "reapertura-cerrada"), "--json")
+    checked += 1
+    if closed.returncode != 1:
+        fail(f"doctor/reapertura-cerrada: salida {closed.returncode}, se esperaba 1")
+    else:
+        reported = " ".join(json.loads(closed.stdout)["errores"])
+        if "reabre la conciliación pero el índice la declara cerrada" not in reported:
+            fail(f"doctor/reapertura-cerrada: no reporta el cierre reabierto ({reported})")
+
+    healthy = run("doctor.py", str(root))
+    checked += 1
+    if healthy.returncode != 0:
+        fail(f"doctor/reapertura-auditoria: salida {healthy.returncode} sobre el árbol coherente: {healthy.stdout}")
+
 def main() -> int:
     check_transitions()
     check_doctor()
@@ -730,6 +788,7 @@ def main() -> int:
     check_budget_branches()
     check_behavioral_materialization()
     check_reconcile()
+    check_reopening()
     for error in errors:
         print(f"ERROR: {error}")
     if not errors:

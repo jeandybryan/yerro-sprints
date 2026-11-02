@@ -78,6 +78,25 @@ the stage must be audited again; never reuse it to close. The feature root is
 excluded so writing this file does not invalidate its own evidence, and
 `exclude=` travels inside the value so verification recomputes the same tree.
 
+## Pasada de reapertura
+
+Cuando el alcance se movió **después** del árbol de una pasada anterior, la
+pasada nueva no audita: reabre. Lleva su motivo en vez de `**Snapshot:**` y no
+lleva veredicto de calidad, porque no cierra.
+
+```markdown
+## Pasada N — <fecha>
+
+**Reapertura:** <qué se movió, desde cuándo y por qué la conformidad de la pasada anterior ya no cubre este árbol>
+**Trazabilidad:** S-NN → CA-NN → T-NN → <test> → E-NN
+
+**Veredicto:** no coincide
+```
+
+Sin `**Reapertura:**`, un `no coincide` con el presupuesto agotado pide delta o
+detiene la etapa; con ella, la etapa vuelve a `conciliando` y el siguiente paso
+es `conciliate-stage`. No consume presupuesto.
+
 ## Trazabilidad y test-first
 
 - Cada decisión acordada tiene un ID estable `S-NN`, cita verbal exacta cuando la haya, fecha, motivo y consecuencias. No se recicla un ID para otra decisión.

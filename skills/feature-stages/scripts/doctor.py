@@ -30,11 +30,13 @@ from next_step import (  # noqa: E402
     DELTA_RE,
     FeatureError,
     analyze,
+    audit_verdict,
     delta_files,
     normalize,
     parse_index,
     parse_state,
     read,
+    reopening_reason,
 )
 
 STAGE_DIR_RE = re.compile(r"^\d{2}-[a-z0-9][a-z0-9-]*$")
@@ -261,12 +263,22 @@ def check(root: Path, result: dict | None, errors: list[str], warnings: list[str
             errors.append(
                 f"{name}: estado {stage_state} incompatible con conciliación {conc_state or 'ausente'}"
             )
+        # Una etapa en `implementando` re-concilia un alcance que se movió: eso es
+        # trabajo, no un cierre. Cerrar con la última pasada en `no coincide` sí es
+        # error, y por eso el aviso solo dispara cuando el índice ya declara `cerrada`.
+        if reopening_reason(audit) and stage_state == "cerrada":
+            errors.append(
+                f"{name}: la última pasada reabre la conciliación pero el índice la "
+                "declara cerrada; re-conciliar y volver a auditar antes de cerrar"
+            )
 
         if stage_state in NEEDS_TASKS and not tasks:
             errors.append(f"{name}: etapa {stage_state} sin TAREAS.md")
         if stage_state in NEEDS_AUDIT and not audit:
             errors.append(f"{name}: etapa {stage_state} sin AUDIT.md")
-        if stage_state in ("borrador", "conciliando") and tasks:
+        # La pasada que reabre deja la etapa en `implementando` mientras re-concilia:
+        # sus tareas siguen siendo la lista de trabajo, no un TAREAS.md prematuro.
+        if stage_state in ("borrador", "conciliando") and tasks and not reopening_reason(audit):
             errors.append(f"{name}: TAREAS.md prematuro para etapa {stage_state}")
         if tasks and re.search(r"^[-*] \[", tasks, re.M):
             if not re.search(r"Test-first:\s*(?:sí|si|no)\b", tasks, re.I):
@@ -277,7 +289,11 @@ def check(root: Path, result: dict | None, errors: list[str], warnings: list[str
             for label, pattern in (("Snapshot", r"\*\*Snapshot:\*\*\s*\S+"), ("Trazabilidad", r"\*\*Trazabilidad:\*\*\s*\S+"), ("E-NN", r"\bE-\d{2}\b"), ("Veredicto", r"\*\*Veredicto:\*\*\s*\S+")):
                 if not re.search(pattern, audit, re.I):
                     errors.append(f"{name}: AUDIT.md sin {label}")
-            if stage_state == "cerrada" and not re.search(r"\*\*Veredicto:\*\*\s*coincide\b", audit, re.I):
+            # La pasada que reabre declara `no coincide` con `**Reapertura:**`:
+            # probarlo con `re.search` sobre el archivo entero dejaría pasar un
+            # cierre cuyo último veredicto ya no coincide. Manda la última
+            # pasada, la misma que lee `next_step.py`.
+            if stage_state == "cerrada" and audit_verdict(audit) != "coincide":
                 errors.append(f"{name}: cierre sin veredicto coincide")
         # B-28: la migración la hace el humano, pero saber a quién le toca sí se
         # puede automatizar. Una etapa no cerrada cuyo TAREAS.md no declara los

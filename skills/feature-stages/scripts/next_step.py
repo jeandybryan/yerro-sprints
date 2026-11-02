@@ -41,6 +41,13 @@ ETAPA_ELEGIBLE = ("borrador", "lista")
 INDEX_COLUMNS = ("Carpeta", "Conciliación", "Estado", "Tareas", "Auditoría")
 STATE_RE = re.compile(r"\*\*Estado:\*\*\s*([^\n]+)", re.I)
 VERDICT_RE = re.compile(r"\*\*Veredicto:\*\*\s*(.+?)\s*$", re.I | re.M)
+# Una pasada puede reabrir la conciliación: declara `**Reapertura:** <motivo>` y
+# su veredicto es `no coincide` porque la conformidad que registró otra pasada
+# pertenecía a otro árbol. Esa pasada no pide un delta: pide re-conciliar.
+REOPENING_RE = re.compile(r"\*\*Reapertura:\*\*\s*([^\n]+)", re.I)
+PASS_RE = re.compile(
+    r"^##\s+Pasada\b.*?$(.*?)(?=^##\s+Pasada\b|\Z)", re.M | re.S | re.I
+)
 CIERRA_RE = re.compile(r"\*\*Cierra:\*\*\s*([^\n]+)", re.I)
 DELTA_RE = re.compile(r"^TAREAS-delta-(\d{2,})\.md$")
 DELTA_BUDGET_RE = re.compile(r"\*\*Presupuesto de deltas:\*\*\s*(\d+)", re.I)
@@ -124,9 +131,50 @@ def active_goal(index: str) -> list[str]:
     text = match.group(1)
     return [name for name in re.findall(r"\b\d{2}-[a-z0-9][a-z0-9-]*", text, re.I)]
 
-def audit_verdict(audit: str) -> str | None:
-    verdicts = [item.strip().lower() for item in VERDICT_RE.findall(audit)]
+def audit_passes(audit: str) -> list[str]:
+    """El `AUDIT.md` pasada por pasada, en orden.
+
+    Sin encabezados `## Pasada`, el documento entero es una sola pasada: es la
+    forma que usan las fixtures cortas y la de un `AUDIT.md` de una sola pasada.
+    """
+    found = PASS_RE.findall(audit)
+    return found or ([audit] if audit else [])
+
+def pass_verdict(body: str) -> str | None:
+    verdicts = [item.strip().lower() for item in VERDICT_RE.findall(body)]
     return verdicts[-1] if verdicts else None
+
+def audit_verdict(audit: str) -> str | None:
+    """El veredicto de la última pasada: a qué árbol se le aplica."""
+    passes = audit_passes(audit)
+    return pass_verdict(passes[-1]) if passes else None
+
+def reopening_reason(audit: str) -> str | None:
+    """El motivo si la última pasada reabre la conciliación, o `None`.
+
+    Una reapertura no es un delta: la pasada dice que el árbol que se auditó
+    dejó de ser el árbol actual, así que el veredicto `coincide` no se hereda y
+    el siguiente paso es re-conciliar. El router no la confunde con un fallo de
+    implementación —que pediría `audit-stage` y un delta— ni la cuenta contra el
+    presupuesto de deltas.
+    """
+    passes = audit_passes(audit)
+    if not passes:
+        return None
+    match = REOPENING_RE.search(passes[-1])
+    return match.group(1).strip() if match else None
+
+def failed_pass(audit: str) -> bool:
+    """¿Hay una pasada `no coincide` que no sea una reapertura?
+
+    Un delta se justifica con un fallo, no con una reapertura: lo que la
+    reapertura pide es un baseline nuevo, y escribir un delta encima del viejo
+    sería corregir contra un criterio que ya se movió.
+    """
+    return any(
+        pass_verdict(body) == "no coincide" and not REOPENING_RE.search(body)
+        for body in audit_passes(audit)
+    )
 
 def delta_files(stage: Path) -> list[Path]:
     return sorted(
@@ -146,6 +194,7 @@ def analyze_stage(feature_root: Path, name: str, row: dict[str, str] | None) -> 
     stage_state = normalize((row or {}).get("Estado"))
     tasks_state = normalize(parse_state(tasks))
     verdict = audit_verdict(audit)
+    reopened = reopening_reason(audit)
     open_questions = bullets(section(conciliation, "Preguntas abiertas"))
     blockers: list[dict[str, str]] = []
 
@@ -163,7 +212,7 @@ def analyze_stage(feature_root: Path, name: str, row: dict[str, str] | None) -> 
     elif conc_state and conc_state not in CONCILIACION_ABIERTA + ("cerrada",):
         block("CONCILIACION_INVALIDA", f"estado de conciliación desconocido: {conc_state}", "corregir CONCILIACION.md")
 
-    if deltas and "no coincide" not in audit.lower():
+    if deltas and not failed_pass(audit):
         block(
             "DELTA_SIN_AUDIT",
             f"hay {len(deltas)} delta(s) sin una pasada de auditoría con veredicto no coincide",
@@ -184,7 +233,7 @@ def analyze_stage(feature_root: Path, name: str, row: dict[str, str] | None) -> 
             f"{len(deltas)} delta(s) con presupuesto {budget}: la corrección dejó de estar acotada",
             "reabrir la conciliación, aceptar el riesgo residual con owner, o detener la etapa",
         )
-    elif verdict == "no coincide" and len(deltas) >= budget:
+    elif verdict == "no coincide" and len(deltas) >= budget and not reopened:
         block(
             "PRESUPUESTO_DE_DELTAS_AGOTADO",
             f"{len(deltas)} delta(s) usados de {budget} y la auditoría sigue en no coincide",
@@ -229,6 +278,10 @@ def analyze_stage(feature_root: Path, name: str, row: dict[str, str] | None) -> 
         state, skill = DECISION, None
     elif not conciliation or conc_state in CONCILIACION_ABIERTA:
         state, skill = TRABAJANDO, "conciliate-stage"
+    elif reopened:
+        # La pasada reabrió la conciliación: el baseline se movió y lo que toca
+        # es re-conciliar, no implementar un delta sobre el criterio viejo.
+        state, skill = TRABAJANDO, "conciliate-stage"
     elif not tasks:
         state, skill = TRABAJANDO, "generate-stage-tasks"
     elif deltas and delta_state in ("", "pendiente", "en curso"):
@@ -257,6 +310,7 @@ def analyze_stage(feature_root: Path, name: str, row: dict[str, str] | None) -> 
             "tareas": tasks_state or "ausente",
             "auditoria": verdict or "ausente",
         },
+        "reabierta": reopened,
         "state": state,
         "siguiente": skill,
         "blockers": blockers,
@@ -352,6 +406,11 @@ def render_text(result: dict, all_stages: bool) -> str:
     lines.append(f"Riesgo: {result['riesgo']} · Deltas: {len(result['deltas'])}/{result['presupuesto_deltas']}")
     if result["deltas"]:
         lines.append("Deltas: " + ", ".join(result["deltas"]))
+    if result.get("reabierta"):
+        lines.append(
+            f"Reapertura: {result['reabierta']} → re-conciliar; no se abre delta "
+            "contra un baseline que se movió"
+        )
     if all_stages:
         lines.append("Otras etapas:")
         lines.extend(

@@ -26,9 +26,17 @@ El contexto no sobrevive a la compactación (P21). Un agente que retoma una etap
 
 ## Estados y baseline
 
-- Conciliación: `borrador-corte` → `abierta` → `cerrada`.
+- Conciliación: `borrador-corte` → `abierta` → `cerrada`. Una etapa ya cerrada puede volver a `abierta` por **reapertura** (ver abajo).
 - Etapa: `borrador` → `conciliando` → `lista` → `implementando` → `auditando` → `cerrada`; `bloqueada` requiere causa, desbloqueador, evidencia y próxima revisión.
 - `TAREAS.md` es la única lista principal. Un delta solo cierra una brecha contra el mismo baseline; un cambio de intención, alcance o CA reabre la conciliación y actualiza la lista principal.
+
+## Reapertura
+
+Una etapa cerrada reabre cuando el alcance que declaró se movió: otra etapa cambió un archivo que esta reclamaba, un cambio llegó al árbol después de la pasada que cerró, o la conciliación misma cambió de criterio. Un delta no cubre eso —corregiría contra un baseline que ya no es el vigente— y el presupuesto puede estar agotado.
+
+La reapertura se registra en una **pasada nueva** del `AUDIT.md` que declara `**Reapertura:** <motivo>` y `**Veredicto:** no coincide`, porque la conformidad que registró otra pasada pertenecía a otro árbol. Esa pasada no lleva `**Veredicto (calidad):**` —no cierra— ni testigos de evidencia nuevos; no abre delta y no consume presupuesto.
+
+Con la última pasada en `**Reapertura:**`, la etapa vuelve a `Conciliación: abierta` en `CONCILIACION.md` y en el índice, y su `Estado:` pasa a `implementando` (re-conciliando) conservando su `TAREAS.md`. `next_step.py` devuelve entonces `trabajando` con `conciliate-stage`, nunca `audit-stage`: lo siguiente es re-conciliar, no implementar. La etapa cierra cuando una pasada nueva vuelve a declarar `coincide` sobre el árbol resultante; el `no coincide` de la reapertura no se hereda como justificación de un delta.
 
 ## Campos obligatorios
 
@@ -47,6 +55,7 @@ El cierre exige **dos veredictos** (P18, B-38). `**Veredicto:** coincide | no co
 - `**Riesgo:** bajo | medio | alto` se congela al cerrar la conciliación. `alto` nombra los ítems concretos: datos, seguridad, contratos compartidos, concurrencia, entrega o huecos de prueba. El auditor puede subirlo en `AUDIT.md`; bajarlo reabre la conciliación.
 - Cada pasada registra `**Snapshot:**` con la salida exacta de `snapshot.py`. `exclude=` identifica el árbol de la feature y `.yerro/approvals.yml` para que ni la evidencia ni la firma invaliden su propio hash: el snapshot es del código auditado, no de los archivos que lo describen o lo aprueban. El validador excluye siempre `.yerro/approvals.yml`, así que un snapshot que no lo excluya no coincide aunque el árbol sea idéntico; la pasada se vuelve a tomar, no se reaudita. `snapshot.py` excluye también, por contrato, el índice del panel de la etapa (el `README.md` de la carpeta que tiene carpetas de etapa `NN-nombre` como hermanas, B-49): su fila de estado se escribe al cerrar y, dentro del snapshot, obligaría a una pasada nueva para cambiar una celda. Lo auditado es el árbol de la etapa; el índice se juzga por su contenido.
 - Un `coincide` solo vale para el snapshot que auditó. Si el árbol cambió, la pasada está obsoleta y se reaudita; no se reutiliza el veredicto para cerrar. `validate_stage.py <etapa> --repo <repo>` verifica esa coincidencia.
+- Una **reapertura** no se cuenta contra el presupuesto de deltas aunque la última pasada sea `no coincide`: no corrige un hueco del baseline, lo reemplaza. La excepción no alcanza a una pasada `no coincide` sin `**Reapertura:**`, que sigue bloqueando con el presupuesto agotado.
 - `**Presupuesto de deltas:**` se **deriva del riesgo**: `bajo → 2`, `medio → 1`, `alto → 1`. Un valor escrito distinto solo vale con `**Motivo del presupuesto:**`; sin motivo gana el derivado, tanto en `validate_stage.py` como en `next_step.py`. Agotado el presupuesto, si la auditoría sigue en `no coincide`, `next_step.py` devuelve `necesita-decision` con `PRESUPUESTO_DE_DELTAS_AGOTADO`: reabrir la conciliación, aceptar el riesgo residual con owner o detener la etapa. Escribir otro delta no es una salida.
 - **El presupuesto no funcional es un campo del corte (P7).** `**Presupuesto no funcional:**` declara, en cinco líneas, latencia, memoria, tamaño de artefacto, dependencias nuevas y rendimiento de la operación crítica. Cada línea se rellena o se marca `no aplica (motivo)`; `no aplica` sin razón es una línea vacía con más palabras, y conservar el `…` de la plantilla no responde. `validate_stage.py` exige las cinco respuestas y **no juzga el número**: el umbral lo acuerda el humano en la conciliación, `Verificar:` de cada tarea lo hereda y la auditoría lo mide contra el ledger. Una etapa que no puede responder una línea lo escribe con su motivo, no la omite.
 - **Prueba y revisión son dos ejes (P22).** Test-first, sensibilidad demostrada y suite de referencia se exigen siempre; el riesgo solo cambia la profundidad de la revisión. «Revisión independiente» es un auditor distinto del implementador cuando el host lo permite; si no, la aprobación humana en `.yerro/approvals.yml`. Riesgo `bajo` no compra menos prueba.
@@ -201,7 +210,8 @@ trabajo aceptado se aprende a saltar.
 - **Sujeto a revisión R-NN:** marca numerada de un ruling de categoría 2; exige una resolución con el mismo ID en `### Rulings revisados` del `AUDIT.md`.
 - **Snapshot:** identidad del árbol auditado: `head`, `tree`, `dirty` y `exclude`.
 - **Trazabilidad:** cadena `S-NN → CA-NN → T-NN → test → E-NN`.
-- **Veredicto:** resultado de una pasada: `coincide` o `no coincide`.
+- **Veredicto:** resultado de una pasada: `coincide` o `no coincide`. Manda la última pasada: una reapertura declara `no coincide` aunque una pasada anterior dijera `coincide`, y ese `coincide` no se reutiliza.
+- **Reapertura:** `**Reapertura:** <motivo>` en la última pasada del `AUDIT.md`: el alcance se movió después del árbol auditado y la etapa re-concilia. No es un delta ni consume presupuesto, y nunca lleva a `audit-stage`.
 - **Veredicto (calidad):** resultado de la pasada que cierra sobre las cuatro comprobaciones de calidad: `aceptable`, `con hallazgos` o `bloqueante`.
 - **E-NN:** evidencia reproducible registrada en el ledger de la pasada.
 

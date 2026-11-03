@@ -79,11 +79,16 @@ def fix_conciliation_state(root: Path) -> None:
 
 
 def justify_delta_with_verdict(root: Path, stage: str) -> None:
-    """DELTA_SIN_AUDIT: una pasada con veredicto no coincide justifica el delta."""
+    """DELTA_SIN_AUDIT: la pasada que cierra declara los deltas que auditó.
+
+    `01-sin-audit` no tiene una pasada previa: el delta no está abierto por un
+    `no coincide`, así que la salida que ofrece el router es declararlo en la
+    pasada, y eso es lo que se ejercita.
+    """
     path = root / stage / "AUDIT.md"
     text = path.read_text(encoding="utf-8") if path.exists() else "# Auditoría\n"
     text += "\n## Pasada 1\n\n**Snapshot:** head=0 tree=0 dirty=no exclude=ninguno\n"
-    text += "\n**Veredicto:** no coincide\n"
+    text += "\n**Deltas:** D1\n\n**Veredicto:** coincide\n"
     path.write_text(text, encoding="utf-8")
 
 
@@ -133,7 +138,7 @@ EXERCISED = {
     "COINCIDE_SIN_CIERRE": "cerrar la etapa en el índice",
     "CONCILIACION_AUSENTE": "crear la etapa",
     "CONCILIACION_INVALIDA": "corregir CONCILIACION.md",
-    "DELTA_SIN_AUDIT": "veredicto no coincide",
+    "DELTA_SIN_AUDIT": "declarar en la pasada los deltas",
     "DEPENDENCIA_ABIERTA": "cerrar la dependencia",
     "ETAPA_BLOQUEADA": "desbloquear con decisión del usuario",
     "INDICE_CERRADO_SIN_COINCIDE": "reauditar",
@@ -184,6 +189,7 @@ CASES = [
     ("sin-conciliacion", None, "CONCILIACION_AUSENTE", create_missing_conciliation),
     ("conciliacion-invalida", None, "CONCILIACION_INVALIDA", fix_conciliation_state),
     ("delta-huerfano", "01-sin-audit", "DELTA_SIN_AUDIT", justify_delta_with_verdict),
+    ("delta-huerfano", "03-cierre-sin-declarar", "DELTA_SIN_AUDIT", justify_delta_with_verdict),
     ("dependencia", "02-dependiente", "DEPENDENCIA_ABIERTA", close_dependency),
     ("bloqueada", None, "ETAPA_BLOQUEADA", register_unblocker),
     ("inconsistente", None, "INDICE_CERRADO_SIN_COINCIDE", reaudit),

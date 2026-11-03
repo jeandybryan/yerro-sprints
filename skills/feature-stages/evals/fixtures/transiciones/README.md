@@ -12,3 +12,4 @@ estado de los artefactos devuelve una única transición válida.
 | 05 | [05-auditando](05-auditando/CONCILIACION.md) | auditar | — | cerrada | auditando | — | TAREAS.md | AUDIT.md |
 | 06 | [06-cerrada](06-cerrada/CONCILIACION.md) | cerrada | — | cerrada | cerrada | — | TAREAS.md | AUDIT.md |
 | 07 | [07-delta](07-delta/CONCILIACION.md) | cerrar delta | — | cerrada | lista | TAREAS-delta-01.md | TAREAS.md | AUDIT.md |
+| 08 | [08-cerrada-con-delta](08-cerrada-con-delta/CONCILIACION.md) | cerrada | — | cerrada | cerrada | TAREAS-delta-01.md | TAREAS.md | AUDIT.md |

@@ -22,6 +22,7 @@ HERE = Path(__file__).resolve().parent
 FIXTURES = HERE.parent / "evals" / "fixtures"
 sys.path.insert(0, str(HERE))
 
+import next_step # noqa: E402
 from next_step import DECISION, DECLARADA_CERRADA, TRABAJANDO, VERIFICANDO, FeatureError, analyze  # noqa: E402
 import validate_stage  # noqa: E402
 
@@ -36,6 +37,10 @@ CASES = [
     ("transiciones", "06-cerrada", DECLARADA_CERRADA, None, []),
     ("cerrada-sin-contrato", None, DECLARADA_CERRADA, None, []),
     ("transiciones", "07-delta", TRABAJANDO, "implement-stage", []),
+    # Índice cerrado, última pasada `coincide` y delta auditado: el cierre ya
+    # ocurrió, así que el router no pide una reauditoría (la rama de deltas
+    # se evaluaba antes de la de cierre y no miraba el índice).
+    ("transiciones", "08-cerrada-con-delta", DECLARADA_CERRADA, None, []),
     ("transiciones", None, VERIFICANDO, "audit-stage", []),
     ("sin-tareas", None, TRABAJANDO, "generate-stage-tasks", []),
     ("abierta", None, DECISION, None, ["PREGUNTAS_ABIERTAS"]),
@@ -47,6 +52,9 @@ CASES = [
     ("cierre-pendiente", None, DECISION, None, ["COINCIDE_SIN_CIERRE"]),
     ("delta-huerfano", "01-sin-audit", DECISION, None, ["DELTA_SIN_AUDIT"]),
     ("delta-huerfano", "02-con-coincide", DECISION, None, ["DELTA_SIN_AUDIT", "COINCIDE_SIN_CIERRE"]),
+    # El cierre no declara el delta en `**Deltas:**`: un delta que ninguna
+    # pasada nombra sigue sin origen, aunque la etapa esté cerrada.
+    ("delta-huerfano", "03-cierre-sin-declarar", DECISION, None, ["DELTA_SIN_AUDIT"]),
     ("sin-conciliacion", None, DECISION, None, ["CONCILIACION_AUSENTE"]),
     ("conciliacion-invalida", None, DECISION, None, ["CONCILIACION_INVALIDA"]),
     ("sin-principal", None, DECISION, None, ["TAREA_NO_PRINCIPAL"]),
@@ -788,6 +796,50 @@ def check_reopening() -> None:
     if resolved["siguiente"] == "conciliate-stage":
         fail(f"reapertura-resuelta: la etapa cerrada vuelve a conciliar ({resolved['state']!r})")
 
+def check_delta_closure() -> None:
+    """Un delta se justifica por una pasada o por el cierre que lo declara.
+
+    Casos:
+    - positiva: el índice está en `cerrada`, la última pasada en `coincide` y
+      declara `**Deltas:** D1`; el router no pide reauditar y no bloquea el
+      delta (el cierre ya lo auditó);
+    - negativa: el mismo árbol sin la declaración en `**Deltas:**`; el delta
+      queda sin origen y `DELTA_SIN_AUDIT` vuelve a bloquear, así que la
+      exención se debe a la declaración y no a que el índice esté cerrado;
+    - negativa de prosa: nombrar los deltas en un párrafo no los declara.
+    """
+    global checked
+    closed = analyze(FIXTURES / "transiciones", "08-cerrada-con-delta")
+    checked += 1
+    if closed["state"] != DECLARADA_CERRADA:
+        fail(
+            "08-cerrada-con-delta: índice cerrado con la última pasada coincide y un "
+            f"delta auditado dio {closed['state']!r}"
+        )
+    checked += 1
+    if "DELTA_SIN_AUDIT" in {item["codigo"] for item in closed["blockers"]}:
+        fail("08-cerrada-con-delta: un cierre que declara el delta sigue sin justificarlo")
+
+    undeclared = analyze(FIXTURES / "delta-huerfano", "03-cierre-sin-declarar")
+    checked += 1
+    if "DELTA_SIN_AUDIT" not in {item["codigo"] for item in undeclared["blockers"]}:
+        fail("delta-huerfano/03: un cierre que no declara el delta lo da por auditado")
+
+    # Sin `declared_deltas` el router no distingue la declaración de la prosa;
+    # el caso lo dice en vez de romperse con un `AttributeError`, que no es
+    # evidencia de nada.
+    reader = getattr(next_step, "declared_deltas", None)
+    checked += 1
+    if reader is None:
+        fail("next_step no lee `**Deltas:**`: un delta solo puede justificarse con `no coincide`")
+    else:
+        checked += 1
+        if reader("## Pasada 1\n\nAudita los deltas 01 y 02.\n") != []:
+            fail("declared_deltas: la prosa que nombra «deltas» se cuenta como declaración")
+        checked += 1
+        if reader("## Pasada 1\n\n**Deltas:** D1, D2\n") != ["D1", "D2"]:
+            fail("declared_deltas: no lee `**Deltas:** D1, D2`")
+
 def main() -> int:
     check_transitions()
     check_doctor()
@@ -802,6 +854,7 @@ def main() -> int:
     check_behavioral_materialization()
     check_reconcile()
     check_reopening()
+    check_delta_closure()
     for error in errors:
         print(f"ERROR: {error}")
     if not errors:

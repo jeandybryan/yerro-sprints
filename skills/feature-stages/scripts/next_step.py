@@ -49,6 +49,10 @@ PASS_RE = re.compile(
     r"^##\s+Pasada\b.*?$(.*?)(?=^##\s+Pasada\b|\Z)", re.M | re.S | re.I
 )
 CIERRA_RE = re.compile(r"\*\*Cierra:\*\*\s*([^\n]+)", re.I)
+# Una pasada que cierra declara los deltas que auditó (`**Deltas:** D1, D2`).
+# Es la evidencia del delta, no la prosa: la palabra «deltas» aparece en un
+# informe sin declarar ninguno.
+DELTA_IDS_RE = re.compile(r"^\s*\*\*Deltas:\*\*\s*(.+?)\s*$", re.M | re.I)
 DELTA_RE = re.compile(r"^TAREAS-delta-(\d{2,})\.md$")
 DELTA_BUDGET_RE = re.compile(r"\*\*Presupuesto de deltas:\*\*\s*(\d+)", re.I)
 RISK_RE = re.compile(r"\*\*Riesgo:\*\*\s*(bajo|medio|alto)\b", re.I)
@@ -180,6 +184,34 @@ def failed_pass(audit: str) -> bool:
         for body in audit_passes(audit)
     )
 
+def declared_deltas(audit: str) -> list[str]:
+    """Los deltas que declaran las pasadas del `AUDIT.md`, por su ID (`D1`).
+
+    Un delta queda justificado por una pasada que lo abrió con `no coincide` o
+    por la pasada que lo cerró declarándolo: un delta de verificación no tiene
+    por qué fabricar un hueco para existir.
+    """
+    found: list[str] = []
+    for body in audit_passes(audit):
+        match = DELTA_IDS_RE.search(body)
+        if not match:
+            continue
+        for item in re.split(r"[,\s]+", match.group(1)):
+            if re.fullmatch(r"D\d+", item.strip(), re.I):
+                found.append(item.strip().upper())
+    return found
+
+def justified_delta(audit: str) -> bool:
+    """¿Alguna pasada justifica que exista un delta?
+
+    Lo justifica una pasada `no coincide` que no sea reapertura —abre un hueco
+    del baseline— o una pasada que cierra declarando en `**Deltas:**` los que
+    auditó: esa pasada dice a qué archivos aplica su conformidad, y su ledger
+    los mide. Lo que no lo justifica es un delta que ninguna pasada nombra;
+    `delta-huerfano/02` es el cierre que no declara ninguno.
+    """
+    return failed_pass(audit) or bool(declared_deltas(audit))
+
 def delta_files(stage: Path) -> list[Path]:
     return sorted(
         (path for path in stage.glob("TAREAS-delta-*.md") if DELTA_RE.match(path.name)),
@@ -216,11 +248,13 @@ def analyze_stage(feature_root: Path, name: str, row: dict[str, str] | None) -> 
     elif conc_state and conc_state not in CONCILIACION_ABIERTA + ("cerrada",):
         block("CONCILIACION_INVALIDA", f"estado de conciliación desconocido: {conc_state}", "corregir CONCILIACION.md")
 
-    if deltas and not failed_pass(audit):
+    if deltas and not justified_delta(audit):
         block(
             "DELTA_SIN_AUDIT",
-            f"hay {len(deltas)} delta(s) sin una pasada de auditoría con veredicto no coincide",
-            "audit-stage: justificar el delta con un veredicto no coincide antes de implementarlo",
+            f"hay {len(deltas)} delta(s) que ninguna pasada justifica: ni un "
+            "`no coincide` los abrió ni la pasada que cierra los declara en `**Deltas:**`",
+            "audit-stage: reauditar y declarar en la pasada los deltas que audita, "
+            "o retirar el delta si ningún criterio lo justifica",
         )
 
     budget_match = DELTA_BUDGET_RE.search(conciliation)
@@ -290,7 +324,11 @@ def analyze_stage(feature_root: Path, name: str, row: dict[str, str] | None) -> 
         state, skill = TRABAJANDO, "generate-stage-tasks"
     elif deltas and delta_state in ("", "pendiente", "en curso"):
         state, skill = TRABAJANDO, "implement-stage"
-    elif deltas and delta_state in ("implementada", "auditada"):
+    elif deltas and delta_state in ("implementada", "auditada") and stage_state != "cerrada":
+        # Con el índice en `cerrada` y la última pasada en `coincide`, el cierre
+        # ya ocurrió: reauditar un árbol sin cambios no es el siguiente paso. Si
+        # un delta no estaba auditado, la pasada no coincide o el índice no está
+        # cerrado, así que el gate no se rebaja: se deja de pedir trabajo hecho.
         state, skill = VERIFICANDO, "audit-stage"
     elif tasks_state in ("", "pendiente", "en curso") and stage_state == "auditando":
         state, skill = VERIFICANDO, "audit-stage"

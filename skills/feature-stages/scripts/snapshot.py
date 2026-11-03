@@ -20,6 +20,12 @@ etapa que documenta, y mantenerla dentro obliga a una pasada nueva para
 cambiar una celda. Lo que se audita es el árbol de la etapa; el índice se
 juzga por su contenido (estado y veredicto de la fila), no por identidad.
 
+S61: se excluyen **todas** las carpetas de etapa del panel, no solo la
+auditada. Si el snapshot de una etapa incluyera los documentos de las demás,
+escribirlos en la vecina cambiaría el árbol auditado y obligaría a repetir la
+pasada sin un cambio de código. Un archivo del panel que no es de etapa —un
+fichero compartido, código— sigue contando.
+
 Salida canónica, apta para pegar después de `**Snapshot:**`:
 
     head=<sha> tree=<sha> dirty=<si|no> exclude=<ninguno|a,b>
@@ -83,30 +89,57 @@ def _relative(root: Path, path: Path) -> str:
         raise SnapshotError(f"{path} queda fuera del repositorio {root}") from error
 
 
-def panel_index(path: Path) -> Path | None:
-    """Índice del panel al que pertenece una etapa, si lo hay.
+def panel_of(path: Path) -> Path | None:
+    """Carpeta del panel al que pertenece una etapa, si la hay.
 
-    El índice es el `README.md` de la carpeta que tiene, como hermanas,
-    carpetas de etapa (`NN-nombre`). Se reconoce por la forma del nombre y por
-    la vecindad, nunca por una ruta de un consumidor: el paquete no conoce sus
-    etapas. Solo se mira la propia carpeta y su padre, para no confundir
-    cualquier `README.md` de un antepasado ajeno con un índice de panel.
+    El panel es la carpeta que tiene, como hermanas, carpetas de etapa
+    (`NN-nombre`). Se reconoce por la forma del nombre y por la vecindad, nunca
+    por una ruta de un consumidor: el paquete no conoce sus etapas. Solo se
+    mira la propia carpeta y su padre, para no confundir cualquier carpeta con
+    subcarpetas `NN-nombre` con un panel.
     """
     start = path.resolve()
-    if not start.is_dir():
-        return None
-    for directory in (start, start.parent):
-        candidate = directory / "README.md"
-        if not candidate.is_file():
+    directory = start if start.is_dir() else start.parent
+    for candidate in (directory, directory.parent):
+        if not candidate.is_dir():
             continue
         siblings = [
             child
-            for child in directory.iterdir()
+            for child in candidate.iterdir()
             if child.is_dir() and STAGE_DIR_RE.match(child.name)
         ]
         if siblings:
             return candidate
     return None
+
+
+def documentation(path: Path, excludes: tuple[Path, ...]) -> set[Path]:
+    """Los documentos que no se auditan, aunque vivan en el mismo panel.
+
+    Todas las carpetas de etapa del panel —y su índice— son registro, no
+    código. Si el snapshot de una etapa incluyera los documentos de las
+    demás, escribir en la etapa vecina cambiaría el árbol auditado y
+    obligaría a repetir una pasada sin un cambio de código: fue lo que dejó
+    las pasadas 7 y 8 de las etapas 07 y 08 con un `tree=` que ningún commit
+    reproducía. Se excluye por forma y **solo** las carpetas `NN-nombre` y el
+    índice: un archivo que no es de etapa dentro del panel sigue contando.
+    """
+    found: set[Path] = set()
+    panels: set[Path] = set()
+    for item in (path, *excludes):
+        absolute = item if item.is_absolute() else Path.cwd() / item
+        panel = panel_of(absolute)
+        if panel is not None:
+            panels.add(panel)
+    for panel in panels:
+        if (panel / "README.md").is_file():
+            found.add(panel / "README.md")
+        found.update(
+            child
+            for child in panel.iterdir()
+            if child.is_dir() and STAGE_DIR_RE.match(child.name)
+        )
+    return found
 
 
 def identity(path: Path, excludes: tuple[Path, ...] = ()) -> str:
@@ -129,19 +162,19 @@ def identity(path: Path, excludes: tuple[Path, ...] = ()) -> str:
     # el snapshot de la etapa directamente es el mismo caso. Se reconocen por
     # forma (`NN-nombre`): ni el paquete ni el snapshot conocen los nombres de
     # las etapas de un consumidor.
-    stages = [
-        absolute
-        for absolute in (
-            path.resolve() if path.is_dir() else path.resolve().parent,
-            *(item if item.is_absolute() else root / item for item in excludes),
-        )
-        if absolute.is_dir() and STAGE_DIR_RE.match(absolute.name)
-    ]
-    panel_excludes = [
-        index for index in (panel_index(stage) for stage in stages) if index is not None
-    ]
-    if panel_excludes:
-        excludes = (*excludes, *panel_excludes)
+    # B-49/S61: el panel entero se excluye con la etapa. Las rutas se
+    # resuelven desde la raíz para no depender del directorio actual: la
+    # exclusión se compara después como ruta relativa al repositorio.
+    local = tuple(item if item.is_absolute() else root / item for item in excludes)
+    panels = documentation(path, local)
+    # Una exclusión que el panel ya cubre es ruido: la etapa auditada y su
+    # índice forman parte del panel excluido.
+    local = tuple(
+        item
+        for item in local
+        if not any(item == panel or panel in item.parents for panel in panels)
+    )
+    excludes = (*local, *sorted(panels))
     head = _run(root, ["rev-parse", "--verify", "HEAD"])
     head_sha = head.stdout.strip() if head.returncode == 0 else "sin-head"
     head_tree = None

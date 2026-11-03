@@ -146,11 +146,18 @@ def check_panel_index_excluded(repo: Path) -> None:
             f"auditado ({before!r} → {after!r})"
         )
 
+    # S61: la carpeta de la etapa es documentación (registro), así que
+    # escribirla tampoco cambia el árbol. El código que no es de etapa, sí.
     (panel / "01-export" / "AUDIT.md").write_text("pasada 1\npasada 2\n", encoding="utf-8")
+    changed_stage = identity(panel / "01-export")
+    checked += 1
+    if changed_stage != before:
+        fail("snapshot: escribir en la carpeta de la etapa cambió el árbol auditado")
+    (panel / "shared.yaml").write_text("k: v\n", encoding="utf-8")
     changed_code = identity(panel / "01-export")
     checked += 1
     if changed_code == before:
-        fail("snapshot: excluir el índice cegó también la etapa")
+        fail("snapshot: excluir el índice cegó también el código del panel")
 
     # Un `README.md` suelto, sin carpetas de etapa hermanas, no es un panel:
     # sigue contando, y su cambio sí rompe la identidad.
@@ -244,6 +251,70 @@ def validate(stage: Path, repo: Path) -> subprocess.CompletedProcess[str]:
         capture_output=True,
         text=True,
     )
+
+
+def check_whole_panel_excluded(repo: Path) -> None:
+    """Los documentos de las demás etapas no son código auditado.
+
+    El snapshot de una etapa excluía su propia carpeta y el índice del panel,
+    pero no las carpetas de las etapas vecinas: escribir el `AUDIT.md` de la
+    etapa 02 cambiaba el árbol que la etapa 01 había auditado, y cada pasada
+    de una etapa obligaba a repetir la de al lado. Se excluye el panel entero
+    por forma —todas las carpetas `NN-nombre` y su `README.md`— y el código
+    que viva en el mismo panel sigue contando.
+    """
+    global checked
+    panel = repo / "docs" / "panel"
+    for name in ("01-uno", "02-dos"):
+        (panel / name).mkdir(parents=True)
+        (panel / name / "AUDIT.md").write_text("pasada 1\n", encoding="utf-8")
+    (panel / "README.md").write_text("| etapa | estado |\n", encoding="utf-8")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-qm", "panel de dos etapas")
+
+    before = identity(panel / "01-uno")
+    checked += 1
+    if "exclude=" not in before or f"exclude=" not in before:
+        fail(f"snapshot: sin exclude= en la identidad: {before!r}")
+    # Todas las etapas del panel, no solo la auditada.
+    declared = before.split("exclude=", 1)[1]
+    checked += 1
+    if not {"01-uno", "02-dos", "README.md"} <= set(declared.replace("/", ",").split(",")):
+        fail(f"snapshot: el panel entero no viaja en exclude=: {before!r}")
+
+    (panel / "02-dos" / "AUDIT.md").write_text("pasada 2\n", encoding="utf-8")
+    after_neighbour = identity(panel / "01-uno")
+    checked += 1
+    if before != after_neighbour:
+        fail(
+            "snapshot: escribir en la etapa vecina cambió el árbol auditado "
+            f"({before!r} → {after_neighbour!r})"
+        )
+
+    (panel / "README.md").write_text("| etapa | estado |\n| 01-uno | cerrada |\n", encoding="utf-8")
+    after_index = identity(panel / "01-uno")
+    checked += 1
+    if before != after_index:
+        fail("snapshot: editar el índice del panel cambió el árbol auditado")
+
+    (panel / "01-uno" / "AUDIT.md").write_text("pasada 1\npasada 2\n", encoding="utf-8")
+    after_own = identity(panel / "01-uno")
+    checked += 1
+    if before != after_own:
+        fail("snapshot: escribir en la propia etapa cambió el árbol auditado")
+
+    # El código dentro del panel sigue contando: la exclusión es de documentos.
+    code = repo / "docs" / "panel" / "src.py"
+    code.write_text("uno\n", encoding="utf-8")
+    with_code = identity(panel / "01-uno")
+    checked += 1
+    if code_identity(with_code) == code_identity(after_own):
+        fail("snapshot: excluir el panel cegó también el código que contiene")
+
+    # Dos etapas del mismo panel ven el mismo árbol: no se condicionan entre sí.
+    checked += 1
+    if code_identity(identity(panel / "01-uno")) != code_identity(identity(panel / "02-dos")):
+        fail("snapshot: dos etapas del mismo panel no ven el mismo árbol de código")
 
 
 def check_validate(repo: Path) -> None:
@@ -530,6 +601,7 @@ def main() -> int:
         check_panel_index_excluded(repo)
         check_validate(repo)
         check_document_commit(repo)
+        check_whole_panel_excluded(repo)
         check_delta_scope(repo)
         sin_exclusion = Path(raw) / "sin-exclusion"
         sin_exclusion.mkdir()

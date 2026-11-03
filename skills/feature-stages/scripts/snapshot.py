@@ -223,18 +223,33 @@ def identity(path: Path, excludes: tuple[Path, ...] = ()) -> str:
 
 
 def code_identity(value: str) -> str:
-    """La parte de la identidad que describe el código auditado.
+    """La parte de la identidad que describe el código auditado: el árbol.
 
-    `tree=`, `dirty=` y `exclude=`. `head=` no entra: es el commit desde el
-    que se partió, y un commit que solo escribe rutas excluidas lo mueve sin
-    tocar el árbol auditado.
+    `tree=` (y el `dirty=` que se deriva de él). No entra `head=`, que es el
+    commit desde el que se partió, ni `exclude=`, que es la lista con la que
+    se calculó: el árbol es content-addressable, así que dos listas distintas
+    que dejen el mismo contenido son la misma identidad. Comparar la lista
+    hacía que dar de alta la etapa 03 invalidara la pasada de la 01 —el
+    `exclude=` crece con una carpeta y el árbol no cambia—.
     """
-    parts = SNAPSHOT_VALUE_RE.match(value.strip())
+    parts = SNAPSHOT_VALUE_RE.search(value.strip())
     if not parts:
         return value.strip().lower()
-    return " ".join(
-        parts.group(name).lower() for name in ("tree", "dirty", "exclude")
-    )
+    return " ".join(parts.group(name).lower() for name in ("tree", "dirty"))
+
+
+TREE_RE = re.compile(r"tree=(?P<tree>[0-9a-f]{4,64})")
+
+
+def tree_of(value: str) -> str | None:
+    """El `tree=` de una identidad o de un alcance (`tree=<sha>`), si lo hay.
+
+    Sirve para anclar una aprobación al árbol auditado sin repetir el commit
+    de partida: la persona firma `alcance: tree=<sha>` y la firma sigue
+    valiendo mientras el árbol no cambie.
+    """
+    found = TREE_RE.search(value.strip().lower())
+    return found.group("tree") if found else None
 
 
 SNAPSHOT_VALUE_RE = re.compile(

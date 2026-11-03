@@ -230,16 +230,10 @@ def snapshot_mismatch(recorded: str, current: str) -> str:
         "`snapshot.py <repo> --exclude <feature-root> "
         f"--exclude {DEFAULT_APPROVALS}`"
     )
-    if same_tree and not same_excludes and missing_approvals:
-        return (
-            f"el snapshot grabado {recorded} no excluye {DEFAULT_APPROVALS}, que el "
-            "validador excluye siempre. El árbol auditado es el mismo, así que no hace "
-            f"falta reauditar: vuelve a tomar el snapshot con {command}"
-        )
     if same_tree and not same_head:
         return (
             f"la pasada auditó {recorded} y el árbol actual es {current}; el árbol "
-            f"auditado es el mismo (tree= y exclude= coinciden) y solo cambió el "
+            f"auditado es el mismo (tree= coincide) y solo cambió el "
             f"commit de partida, que no forma parte de la identidad"
         )
     if same_tree and same_head:
@@ -251,9 +245,9 @@ def snapshot_mismatch(recorded: str, current: str) -> str:
             f"(el validador lo excluye siempre): {command}"
         )
     return (
-        f"la pasada auditó {recorded} y el árbol actual es {current}; la identidad no "
-        "coincide: cambió el contenido del árbol o la lista de exclusiones de contrato "
-        "(el índice del panel de la etapa se excluye por contrato, B-49). Hay que reauditar."
+        f"la pasada auditó {recorded} y el árbol actual es {current}; el árbol auditado "
+        "cambió, así que hay que reauditar sobre el contenido actual. La identidad es el "
+        f"árbol (`tree=`), no el commit ni la lista de exclusiones: {command}"
     )
 
 
@@ -341,6 +335,17 @@ def declared_runners(conciliation: str) -> list[str]:
     if not match:
         return []
     return [item.strip() for item in re.split(r"[|,]", match.group(1)) if item.strip()]
+
+
+def declares_approvals(snapshot: str) -> bool:
+    """¿La pasada declara que excluyó el archivo de aprobación?
+
+    El validador lo excluye siempre. Si la línea grabada no lo nombra, el árbol
+    auditado sigue siendo el actual —la exclusión se aplica igual— pero el
+    snapshot miente sobre cómo se calculó: se avisa y no se bloquea.
+    """
+    declared = str(DEFAULT_APPROVALS).replace("\\", "/").lower()
+    return any(str(item).replace("\\", "/").lower() == declared for item in parse_excludes(snapshot))
 
 
 def is_runner(command: str, runners: list[str]) -> bool:
@@ -1000,10 +1005,18 @@ def main() -> int:
             except SnapshotError as error:
                 result.warnings.append(f"no se pudo verificar el snapshot: {error}")
             else:
+                same_tree_now = same_identity(recorded, current)
                 result.require(
-                    same_identity(recorded, current),
+                    same_tree_now,
                     snapshot_mismatch(recorded, current),
                 )
+                if same_tree_now and not declares_approvals(recorded):
+                    result.warnings.append(
+                        f"el snapshot grabado no excluye {DEFAULT_APPROVALS}, que el "
+                        "validador excluye siempre. El árbol auditado es el mismo, así que "
+                        "la pasada vale; vuelve a tomar el snapshot la próxima vez: "
+                        f"`snapshot.py <repo> --exclude <feature-root> --exclude {DEFAULT_APPROVALS}`"
+                    )
                 result.require(
                     checkpoint_approval(args.repo, stage, recorded),
                     f"ninguna aprobación humana en {DEFAULT_APPROVALS} cubre la etapa "

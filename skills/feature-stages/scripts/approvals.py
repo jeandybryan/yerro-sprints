@@ -13,11 +13,14 @@ agente edita:
 - etapa: 01-export
   aprobado-por: Ana Ruiz
   fecha: 2026-10-22
-  alcance: 3f9c1e2
+  alcance: tree=<sha>
 ```
 
-`fecha` es la fecha de la aprobación; `alcance` es, opcionalmente, el prefijo
-del snapshot que se aprueba. Sin `alcance`, la aprobación cubre la etapa entera.
+`fecha` es la fecha de la aprobación; `alcance` es, opcionalmente, el árbol
+que se aprueba (`tree=<sha>`). Se compara con el `tree=` del snapshot, así
+que la firma sigue valiendo mientras el código no cambie, aunque un commit de
+documentos mueva `head=`. Un prefijo literal del snapshot se sigue aceptando
+para las firmas anteriores. Sin `alcance`, la aprobación cubre la etapa entera.
 
 Formato: lista de bloques `clave: valor`. Se lee sin PyYAML para no añadir una
 dependencia al paquete.
@@ -33,6 +36,8 @@ import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+
+from snapshot import tree_of
 
 DEFAULT_PATH = Path(".yerro") / "approvals.yml"
 ENTRY_RE = re.compile(r"^\s*-\s*(\w[\w-]*)\s*:\s*(.*)$")
@@ -51,10 +56,20 @@ class Approval:
     scope: str = ""
 
     def covers(self, snapshot: str) -> bool:
-        """¿La aprobación cubre este snapshot? Sin alcance, cubre la etapa."""
+        """¿La aprobación cubre este snapshot? Sin alcance, cubre la etapa.
+
+        El alcance se compara con el **árbol auditado**, no con la línea
+        literal: `alcance: tree=<sha>` cubre toda pasada de ese árbol, aunque
+        un commit de documentos haya movido `head=` (que no forma parte de la
+        identidad). Un prefijo literal se sigue aceptando para las firmas
+        anteriores a S62, que anclaban el `head=`.
+        """
         if not self.scope:
             return True
-        return snapshot.lower().startswith(self.scope.lower())
+        if snapshot.lower().startswith(self.scope.lower()):
+            return True
+        wanted = tree_of(self.scope)
+        return wanted is not None and wanted == tree_of(snapshot)
 
 
 def parse(text: str) -> list[Approval]:

@@ -317,6 +317,50 @@ def check_whole_panel_excluded(repo: Path) -> None:
         fail("snapshot: dos etapas del mismo panel no ven el mismo árbol de código")
 
 
+def check_new_stage_does_not_invalidate(repo: Path) -> None:
+    """Una etapa nueva en el panel no invalida la pasada de las anteriores.
+
+    El snapshot enumera las carpetas de etapa que excluye, así que crear la
+    etapa 02 alarga la línea `exclude=` sin cambiar el árbol auditado.
+    Comparar la línea literal convertía ese alta en una reauditoría de todas
+    las etapas: la 01 y la 02 quedaban mirando el mismo árbol de código con
+    dos `exclude=` distintos, y ninguna de las dos había perdido una línea
+    de código. La lista de exclusión dice lo mismo con una carpeta más.
+    """
+    global checked
+    panel = repo / "docs" / "otro-panel"
+    (panel / "01-uno").mkdir(parents=True)
+    (panel / "01-uno" / "AUDIT.md").write_text("pasada 1\n", encoding="utf-8")
+    (panel / "README.md").write_text("| etapa | estado |\n", encoding="utf-8")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-qm", "panel de una etapa")
+    before = identity(panel / "01-uno")
+
+    (panel / "02-dos").mkdir()
+    (panel / "02-dos" / "CONCILIACION.md").write_text("nueva etapa\n", encoding="utf-8")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-qm", "alta de la etapa 02")
+    after = identity(panel / "01-uno")
+
+    # La fixture tiene que mover la lista de exclusión, o no prueba lo que dice.
+    checked += 1
+    if "02-dos" not in after.split("exclude=", 1)[1]:
+        fail("snapshot: la etapa nueva no aparece en exclude=; la fixture no prueba nada")
+    checked += 1
+    if before.split("exclude=", 1)[1] == after.split("exclude=", 1)[1]:
+        fail("snapshot: la lista de exclusiones no cambió al crear una etapa")
+    checked += 1
+    if not same_identity(before, after):
+        fail(
+            "validate: crear una etapa invalidó la pasada de la vecina "
+            f"({before!r} → {after!r})"
+        )
+    # El árbol no cambió: es la misma pasada, no otra.
+    checked += 1
+    if code_identity(before) != code_identity(after):
+        fail("snapshot: la etapa nueva cambió la identidad del árbol auditado")
+
+
 def check_validate(repo: Path) -> None:
     global checked
     stage = repo / "feature" / "01-snapshot"
@@ -364,6 +408,44 @@ def check_validate(repo: Path) -> None:
     approvals.write_text(
         f"- etapa: 01-snapshot\n  aprobado-por: Ana\n  fecha: 2026-10-23\n", encoding="utf-8"
     )
+
+    # Una aprobación se ancla al árbol auditado, no al commit desde el que se
+    # partió: firma con `alcance: tree=<sha>` y cubre la pasada aunque un commit
+    # de documentos haya movido `head=`.
+    tree = snapshot.split("tree=", 1)[1].split(" ", 1)[0]
+    approvals.write_text(
+        f"- etapa: 01-snapshot\n aprobado-por: Ana\n fecha: 2026-11-03\n alcance: tree={tree}\n",
+        encoding="utf-8",
+    )
+    (stage / "AUDIT.md").write_text(
+        AUDIT.format(snapshot=snapshot) + "\n## Pasada 2 — nota\n", encoding="utf-8"
+    )
+    git(repo, "add", "--", "feature/01-snapshot/AUDIT.md")
+    git(repo, "commit", "-qm", "nota de la etapa")
+    checked += 1
+    signed_tree = validate(stage, repo)
+    if signed_tree.returncode != 0:
+        fail(
+            "validate --repo: una firma por árbol no cubrió la pasada tras un "
+            f"commit de documentos: {signed_tree.stdout}"
+        )
+    # Y un alcance con otro árbol no cubre.
+    approvals.write_text(
+        f"- etapa: 01-snapshot\n aprobado-por: Ana\n fecha: 2026-11-03\n alcance: tree={'0' * 40}\n",
+        encoding="utf-8",
+    )
+    checked += 1
+    wrong_tree = validate(stage, repo)
+    if wrong_tree.returncode == 0:
+        fail("validate --repo: una firma con otro árbol cerró la etapa")
+    approvals.write_text(
+        "- etapa: 01-snapshot\n aprobado-por: Ana\n fecha: 2026-10-23\n",
+        encoding="utf-8",
+    )
+    # La pasada se vuelve a grabar sobre el árbol actual: la nota de la etapa
+    # está excluida del árbol y el head ya no es el de la firma.
+    snapshot = identity(repo, (Path("feature"), APPROVALS))
+    audit.write_text(AUDIT.format(snapshot=snapshot), encoding="utf-8")
 
     (repo / "src.txt").write_text("tres\n", encoding="utf-8")
     checked += 1
@@ -547,15 +629,23 @@ def check_missing_approval_exclusion(repo: Path) -> None:
     audit = stage / "AUDIT.md"
 
     # Sin `.yerro/approvals.yml` en el repositorio: el árbol es el mismo y lo
-    # único distinto es la lista de exclusiones.
+    # único distinto es la lista de exclusiones. S62: la identidad es el árbol,
+    # así que la pasada vale; la línea que no nombra la exclusión se avisa,
+    # porque miente sobre cómo se calculó el árbol, pero no bloquea.
     snapshot = identity(repo, (Path("feature"),))
     audit.write_text(AUDIT.format(snapshot=snapshot), encoding="utf-8")
     checked += 1
     missing = validate(stage, repo)
-    if missing.returncode == 0:
-        fail("validate --repo: aceptó un snapshot sin excluir .yerro/approvals.yml")
-    elif "no hace falta reauditar" not in missing.stdout:
-        fail(f"validate --repo: no explicó que solo falta reexcluir: {missing.stdout}")
+    if "no excluye .yerro/approvals.yml" not in missing.stdout:
+        fail(f"validate --repo: no avisó que la pasada no declara la exclusión: {missing.stdout}")
+    # Y no bloquea por eso: el único error que queda es la firma que falta.
+    blockers = [line for line in missing.stdout.splitlines() if line.startswith("ERROR:")]
+    checked += 1
+    if len(blockers) != 1 or "ninguna aprobación humana" not in blockers[0]:
+        fail(
+            "validate --repo: la lista de exclusiones sigue bloqueando un árbol idéntico: "
+            f"{missing.stdout}"
+        )
 
     # El flujo real escribe la aprobación antes de auditar. Si la pasada no
     # excluye el archivo, su árbol lo incluye y el actual no: el mensaje debe
@@ -602,6 +692,7 @@ def main() -> int:
         check_validate(repo)
         check_document_commit(repo)
         check_whole_panel_excluded(repo)
+        check_new_stage_does_not_invalidate(repo)
         check_delta_scope(repo)
         sin_exclusion = Path(raw) / "sin-exclusion"
         sin_exclusion.mkdir()

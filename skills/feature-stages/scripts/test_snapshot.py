@@ -429,6 +429,19 @@ def check_validate(repo: Path) -> None:
             "validate --repo: una firma por árbol no cubrió la pasada tras un "
             f"commit de documentos: {signed_tree.stdout}"
         )
+    # El árbol se puede firmar en forma corta, como `git rev-parse --short`:
+    # es lo que una persona escribe al leer `tree=152c3474` en la pasada.
+    approvals.write_text(
+        f"- etapa: 01-snapshot\n aprobado-por: Ana\n fecha: 2026-11-03\n alcance: tree={tree[:8]}\n",
+        encoding="utf-8",
+    )
+    checked += 1
+    short_tree = validate(stage, repo)
+    if short_tree.returncode != 0:
+        fail(
+            "validate --repo: una firma con el árbol en forma corta no cubrió la pasada: "
+            f"{short_tree.stdout}"
+        )
     # Y un alcance con otro árbol no cubre.
     approvals.write_text(
         f"- etapa: 01-snapshot\n aprobado-por: Ana\n fecha: 2026-11-03\n alcance: tree={'0' * 40}\n",

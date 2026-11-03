@@ -58,6 +58,8 @@ CASES = [
     # La pasada que reabre no pide delta ni rutea a auditar: pide re-conciliar.
     ("reapertura-auditoria", None, TRABAJANDO, "conciliate-stage", []),
     ("presupuesto-excedido-reabierto", None, DECISION, None, ["PRESUPUESTO_DE_DELTAS_AGOTADO"]),
+    # Una pasada que cierra y cita la reapertura que resolvió no reabre nada.
+    ("reapertura-resuelta", None, DECLARADA_CERRADA, None, []),
 ]
 
 def fail(message: str) -> None:
@@ -774,6 +776,17 @@ def check_reopening() -> None:
     checked += 1
     if healthy.returncode != 0:
         fail(f"doctor/reapertura-auditoria: salida {healthy.returncode} sobre el árbol coherente: {healthy.stdout}")
+
+    # La marca solo reabre si la pasada no cierra. La pasada 3 de esta fixture
+    # cierra y cita la reapertura que resolvió: leer la marca sin el veredicto
+    # deja una etapa cerrada en `conciliate-stage`.
+    resolved = analyze(FIXTURES / "reapertura-resuelta", None)
+    checked += 1
+    if resolved.get("reabierta"):
+        fail("reapertura-resuelta: una pasada `coincide` que cita la reapertura se lee como reapertura")
+    checked += 1
+    if resolved["siguiente"] == "conciliate-stage":
+        fail(f"reapertura-resuelta: la etapa cerrada vuelve a conciliar ({resolved['state']!r})")
 
 def main() -> int:
     check_transitions()

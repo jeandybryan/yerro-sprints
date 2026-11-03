@@ -161,6 +161,10 @@ def reopening_reason(audit: str) -> str | None:
     passes = audit_passes(audit)
     if not passes:
         return None
+    # La marca solo cuenta si la pasada NO cierra: una pasada que declara
+    # `coincide` y cita la reapertura que resolvió no reabre nada.
+    if pass_verdict(passes[-1]) != "no coincide":
+        return None
     match = REOPENING_RE.search(passes[-1])
     return match.group(1).strip() if match else None
 
@@ -172,7 +176,7 @@ def failed_pass(audit: str) -> bool:
     sería corregir contra un criterio que ya se movió.
     """
     return any(
-        pass_verdict(body) == "no coincide" and not REOPENING_RE.search(body)
+        pass_verdict(body) == "no coincide" and reopening_reason(body) is None
         for body in audit_passes(audit)
     )
 

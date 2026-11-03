@@ -100,6 +100,12 @@ updates the principal list; it is not a delta. When the finding only closes a
 gap against the unchanged baseline, it becomes the next delta while the frozen
 budget lasts.
 
+When the scope moved **after** the tree a previous pass audited —another stage
+changed a file this one claimed— record the reopening in a new pass with
+`**Reapertura:** <motivo>` and `**Veredicto:** no coincide`: the earlier
+`coincide` belonged to another tree. That pass has no quality verdict, opens no
+delta and does not spend budget; the next step is `conciliate-stage`.
+
 ## Verdict
 
 Two verdicts, and both must be positive to close (B-38).

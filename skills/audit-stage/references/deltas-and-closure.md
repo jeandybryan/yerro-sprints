@@ -18,3 +18,18 @@ Para un gap contra el baseline sin cambios:
 
 Nunca escribas un delta adicional para evitar la decisión ni edites la
 conciliación para que el código parezca cumplir.
+
+## Reapertura
+
+Si el alcance se movió **después** del árbol que auditó una pasada anterior
+—otra etapa tocó un archivo que esta reclamaba, o la conciliación cambió de
+criterio—, la corrección no es un delta: es una reapertura. Escribe una pasada
+nueva con `**Reapertura:** <motivo>` y `**Veredicto:** no coincide`; no lleves
+`**Veredicto (calidad):**`, no abras delta y no consumas presupuesto. La pasada
+dice por qué la conformidad anterior ya no cubre el árbol actual; el `coincide`
+de la pasada vieja no se hereda.
+
+Después re-concilia el alcance (`CONCILIACION.md` a `abierta`, índice a
+`implementando`) y audita otra vez cuando haya un árbol nuevo. `next_step.py`
+devuelve `trabajando` con `conciliate-stage` mientras la última pasada declare
+la reapertura; si el índice sigue en `cerrada`, `doctor.py` lo rechaza.

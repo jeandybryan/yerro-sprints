@@ -97,6 +97,9 @@ Sin `**Reapertura:**`, un `no coincide` con el presupuesto agotado pide delta o
 detiene la etapa; con ella, la etapa vuelve a `conciliando` y el siguiente paso
 es `conciliate-stage`. No consume presupuesto.
 
+La marca solo vale en una pasada que **no** cierra: una pasada `coincide` que
+menciona la reapertura que resolvió es una pasada de cierre y no reabre nada.
+
 ## Trazabilidad y test-first
 
 - Cada decisión acordada tiene un ID estable `S-NN`, cita verbal exacta cuando la haya, fecha, motivo y consecuencias. No se recicla un ID para otra decisión.

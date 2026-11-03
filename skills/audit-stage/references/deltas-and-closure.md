@@ -10,7 +10,11 @@ Para un gap contra el baseline sin cambios:
    (`bajo → 2`, `medio → 1`, `alto → 1`) salvo `**Motivo del presupuesto:**`;
 2. si queda presupuesto, crea solo el `TAREAS-delta-NN.md` necesario y enlaza
    pasada, CA y evidencia/hueco; cada tarea del delta declara `**Archivos:**`,
-   `Test-first:`, `Test:` y `Verificar:`, como cualquier tarea principal;
+   `Test-first:`, `Test:` y `Verificar:`, como cualquier tarea principal. La
+   pasada que lo cierra lo declara en `**Deltas:**` con su ID (`D1`, `D2`):
+   un delta que ninguna pasada abre ni declara no tiene origen, y nombrarlo
+   en prosa no cuenta. Un delta de verificación —el que existe para demostrar,
+   no para corregir— se justifica precisamente así;
 3. si el presupuesto se agotó, detén el ciclo y pide decisión: reabrir
    conciliación, aceptar riesgo residual con owner o bloquear la etapa;
 4. después de implementar, audita nuevamente contra `TAREAS.md`, no solo contra

@@ -7,6 +7,7 @@
 
 **Contra:** TAREAS.md (principal)
 **Snapshot:** head=… tree=… dirty=… exclude=…
+<!-- head= es el commit de partida; la identidad auditada es tree= + dirty= + exclude=. -->
 **Riesgo auditado:** bajo | medio | alto
 **Trazabilidad:** S-01 → CA-01 → T1 → <test> → E-01
 **Baseline:** conciliación cerrada <fecha>; origen de tareas <fecha>; entorno <entorno/configuración relevante>

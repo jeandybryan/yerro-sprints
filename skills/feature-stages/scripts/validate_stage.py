@@ -20,7 +20,7 @@ from approvals import (  # noqa: E402
     ApprovalError,
     load as load_approvals,
 )
-from snapshot import SnapshotError, identity, repo_root  # noqa: E402
+from snapshot import SnapshotError, code_identity, identity, repo_root # noqa: E402
 from diff_scope import ( # noqa: E402
     ARCHIVOS_RE,
     DELTA_NAME_RE,
@@ -190,6 +190,19 @@ SNAPSHOT_PARTS_RE = re.compile(
     re.I,
 )
 
+def same_identity(recorded: str, current: str) -> bool:
+    """¿Las dos líneas describen el mismo árbol auditado?
+
+    Se delega en `snapshot.code_identity`: la identidad es `tree=`, `dirty=`
+    y `exclude=`, y `head=` es el commit desde el que se partió. Comparar
+    `head=` hace que un commit que solo escribe la etapa, el índice del panel
+    o la aprobación —rutas excluidas del árbol— invalide una pasada que
+    auditó exactamente el mismo código, y manda a reauditar sin que nada
+    haya cambiado.
+    """
+    return code_identity(recorded) == code_identity(current)
+
+
 def snapshot_mismatch(recorded: str, current: str) -> str:
     """Explica la diferencia en vez de mandar a reauditar sin salida.
 
@@ -203,7 +216,11 @@ def snapshot_mismatch(recorded: str, current: str) -> str:
     after = SNAPSHOT_PARTS_RE.search(current)
     if not before or not after:
         return f"la pasada auditó {recorded} y el árbol actual es {current}; reauditar"
-    same_tree = before.group("head", "tree", "dirty") == after.group("head", "tree", "dirty")
+    same_tree = (
+        before.group("tree").lower() == after.group("tree").lower()
+        and before.group("dirty").lower() == after.group("dirty").lower()
+    )
+    same_head = before.group("head").lower() == after.group("head").lower()
     same_excludes = before.group("exclude").lower() == after.group("exclude").lower()
     declared = {
         item for item in before.group("exclude").lower().split(",") if item and item != "ninguno"
@@ -219,7 +236,13 @@ def snapshot_mismatch(recorded: str, current: str) -> str:
             "validador excluye siempre. El árbol auditado es el mismo, así que no hace "
             f"falta reauditar: vuelve a tomar el snapshot con {command}"
         )
-    if same_tree:
+    if same_tree and not same_head:
+        return (
+            f"la pasada auditó {recorded} y el árbol actual es {current}; el árbol "
+            f"auditado es el mismo (tree= y exclude= coinciden) y solo cambió el "
+            f"commit de partida, que no forma parte de la identidad"
+        )
+    if same_tree and same_head:
         return f"la pasada auditó {recorded} y el árbol actual es {current}; reauditar"
     if missing_approvals:
         return (
@@ -978,7 +1001,7 @@ def main() -> int:
                 result.warnings.append(f"no se pudo verificar el snapshot: {error}")
             else:
                 result.require(
-                    recorded.lower() == current.lower(),
+                    same_identity(recorded, current),
                     snapshot_mismatch(recorded, current),
                 )
                 result.require(

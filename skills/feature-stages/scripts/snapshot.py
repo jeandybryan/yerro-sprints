@@ -24,6 +24,10 @@ Salida canónica, apta para pegar después de `**Snapshot:**`:
 
     head=<sha> tree=<sha> dirty=<si|no> exclude=<ninguno|a,b>
 
+`tree=` es la identidad del código auditado; `head=` es el commit desde el que
+se partió. Un commit que solo toca rutas excluidas mueve `head` y deja `tree=`
+igual: el árbol auditado no cambió, y la pasada sigue siendo válida.
+
 Salida: 0 si calcula la identidad; 2 si la ruta no está en un repositorio git.
 """
 from __future__ import annotations
@@ -106,7 +110,17 @@ def panel_index(path: Path) -> Path | None:
 
 
 def identity(path: Path, excludes: tuple[Path, ...] = ()) -> str:
-    """Identidad canónica del árbol de trabajo en `path`."""
+    """Identidad canónica del árbol de trabajo en `path`.
+
+    Con el árbol sucio la identidad es **el árbol de código**: el `tree=` y la
+    lista de exclusiones. El `head=` describe el commit desde el que se
+    empezó, no lo que se auditó: quien commitea la documentación de la etapa
+    —que está excluida— o el índice del panel cambia `head` sin cambiar una
+    línea del código auditado, y volver a auditar por eso pedía repetir una
+    pasada sobre el mismo árbol (fue lo que pasó con las pasadas 7 y 8 de las
+    etapas 07 y 08). Se graba igual para saber de dónde se partió, y el
+    validador no lo compara.
+    """
     if not path.exists():
         raise SnapshotError(f"{path} no existe")
     root = repo_root(path)
@@ -173,6 +187,26 @@ def identity(path: Path, excludes: tuple[Path, ...] = ()) -> str:
         dirty = tree != EMPTY_TREE
     excluded = ",".join(relative_excludes) if relative_excludes else "ninguno"
     return f"head={head_sha} tree={tree} dirty={'si' if dirty else 'no'} exclude={excluded}"
+
+
+def code_identity(value: str) -> str:
+    """La parte de la identidad que describe el código auditado.
+
+    `tree=`, `dirty=` y `exclude=`. `head=` no entra: es el commit desde el
+    que se partió, y un commit que solo escribe rutas excluidas lo mueve sin
+    tocar el árbol auditado.
+    """
+    parts = SNAPSHOT_VALUE_RE.match(value.strip())
+    if not parts:
+        return value.strip().lower()
+    return " ".join(
+        parts.group(name).lower() for name in ("tree", "dirty", "exclude")
+    )
+
+
+SNAPSHOT_VALUE_RE = re.compile(
+    r"head=(?P<head>\S+)\s+tree=(?P<tree>\S+)\s+dirty=(?P<dirty>\S+)\s+exclude=(?P<exclude>\S+)"
+)
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -22,7 +22,11 @@ sys.path.insert(0, str(HERE))
 
 APPROVALS = Path(".yerro") / "approvals.yml"
 
-from snapshot import SnapshotError, identity  # noqa: E402
+from snapshot import SnapshotError, code_identity, identity # noqa: E402
+import validate_stage # noqa: E402
+
+same_identity = validate_stage.same_identity
+snapshot_mismatch = validate_stage.snapshot_mismatch
 
 errors: list[str] = []
 checked = 0
@@ -339,6 +343,69 @@ def check_validate(repo: Path) -> None:
         fail(f"validate --repo: rechazó por otro motivo: {committed_scope.stdout}")
 
 
+def check_document_commit(repo: Path) -> None:
+    """Commitea un documento de la etapa sin tocar el árbol auditado.
+
+    Un commit que solo escribe dentro de las rutas excluidas —la etapa, el
+    índice del panel, la aprobación— deja el mismo árbol de código en otro
+    `head`. La identidad tiene que seguir siendo la misma: si el `head` entra
+    en la comparación, cada corrección de documento invalida la pasada y pide
+    reauditar un árbol que no cambió, que es lo que pasó en la etapa 07 del
+    consumidor.
+    """
+    global checked
+    stage = repo / "feature" / "01-snapshot"
+    audit = stage / "AUDIT.md"
+    audit.write_text("# Auditoría\n\nanotación\n", encoding="utf-8")
+    (repo / ".yerro" / "approvals.yml").write_text(
+        "- etapa: 01-snapshot\n aprobado-por: Ana\n fecha: 2026-11-03\n", encoding="utf-8"
+    )
+    git(repo, "add", "-A")
+    git(repo, "commit", "-qm", "documento")
+    document = identity(repo, (Path("feature"), APPROVALS))
+    head_only = identity(repo, ())
+    # Commit solo dentro de las excluidas: otra nota de la etapa.
+    audit.write_text("# Auditoría\n\nanotación\nmás\n", encoding="utf-8")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-qm", "otra anotación")
+    same_tree = identity(repo, (Path("feature"), APPROVALS))
+    checked += 1
+    if head_only[:head_only.index(" tree=")] == same_tree[:same_tree.index(" tree=")]:
+        fail("snapshot: la fixture no movió HEAD; no prueba lo que dice probar")
+    checked += 1
+    if code_identity(document) != code_identity(same_tree):
+        fail(
+            "snapshot: un commit que solo toca rutas excluidas cambió la identidad "
+            f"({document!r} → {same_tree!r})"
+        )
+    # El `head=` grabado sigue describiendo de dónde se partió, pero no es la
+    # identidad: el validador no rechaza el mismo árbol por otro commit.
+    checked += 1
+    if not same_identity(document, same_tree):
+        fail(
+            "validate: el mismo árbol en otro commit cuenta como pasada obsoleta "
+            f"({document!r} → {same_tree!r})"
+        )
+    checked += 1
+    if "solo cambió el commit de partida" not in snapshot_mismatch(document, same_tree):
+        fail("validate: el mismo árbol en otro commit no se explica por el commit de partida")
+
+    # Un commit que sí toca el código sigue invalidando la pasada.
+    (repo / "src.txt").write_text("cuatro\n", encoding="utf-8")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-qm", "código")
+    code = identity(repo, (Path("feature"), APPROVALS))
+    checked += 1
+    if code_identity(code) == code_identity(same_tree):
+        fail("snapshot: un commit de código dejó la identidad igual")
+    checked += 1
+    if same_identity(same_tree, code):
+        fail("validate: un cambio de código no invalidó la pasada")
+    checked += 1
+    if "reauditar" not in snapshot_mismatch(document, code):
+        fail("validate: un cambio de código no pide reauditar")
+
+
 def check_delta_scope(repo: Path) -> None:
     """El archivo que produce un delta pertenece al alcance de la etapa.
 
@@ -462,6 +529,7 @@ def main() -> int:
         check_exclude(repo, bare)
         check_panel_index_excluded(repo)
         check_validate(repo)
+        check_document_commit(repo)
         check_delta_scope(repo)
         sin_exclusion = Path(raw) / "sin-exclusion"
         sin_exclusion.mkdir()

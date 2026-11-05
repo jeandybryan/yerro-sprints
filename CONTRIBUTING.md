@@ -39,7 +39,7 @@ exentas.
 - [ ] No se introdujeron reglas de dominio ni referencias a un consumidor.
 - [ ] Las seis fases y sus límites de responsabilidad se preservan.
 - [ ] Ningún gate fue rebajado para que una fixture pase.
-- [ ] Se ejecutaron las validaciones locales (ver README, sección de validación).
+- [ ] Se ejecutaron las validaciones locales (ver **Validación local** en este archivo).
 - [ ] Si el cambio modifica una skill o el contrato, ejecuté el nivel 4 de
       `EVALUATION.md` sobre sus casos retenidos y anoté modelo, host, fecha y
       commit. Un cambio cuyo comportamiento no se midió queda `no verificado`.

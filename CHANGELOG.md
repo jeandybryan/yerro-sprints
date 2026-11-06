@@ -7,6 +7,10 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+### Corregido
+
+- **La instalación fijada a un tag usa `#`, no `@`.** Las notas de `v0.4.1` y el README mostraban `npx skills add jeandybryan/yerro-sprints@v0.4.0`, que el CLI lee como «la skill `v0.4.0`» y termina en `No matching skills found for: v0.4.1`. El ref va en el fragmento (`owner/repo#v0.4.1`); el `@` es el selector de skill. `skills-lock.json` graba `"ref": "v0.4.1"` y `npx skills update` respeta ese tag en vez de seguir `main`. `Baseline:` `npx skills add jeandybryan/yerro-sprints@v0.4.1` falla con `No matching skills found for: v0.4.1` y lista las seis skills. `Reps: 1/1` — es documentación; el comportamiento del CLI no cambia. `Control:` `npx skills add 'jeandybryan/yerro-sprints#v0.4.1' --list` lista las seis y una instalación real deja `"ref": "v0.4.1"` en el lock, que `skills update` conserva.
+
 ## [0.4.1] - 2026-11-06
 
 ### Corregido

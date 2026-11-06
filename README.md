@@ -69,6 +69,24 @@ npx skills add jeandybryan/yerro-sprints \
 Cambia `--agent cursor` por el host que uses. Verifica en la configuración de
 Skills del host que aparezcan las seis.
 
+### Fijar una versión
+
+El CLI separa el repositorio del ref con `#`, no con `@`: el `@` selecciona una
+skill (`owner/repo@skill`). Para instalar el árbol de un tag:
+
+```bash
+npx skills add 'jeandybryan/yerro-sprints#v0.4.1' \
+  --skill '*' \
+  --agent cursor \
+  --copy \
+  --yes
+```
+
+`skills-lock.json` graba `"ref": "v0.4.1"`, así que `npx skills update` sigue
+ese tag y no salta a `main`. Para subir de versión, vuelve a ejecutar `add` con
+el tag nuevo; el lock se reescribe. Sin `#<ref>` el lock queda sin ref y
+`update` sigue `main`.
+
 ### Proyectos con pnpm
 
 `npx` es `npm exec` y npm rechaza el `devEngines.packageManager` de un proyecto
@@ -82,6 +100,9 @@ pnpm dlx skills add jeandybryan/yerro-sprints \
   --copy \
   --yes
 ```
+
+Con tag, el mismo `#<ref>`: `pnpm dlx skills add
+'jeandybryan/yerro-sprints#v0.4.1' ...`.
 
 ### Instalación manual
 

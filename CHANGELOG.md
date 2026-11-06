@@ -7,6 +7,12 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-06
+
+### Corregido
+
+- **La release lleva su changelog y sus notas dentro del árbol etiquetado.** `v0.4.0` se etiquetó mientras este archivo seguía en `[Unreleased]`, así que quien clonaba el tag no veía la versión ni las notas, y el reporte de nivel 4 vivía solo en un directorio temporal. `v0.4.1` publica el mismo código con la sección `[0.4.0]` ya nombrada, las notas en `docs/releases/v0.4.1.md` y el reporte agregado en `docs/releases/v0.4.1-REPORTE-nivel4.md`. El tag `v0.4.0` no se mueve: es inmutable por gobernanza. `Baseline:` el árbol de `v0.4.0` (`8bcc78a`) no contenía la entrada de versión ni el reporte. `Reps: 1/1` — es un cambio de documentación, sin comportamiento que medir. `Control:` `git show v0.4.0:CHANGELOG.md` sigue mostrando `[Unreleased]`; `git show v0.4.1:CHANGELOG.md` muestra `[0.4.1]` y `[0.4.0]`.
+
 ## [0.4.0] - 2026-11-06
 
 ### Añadido

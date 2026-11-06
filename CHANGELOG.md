@@ -7,6 +7,8 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-06
+
 ### Añadido
 
 - **El nivel 4 tiene arnés, no solo un requisito escrito (P10).** `EVALUATION.md` y `RELEASE_CHECKLIST.md` exigían la corrida de comportamiento para publicar un release que toque una skill o el contrato, pero no había forma de prepararla: cada release improvisaba los snapshots, la rúbrica viajaba dentro del árbol que el agente veía y el reporte se armaba a mano. `evals/level4/` materializa un snapshot aislado por caso (`prepare.py`), deja la rúbrica fuera del snapshot, y agrega el reporte exigiendo transcript, diff, puntos por expectation y metadatos de la corrida (`score.py`). Los doce casos de esta release son S52–S63, con su petición, sus expectations y el control sin la regla en `cases.json`. `prepare.py --check` no consume tokens y comprueba que cada snapshot arranca en el estado que mide; `test_level4.py` lo ejecuta en CI y `validate_skill_evals.py` falla si el arnés desaparece o un caso queda sin rúbrica. `Baseline:` el requisito estaba escrito y la corrida dependía de que alguien improvisara los snapshots; no había dos releases medidos con el mismo protocolo. `Reps: 1/1` — el gate es determinista (no hay agente ni varianza); cinco repeticiones serían cinco ejecuciones idénticas. `Control:` `test_skill_evals.py` quita `expectations` de un caso y borra `prepare.py` en una copia, y `level4_errors()` falla en las dos; `score.py` rechaza un `pasa: true` sin transcript y una corrida con metadatos vacíos.

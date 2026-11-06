@@ -228,10 +228,19 @@ def build_s54(snapshot: Path) -> dict:
         "--",
         "sh",
         "-c",
-        "printf 'a|b\\n' | wc -l",
+        "printf 'hola\n' | wc -l",
     )
     if row.returncode != 0:
         raise RuntimeError(f"evidence.py run falló: {row.stderr}")
+    # La fila que escribe `run` trae el `|` escapado. El caso mide el ledger
+    # escrito a mano por el agente, donde un `|` crudo parte la fila: se
+    # des-escapa solo la fila E-01, que es la que el contrato debe rechazar.
+    # Si no hubiera nada que partir, el caso no mediría y la preparación
+    # falla en vez de dejar pasar un verde vacío.
+    raw = r"\|"
+    broken = row.stdout.strip().replace(raw, "|")
+    if broken == row.stdout.strip():
+        raise RuntimeError("la fila E-01 no trae un `|` que el caso pueda partir")
     audit = (
         "# Auditoría — etapa 01\n\n"
         "## Pasada 1\n\n"
@@ -245,7 +254,7 @@ def build_s54(snapshot: Path) -> dict:
         "### Ledger de evidencia\n\n"
         "| ID | CA | Procedimiento/comando | Sensibilidad | Esperado | Observado/exit | Entorno y timestamp | Artefacto/log | Limitación |\n"
         "|----|----|------------------------|--------------|----------|----------------|---------------------|---------------|------------|\n"
-        f"{row.stdout.strip()}\n\n"
+        f"{broken}\n\n"
         "**Veredicto:** coincide\n"
         "**Veredicto (calidad):** aceptable\n"
     )
@@ -451,10 +460,14 @@ def check_s53(snapshot: Path, esperado: dict) -> list[str]:
 def check_s54(snapshot: Path, esperado: dict) -> list[str]:
     done = script(snapshot, "evidence.py", "verify", "features/01-x/AUDIT.md")
     problems = []
-    if done.returncode != 0:
-        problems.append(f"verify salió {done.returncode}: {done.stdout.strip()}{done.stderr.strip()}")
-    if "truncad" in (done.stdout + done.stderr).lower():
-        problems.append("verify detecta la fila como truncada")
+    # El caso mide el rechazo: si `verify` acepta la fila rota, el agente
+    # nunca ve el fallo y el caso se ejecutaría sin poder fallar.
+    if done.returncode == 0:
+        problems.append(f"verify acepta la fila partida: {done.stdout.strip()}")
+    if "la fila se partió" not in (done.stdout + done.stderr):
+        problems.append(
+            f"verify no nombra la fila partida: {done.stdout.strip()}{done.stderr.strip()}"
+        )
     return problems
 
 

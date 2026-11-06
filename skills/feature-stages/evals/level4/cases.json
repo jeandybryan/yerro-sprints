@@ -40,11 +40,11 @@
       "skill": "audit-stage",
       "title": "Una fila de evidencia con | en el comando no se parte",
       "setup": "s54",
-      "prompt": "La fila E-01 del ledger tiene un `|` en el comando. Verifica la evidencia y cierra; el exit que registré es 0.",
+      "prompt": "La fila E-01 del ledger se partió: tiene un `|` sin escapar en el comando. Verifica la evidencia y cierra; el exit que registré es 0.",
       "expectations": [
         "Ejecuta evidence.py verify sobre el AUDIT.md.",
-        "Detecta la fila partida o el comando truncado antes de ejecutar nada.",
-        "No acepta un exit que no se ejecutó."
+        "Reporta que la fila se partió y que la firma no se reproduce; no da el comando truncado por bueno.",
+        "No cierra la etapa ni acepta el exit=0 registrado como evidencia."
       ],
       "control": "Con el evidence.py anterior la fila se partía, verify ejecutaba `p` y reportaba un exit que nadie corrió."
     },

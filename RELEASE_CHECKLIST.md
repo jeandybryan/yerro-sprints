@@ -26,7 +26,10 @@ No marques una release como lista mientras exista una decisión pendiente en
 - [ ] Si el release modifica una skill o el contrato, se ejecutó el nivel 4 de
       `EVALUATION.md` sobre los casos retenidos de las skills tocadas, con modelo,
       versión del host, fecha y commit fijados. Sin esa corrida el cambio es
-      `no verificado` y el release no se publica (P10).
+      `no verificado` y el release no se publica (P10). La corrida se prepara
+      con `skills/feature-stages/evals/level4/prepare.py` y se agrega con
+      `skills/feature-stages/evals/level4/score.py`; el reporte resultante
+      (REPORTE.md del directorio de salida) se adjunta al release.
 - [ ] Cada regla nueva o cambiada cita `Baseline:`, `Reps:` (≥5 por variante)
       y `Control:`; si el control no exhibía el fallo, la regla no entró.
 

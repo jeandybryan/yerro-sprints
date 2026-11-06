@@ -24,10 +24,15 @@ from validate_skill_evals import (  # noqa: E402
     reconcile_errors,
     document_name_errors,
     gate_errors,
+    level4_errors,
     markdown_reference_errors,
     routing_errors,
     workflow_errors,
 )
+
+import validate_skill_evals as catalog_module # noqa: E402
+
+LEVEL4 = HERE.parent / "evals" / "level4"
 
 errors: list[str] = []
 checked = 0
@@ -189,6 +194,48 @@ def check_workflow() -> None:
         check(any("--strict" in item for item in reported), f"modo retirado no detectado: {reported}")
 
 
+def check_level4() -> None:
+    """El requisito del nivel 4 no puede quedar sin arnés ni sin rúbrica.
+
+    `EVALUATION.md` exige la corrida para publicar un release que toque una
+    skill o el contrato. Si el arnés se borra, el requisito sigue escrito y ya
+    nadie puede cumplirlo, así que el catálogo lo comprueba. El control
+    negativo es un caso sin `expectations`: se ejecutaría, se marcaría «bien» y
+    nadie sabría qué decisión medía.
+    """
+    real = level4_errors()
+    check(real == [], f"arnés del nivel 4: {real}")
+    with tempfile.TemporaryDirectory() as tmp:
+        fake_root = Path(tmp) / "feature-stages"
+        (fake_root / "evals").mkdir(parents=True)
+        shutil.copytree(LEVEL4, fake_root / "evals" / "level4")
+        (fake_root / "evals" / "level4" / "cases.json").write_text(
+            '{"cases": [{"id": "S01", "skill": "feature-stages", "control": "x"}]}',
+            encoding="utf-8",
+        )
+        original = catalog_module.ROOT
+        catalog_module.ROOT = fake_root
+        try:
+            reported = catalog_module.level4_errors()
+        finally:
+            catalog_module.ROOT = original
+        check(
+            any("expectations" in item for item in reported),
+            f"caso sin rúbrica no detectado: {reported}",
+        )
+
+        (fake_root / "evals" / "level4" / "prepare.py").unlink()
+        catalog_module.ROOT = fake_root
+        try:
+            reported = catalog_module.level4_errors()
+        finally:
+            catalog_module.ROOT = original
+        check(
+            any("prepare.py" in item for item in reported),
+            f"arnés ausente no detectado: {reported}",
+        )
+
+
 def main() -> int:
     check_catalog()
     check_mutations()
@@ -196,6 +243,7 @@ def main() -> int:
     check_broken_fixture_reference()
     check_document_names()
     check_workflow()
+    check_level4()
     for error in errors:
         print(f"ERROR: {error}")
     if not errors:

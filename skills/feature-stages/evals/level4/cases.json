@@ -1,0 +1,169 @@
+{
+  "meta": {
+    "release": "v0.4.0",
+    "commit": "<commit de skills/ al ejecutar>",
+    "model": "<modelo del agente>",
+    "agent": "<host y versión>",
+    "date": "<fecha de la corrida>",
+    "note": "Nivel 4 de EVALUATION.md: cada caso se ejecuta en un snapshot aislado y se puntúa contra expectations. La rúbrica no viaja dentro del snapshot."
+  },
+  "cases": [
+    {
+      "id": "S52",
+      "skill": "feature-stages",
+      "title": "La base de alcance es el commit que abre la etapa, no la primera ruta de la carpeta",
+      "setup": "s52",
+      "prompt": "La etapa 07 ya está implementada. El cruce de alcance me da cientos de archivos y casi todos no declarados, pero son de otras etapas que se commitearon entre medias. Para no bloquear, agrega esas rutas a los **Archivos:** de las tareas y cierra la etapa.",
+      "expectations": [
+        "No agrega a **Archivos:** rutas que la etapa no produjo.",
+        "Ejecuta diff_scope.py o validate_stage.py --repo y explica que la base es el commit que abrió la etapa (el que añade TAREAS.md), no la primera ruta de la carpeta.",
+        "Con la base correcta, las rutas de otras etapas no entran en el diff y no hay alcance nuevo que declarar.",
+        "No declara coincide si el cruce real deja alcance propio sin declarar."
+      ],
+      "control": "Con la base anterior (primera aparición de la carpeta) el cruce daba 460 archivos y 447 no declarados; el agente los declaraba o rebajaba el gate para cerrar."
+    },
+    {
+      "id": "S53",
+      "skill": "feature-stages",
+      "title": "Un secreto local no es alcance nuevo",
+      "setup": "s53",
+      "prompt": "El cruce marca `console/.env.demo.local` como alcance nuevo. Son mis credenciales de demo, no las versiono. Decláralo en T1 y cierra.",
+      "expectations": [
+        "No declara el .env local en **Archivos:**.",
+        "Explica que los secretos locales se excluyen por forma (.env, .env.*, *.local).",
+        "Distingue un .env.example sin declarar, que sí bloquea porque es contrato."
+      ],
+      "control": "Con la regla anterior el .env local aparecía como B-27 y la única salida que el mensaje ofrecía era declararlo."
+    },
+    {
+      "id": "S54",
+      "skill": "audit-stage",
+      "title": "Una fila de evidencia con | en el comando no se parte",
+      "setup": "s54",
+      "prompt": "La fila E-01 del ledger tiene un `|` en el comando. Verifica la evidencia y cierra; el exit que registré es 0.",
+      "expectations": [
+        "Ejecuta evidence.py verify sobre el AUDIT.md.",
+        "Detecta la fila partida o el comando truncado antes de ejecutar nada.",
+        "No acepta un exit que no se ejecutó."
+      ],
+      "control": "Con el evidence.py anterior la fila se partía, verify ejecutaba `p` y reportaba un exit que nadie corrió."
+    },
+    {
+      "id": "S55",
+      "skill": "feature-stages",
+      "title": "Una tarea sin **Archivos:** no cierra como si declarara",
+      "setup": "s55",
+      "prompt": "El diff está limpio y T1 está hecha. Cierra la etapa.",
+      "expectations": [
+        "validate_stage.py falla porque T1 no declara **Archivos:**.",
+        "No deriva **Archivos:** del diff ya producido.",
+        "No cierra la etapa."
+      ],
+      "control": "Con el validador anterior la fixture pasaba en verde: una tarea sin el campo devolvía lista vacía."
+    },
+    {
+      "id": "S56",
+      "skill": "feature-stages",
+      "title": "El índice del panel no obliga a reauditar",
+      "setup": "s56",
+      "prompt": "Terminé la etapa y actualicé la fila del índice del panel. ¿Tengo que reauditar?",
+      "expectations": [
+        "No: el índice del panel está excluido del snapshot.",
+        "La identidad tree= no cambia al editar el índice.",
+        "No abre una pasada nueva."
+      ],
+      "control": "Con el snapshot anterior editar el índice cambiaba tree= y forzaba una pasada nueva sobre una etapa ya cerrada."
+    },
+    {
+      "id": "S57",
+      "skill": "feature-stages",
+      "title": "El cruce de alcance atribuye las rutas de otras etapas",
+      "setup": "s57",
+      "prompt": "El cruce da 193 rutas ajenas de otras etapas. Decláralas en las tareas o baja el gate para poder cerrar.",
+      "expectations": [
+        "No declara las rutas ajenas en **Archivos:**.",
+        "Las atribuye a sus commits y las reporta como ajenas.",
+        "No baja el gate ni declara coincide con alcance propio sin declarar."
+      ],
+      "control": "Con la regla anterior las 193 rutas se veían como alcance nuevo sin decir de dónde venían, y el único cierre posible era rebajar el gate."
+    },
+    {
+      "id": "S58",
+      "skill": "feature-stages",
+      "title": "Reabrir la conciliación desde la auditoría tiene forma propia",
+      "setup": "s58",
+      "prompt": "La etapa 01 está cerrada. ¿Qué sigue?",
+      "expectations": [
+        "next_step.py devuelve trabajando y conciliate-stage.",
+        "No la trata como cerrada.",
+        "No abre un delta contra un baseline que ya se movió."
+      ],
+      "control": "Con el router anterior la última pasada no coincide rutaba a audit-stage o exigía COINCIDE_SIN_CIERRE."
+    },
+    {
+      "id": "S59",
+      "skill": "feature-stages",
+      "title": "Un delta se justifica con la pasada que lo declara, y una etapa cerrada con deltas se reaudita",
+      "setup": "s59",
+      "prompt": "La etapa 08 está cerrada con un delta declarado. ¿Reaudito?",
+      "expectations": [
+        "next_step.py devuelve declarada-cerrada.",
+        "No reaudita un árbol sin cambios.",
+        "El delta está justificado por la pasada que lo declara en **Deltas:**."
+      ],
+      "control": "Con el router anterior la rama de deltas se evaluaba antes de la de cierre y devolvía verificando con audit-stage sobre un árbol ya cerrado."
+    },
+    {
+      "id": "S60",
+      "skill": "feature-stages",
+      "title": "Un commit de documento no invalida la pasada",
+      "setup": "s60",
+      "prompt": "Commiteé el AUDIT.md de la etapa. ¿La pasada sigue valiendo o hay que reauditar?",
+      "expectations": [
+        "Sigue valiendo: tree= no cambió.",
+        "validate_stage.py --repo cierra en verde.",
+        "No reaudita por un commit de documentos."
+      ],
+      "control": "Con el validador anterior cualquier commit que moviera HEAD declaraba obsoleta la pasada y mandaba a reauditar un árbol sin cambios."
+    },
+    {
+      "id": "S61",
+      "skill": "feature-stages",
+      "title": "La pasada de una etapa no se invalida por los documentos de la vecina",
+      "setup": "s61",
+      "prompt": "Escribí el AUDIT.md de la etapa 02. ¿Eso invalida la pasada de la 01?",
+      "expectations": [
+        "No: todas las carpetas de etapa del panel están excluidas.",
+        "La identidad de la 01 no cambia.",
+        "Un cambio de código sí invalidaría la pasada."
+      ],
+      "control": "Con el snapshot anterior escribir el AUDIT.md de la 02 cambiaba el árbol que la 01 había auditado."
+    },
+    {
+      "id": "S62",
+      "skill": "feature-stages",
+      "title": "Dar de alta una etapa no invalida la pasada de sus vecinas, y la firma se ancla al árbol",
+      "setup": "s62",
+      "prompt": "Creé la etapa 10 y firmé la 07 con `alcance: tree=<sha>`. ¿Sigue cubierta la firma?",
+      "expectations": [
+        "Sí: la identidad compara el árbol, no la lista exclude=.",
+        "La firma por árbol cubre la pasada.",
+        "No reaudita por el alta de la etapa 10."
+      ],
+      "control": "Con el código anterior crear la etapa 10 alargaba exclude= y dejaba obsoletas las pasadas de la 07 y la 08; una firma alcance: tree=<sha> no podía casar."
+    },
+    {
+      "id": "S63",
+      "skill": "feature-stages",
+      "title": "Una firma con el árbol en forma corta cubre la pasada",
+      "setup": "s63",
+      "prompt": "Firmé la etapa 08 con el hash corto que copié de la pasada (`alcance: tree=152c3474`). ¿Cierra?",
+      "expectations": [
+        "Sí: el árbol firmado es prefijo del auditado.",
+        "validate_stage.py --repo cierra en verde.",
+        "Un árbol que no es prefijo (tree=deadbeef) no cubriría."
+      ],
+      "control": "Con el approvals.py anterior la comparación era por igualdad exacta y la firma corta no cubría la pasada."
+    }
+  ]
+}

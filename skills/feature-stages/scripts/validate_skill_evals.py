@@ -165,6 +165,39 @@ def routing_errors(routes: list) -> list[str]:
             errors.append("feature-stages: activación ambigua")
     return errors
 
+def level4_errors() -> list[str]:
+    """El arnés de comportamiento existe, y sus casos tienen rúbrica escrita.
+
+    `EVALUATION.md` exige el nivel 4 para publicar un release que toque una
+    skill o el contrato. Si el arnés desaparece, el requisito sigue escrito y
+    ya nadie puede cumplirlo: el release se publicaría sobre una promesa.
+    Un caso sin `expectations` no tiene rúbrica: se ejecuta, se marca «bien» y
+    nadie sabe qué decisión medía.
+    """
+    base = ROOT / "evals" / "level4"
+    errors: list[str] = []
+    for name in ("README.md", "cases.json", "prepare.py", "score.py"):
+        if not (base / name).is_file():
+            errors.append(f"falta el arnés del nivel 4: evals/level4/{name}")
+    cases_path = base / "cases.json"
+    if not cases_path.is_file():
+        return errors
+    try:
+        cases = json.loads(cases_path.read_text(encoding="utf-8")).get("cases", [])
+    except json.JSONDecodeError as exc:
+        return [*errors, f"evals/level4/cases.json no es JSON válido: {exc}"]
+    if not cases:
+        return [*errors, "evals/level4/cases.json no declara casos"]
+    for case in cases:
+        case_id = case.get("id", "?")
+        if not case.get("expectations"):
+            errors.append(f"level4: el caso {case_id} no declara expectations")
+        if not case.get("control"):
+            errors.append(f"level4: el caso {case_id} no declara el control sin la regla")
+        if not case.get("skill"):
+            errors.append(f"level4: el caso {case_id} no nombra la skill esperada")
+    return errors
+
 def main() -> int:
     errors=[]
     for document in DOCUMENTS:
@@ -191,6 +224,7 @@ def main() -> int:
                 for error in reconcile_errors(markdown.read_text())
             )
     errors.extend(workflow_errors(WORKFLOW, SCRIPTS))
+    errors.extend(level4_errors())
     audit_skill = ROOT.parent / "audit-stage" / "SKILL.md"
     if audit_skill.exists():
         errors.extend(closing_gate_errors(audit_skill.read_text()))

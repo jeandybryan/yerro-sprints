@@ -258,4 +258,22 @@ estructurales de `doctor.py` (etapa sin lista, sin auditoría o sin
 conciliación, delta mal nombrado o sin `Cierra:`, carpeta sin fila, índice sin
 tabla). Una regla nueva sin fixture que la viole no cuenta como cubierta.
 
+### Nivel 4 — corrida
+
+El nivel 4 se ejecuta con el arnés de `evals/level4/`, que materializa un
+snapshot aislado por caso y deja la rúbrica fuera del snapshot:
+
+```bash
+python3 skills/feature-stages/evals/level4/prepare.py --out /tmp/nivel4 --check
+# una sesión nueva por caso, cwd en /tmp/nivel4/<ID>/snapshot/
+python3 skills/feature-stages/evals/level4/score.py --out /tmp/nivel4
+```
+
+`prepare.py --check` no consume tokens y comprueba que cada snapshot arranca en
+el estado que el caso mide. `score.py` exige transcript, diff, puntos por
+expectation y metadatos (commit, modelo, agente, fecha); una corrida
+incompleta sale 1 y el release queda `no verificado`. Los casos y sus
+expectations viven en `evals/level4/cases.json`; el alcance de cada release se
+declara en `evals/level4/README.md`.
+
 Para comportamiento, materializar la fixture indicada en un repositorio temporal, dar el `prompt` a un agente con la skill objetivo y aplicar la rúbrica a la conversación y artefactos. Los dos casos de `S28` y `S29` viven en `evals/cases/{implement-stage,audit-stage,generate-stage-tasks}.json`: sus fixtures pasan `validate_stage.py` a propósito, porque lo que miden no es una marca que falte sino una decisión mal clasificada o una interfaz que nadie leyó. La materialización no copia la carpeta entera: los casos de implementación y de revisión de lista se montan **sin** `AUDIT.md`, porque una etapa en marcha todavía no tiene pasada y con ella el router para en `COINCIDE_SIN_CIERRE` antes de que el agente escriba una línea; el caso de auditoría se monta **con** esa pasada, que es su fallo sembrado —un `coincide` sobre un árbol que no lo cumple—, y por eso se lanza con `audit-stage` de forma explícita en vez de seguir el `siguiente`. `test_next_step.py` monta los tres casos y falla si la receta cambia: con la pasada copiada en un caso de implementación, el estado esperado deja de ser `trabajando`. `validate_skill_evals.py` comprueba además que toda `files:` nombrada exista: una evaluación sobre una fixture borrada no evalúa nada. Los casos de activación se revisan al editar `description` de cualquier skill: al menos tres positivos, dos negativos con propietario y una evaluación conductual por skill modificada.

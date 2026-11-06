@@ -27,6 +27,7 @@ jobs:
           python3 skills/feature-stages/scripts/test_expres.py
           python3 skills/feature-stages/scripts/test_evidence.py
           python3 skills/feature-stages/scripts/test_preflight.py
+          python3 skills/feature-stages/scripts/test_level4.py
       - name: Verificar que doctor rechaza un árbol incoherente
         run: |
           if python3 skills/feature-stages/scripts/doctor.py skills/feature-stages/evals/fixtures/inconsistente; then

@@ -59,6 +59,9 @@ before opening files; everything it omits is listed with its reason.
    The approval lives in `.yerro/approvals.yml`, a versioned file the person
    edits. Never write it: a signature the agent can type is not a signature.
    Without an entry covering this stage and snapshot, the stage does not close.
+   When the stage stops for the signature, give the person the command, not a
+   draft: `approvals.py <repo> --suggest <stage>` prints the block with the
+   current `tree=` and the exact keys, and they paste it with their name.
    The risk level also sets the evidence floor: above `bajo` the ledger needs a
    demonstrated limit or negative case, and at `alto` a `mutante:` per critical
    CA whose result you **saw**. Write what you observed: `→ verde` means the

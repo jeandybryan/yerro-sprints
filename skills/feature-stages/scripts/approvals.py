@@ -27,6 +27,11 @@ etapa entera.
 Formato: lista de bloques `clave: valor`. Se lee sin PyYAML para no añadir una
 dependencia al paquete.
 
+`--suggest <etapa>` imprime el bloque listo para pegar, con el `tree=` del
+snapshot actual ya resuelto. **No escribe el archivo**: la firma la pega la
+persona. El helper quita el trabajo de copiar el sha a mano y el error de
+formato, no la decisión.
+
 Salida: 0 con la aprobación encontrada, 1 sin aprobación, 2 error de lectura.
 Solo stdlib. No consume tokens.
 """
@@ -37,13 +42,15 @@ import json
 import re
 import sys
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 
-from snapshot import tree_of
+from snapshot import SnapshotError, identity, tree_of
 
 DEFAULT_PATH = Path(".yerro") / "approvals.yml"
 ENTRY_RE = re.compile(r"^\s*-\s*(\w[\w-]*)\s*:\s*(.*)$")
 FIELD_RE = re.compile(r"^\s*(\w[\w-]*)\s*:\s*(.*)$")
+STAGE_NAME_RE = re.compile(r"^\d{2}-[^\s/]+$")
 
 
 class ApprovalError(Exception):
@@ -105,9 +112,11 @@ def parse(text: str) -> list[Approval]:
     for entry in entries:
         missing = [key for key in ("etapa", "aprobado-por", "fecha") if not entry.get(key)]
         if missing:
+            hints = [hint for key in missing if (hint := _typo_hint(entry, key))]
+            detail = f"; {'; '.join(hints)}" if hints else ""
             raise ApprovalError(
                 f"aprobación incompleta en {entry.get('etapa') or '<sin etapa>'}: "
-                f"falta {', '.join(missing)}"
+                f"falta {', '.join(missing)}{detail}"
             )
         approvals.append(
             Approval(
@@ -119,6 +128,73 @@ def parse(text: str) -> list[Approval]:
         )
     return approvals
 
+
+def _typo_hint(entry: dict[str, str], key: str) -> str:
+    """Nombra el campo si la persona escribió la variante con guion bajo.
+
+    El parser no conoce claves: `aprobado_por` se lee como otra clave y la que
+    falta es `aprobado-por`. Sin la pista, el error dice «falta aprobado-por» y
+    la línea que la persona acaba de escribir tiene exactamente esas palabras.
+    """
+    alt = key.replace("-", "_")
+    if alt != key and entry.get(alt):
+        return f"escribiste `{alt}`, el campo va `{key}`"
+    return ""
+
+def suggest(
+    repo: Path,
+    stage_dir: Path,
+    *,
+    path: Path = DEFAULT_PATH,
+    approved_by: str = "<tu nombre>",
+    on_date: str | None = None,
+) -> tuple[str, str]:
+    """Bloque listo para pegar, con el árbol del snapshot actual.
+
+    Devuelve `(bloque, aviso)`. El `tree=` se calcula con las mismas
+    exclusiones que la auditoría (`<feature-root>` y el archivo de
+    aprobaciones), así que el bloque cubre la pasada que se grabe a
+    continuación mientras no cambie el código. **No escribe nada**: quien
+    firma pega el bloque en `.yerro/approvals.yml`.
+    """
+    stage_dir = stage_dir if stage_dir.is_absolute() else (repo / stage_dir)
+    stage_dir = stage_dir.resolve()
+    if not stage_dir.is_dir():
+        raise ApprovalError(f"la etapa {stage_dir} no existe")
+    # La etapa se reconoce por forma (`NN-nombre`), como en el resto del
+    # paquete. Sin esta guarda, pasar la raíz de la feature excluye el árbol
+    # entero y el bloque se imprime con el árbol vacío: una firma que no cubre
+    # nada y un error que aparecería recién al cerrar.
+    if not STAGE_NAME_RE.match(stage_dir.name):
+        raise ApprovalError(
+            f"{stage_dir.name} no parece una etapa: se espera una carpeta `NN-nombre`"
+        )
+    panel = stage_dir.parent
+    try:
+        snapshot = identity(repo.resolve(), (panel, path))
+    except SnapshotError as error:
+        raise ApprovalError(f"no se pudo tomar el snapshot: {error}") from None
+    tree = tree_of(snapshot) or ""
+    warning = ""
+    if not tree:
+        raise ApprovalError(f"el snapshot no trae un tree= reconocible: {snapshot}")
+    try:
+        existing = load(repo.resolve(), path)
+    except ApprovalError:
+        existing = []
+    covering = find(existing, stage_dir.name, snapshot)
+    if covering is not None:
+        warning = (
+            f"{stage_dir.name} ya está aprobada por {covering.approved_by} "
+            f"({covering.date}) para este árbol: no hace falta otra entrada"
+        )
+    block = (
+        f"- etapa: {stage_dir.name}\n"
+        f"  aprobado-por: {approved_by}\n"
+        f"  fecha: {on_date or date.today().isoformat()}\n"
+        f"  alcance: tree={tree}\n"
+    )
+    return block, warning
 
 def load(repo: Path, relative: Path = DEFAULT_PATH) -> list[Approval]:
     path = repo / relative
@@ -146,8 +222,33 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--path", type=Path, default=DEFAULT_PATH)
     parser.add_argument("--stage", help="etapa a consultar, p. ej. 01-export")
     parser.add_argument("--snapshot", default="", help="snapshot que debe cubrir")
+    parser.add_argument(
+        "--suggest",
+        type=Path,
+        metavar="ETAPA",
+        help="imprime el bloque de firma con el tree= del snapshot actual (no escribe nada)",
+    )
+    parser.add_argument("--by", default="<tu nombre>", help="nombre para --suggest")
+    parser.add_argument("--date", dest="on_date", help="fecha ISO para --suggest (por defecto, hoy)")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
+
+    if args.suggest is not None:
+        try:
+            block, warning = suggest(
+                args.repo,
+                args.suggest,
+                path=args.path,
+                approved_by=args.by,
+                on_date=args.on_date,
+            )
+        except ApprovalError as error:
+            print(f"ERROR: {error}", file=sys.stderr)
+            return 2
+        if warning:
+            print(f"AVISO: {warning}", file=sys.stderr)
+        print(block, end="")
+        return 0
 
     try:
         approvals = load(args.repo, args.path)

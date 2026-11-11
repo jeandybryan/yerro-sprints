@@ -7,6 +7,8 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-11
+
 ### Añadido
 
 - **Firmar una etapa ya no exige copiar el `tree=` a mano (S64).** La firma humana de `.yerro/approvals.yml` obligaba a leer el sha de la pasada, copiarlo entero y recordar que la clave es `aprobado-por`; un `aprobado_por` se leía como otra clave y el error decía «falta aprobado-por» sobre la línea que ya lo decía. `approvals.py <repo> --suggest <etapa>` imprime el bloque listo para pegar con el `tree=` del snapshot actual, la fecha de hoy y el nombre que se pase, y avisa si ya hay una firma que cubre ese árbol. **No escribe el archivo**: la persona pega el bloque. Una carpeta que no es `NN-nombre` se rechaza en vez de imprimir el árbol vacío. Caso `test_approvals.py` (7 comprobaciones). `Baseline:` la etapa 07 del consumidor se firmó copiando el sha a mano y la 08 con `tree=152c3474`. `Reps:` 5/5 ejecuciones idénticas del caso; el helper es determinista y no hay agente que mida. `Control:` el bloque con otro árbol no cubre la pasada y el bloque impreso, pegado tal cual, sí cubre; `--suggest` sobre la raíz de la feature falla con «no parece una etapa» en vez de imprimir `tree=4b825dc…`. Con el `approvals.py` anterior el caso nuevo falla 5 de 5: `unrecognized arguments: --suggest` y `el error no nombra la variante escrita`. `EVALUATION.md` S64.

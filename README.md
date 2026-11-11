@@ -75,14 +75,14 @@ El CLI separa el repositorio del ref con `#`, no con `@`: el `@` selecciona una
 skill (`owner/repo@skill`). Para instalar el árbol de un tag:
 
 ```bash
-npx skills add 'jeandybryan/yerro-sprints#v0.4.1' \
+npx skills add 'jeandybryan/yerro-sprints#v0.5.0' \
   --skill '*' \
   --agent cursor \
   --copy \
   --yes
 ```
 
-`skills-lock.json` graba `"ref": "v0.4.1"`, así que `npx skills update` sigue
+`skills-lock.json` graba `"ref": "v0.5.0"`, así que `npx skills update` sigue
 ese tag y no salta a `main`. Para subir de versión, vuelve a ejecutar `add` con
 el tag nuevo; el lock se reescribe. Sin `#<ref>` el lock queda sin ref y
 `update` sigue `main`.
@@ -102,7 +102,7 @@ pnpm dlx skills add jeandybryan/yerro-sprints \
 ```
 
 Con tag, el mismo `#<ref>`: `pnpm dlx skills add
-'jeandybryan/yerro-sprints#v0.4.1' ...`.
+'jeandybryan/yerro-sprints#v0.5.0' ...`.
 
 ### Instalación manual
 
@@ -275,6 +275,17 @@ Sin entrada que cubra la etapa y el snapshot, la etapa no cierra. El agente
 nunca escribe ese archivo: una firma que el agente puede teclear no es una
 firma.
 
+No hace falta escribir el bloque de memoria ni copiar el sha: este comando lo
+imprime con el árbol del snapshot actual y las claves exactas:
+
+```bash
+python3 <skills-root>/feature-stages/scripts/approvals.py <repo> --suggest <stage> --by "Tu Nombre"
+```
+
+Copia la salida y pégala en `.yerro/approvals.yml`. Detecta además el campo
+escrito con guion bajo (`aprobado_por`), que antes se leía como una clave
+desconocida.
+
 ## Vía exprés
 
 No todo merece el ciclo completo. Antes de abrir etapa, comprueba la frontera:
@@ -316,6 +327,8 @@ etapa**: la vía exprés no tiene override.
 ## Actualización y versionado
 
 - [Keep a Changelog](CHANGELOG.md) y [SemVer](https://semver.org/lang/es/).
+- Última versión: [`v0.5.0`](https://github.com/jeandybryan/yerro-sprints/releases/tag/v0.5.0).
+  El comando de instalación fijado al tag está en «Fijar una versión».
 - Para actualizar, revisa las release notes y usa `npx skills update` o
   reinstala desde el tag/revisión que tu política permita.
 - No publiques scripts no revisados, secretos, resultados locales ni archivos

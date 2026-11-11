@@ -7,6 +7,12 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-11
+
+### Corregido
+
+- **El README instalaba `v0.4.1` y no mencionaba el helper de firma.** «Fijar una versión» y el ejemplo de pnpm mostraban `#v0.4.1`, dos versiones por detrás, y «Aprobación humana» solo enseñaba el bloque YAML escrito a mano, sin el comando que lo imprime. Ahora el README instala `#v0.5.1`, documenta `approvals.py --suggest` (imprime el `tree=` del snapshot actual y detecta `aprobado_por`) y enlaza la release vigente. `Baseline:` el `README.md` de `v0.5.0` (`0eb8e69`) muestra `#v0.4.1` en sus dos ejemplos de instalación fijada y no nombra `--suggest`. `Reps: 1/1` — es documentación, sin comportamiento que medir; `test_skill_evals.py` (24 comprobaciones documentales) sale en verde. `Control:` El `README.md` de `origin/main` (`88f831f`, antes de esta corrección) reproduce el fallo en las tres líneas de instalación y en la sección de aprobación; `git show v0.5.1:README.md` muestra `#v0.5.1` y el bloque de `--suggest`.
+
 ## [0.5.0] - 2026-11-11
 
 ### Añadido

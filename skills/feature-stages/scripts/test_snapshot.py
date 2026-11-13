@@ -509,6 +509,95 @@ def check_validate(repo: Path) -> None:
         fail(f"validate --repo: rechazó por otro motivo: {committed_scope.stdout}")
 
 
+def _plant_bytecode(repo: Path) -> None:
+    cache = repo / "skills" / "feature-stages" / "scripts" / "__pycache__"
+    cache.mkdir(parents=True)
+    (cache / "snapshot.cpython-311.pyc").write_bytes(b"\x00bytecode")
+    (cache / "diff_scope.cpython-311.pyc").write_bytes(b"\x00bytecode-2")
+    (cache / "approvals.cpython-311.pyc").write_bytes(b"\x00bytecode-3")
+    (repo / "legacy.pyc").write_bytes(b"\x00legacy")
+
+
+def check_bytecode_ignored() -> None:
+    """El bytecode no cambia el árbol auditado ni bloquea el cierre.
+
+    Correr `validate_stage.py --repo` importa módulos hermanos y, si las
+    skills viven dentro del repositorio y este no ignora `__pycache__`,
+    escribe `*.pyc` antes de calcular la identidad. Sin excluirlos, la pasada
+    que acaba de medirse queda obsoleta y el cruce pide declarar el artefacto.
+    Un cambio en `src.txt` sigue invalidando la pasada: el gate no se apaga.
+    """
+    global checked
+    repo = Path(tempfile.mkdtemp(prefix=".tmp-snapshot-pyc-"))
+    try:
+        init_repo(repo)
+        stage = repo / "feature" / "01-snapshot"
+        stage.mkdir(parents=True)
+        (stage / "CONCILIACION.md").write_text(STAGE, encoding="utf-8")
+        (stage / "TAREAS.md").write_text(TASKS, encoding="utf-8")
+        (stage / "AUDIT.md").write_text(AUDIT.format(snapshot="pendiente"), encoding="utf-8")
+        approvals = repo / APPROVALS
+        approvals.parent.mkdir(parents=True)
+        approvals.write_text(
+            "- etapa: 01-snapshot\n  aprobado-por: Ana\n  fecha: 2026-11-13\n",
+            encoding="utf-8",
+        )
+        git(repo, "add", "-A")
+        git(repo, "commit", "-qm", "abre la etapa")
+        before = identity(repo, (Path("feature"), APPROVALS))
+        (stage / "AUDIT.md").write_text(AUDIT.format(snapshot=before), encoding="utf-8")
+
+        _plant_bytecode(repo)
+        checked += 1
+        after = identity(repo, (Path("feature"), APPROVALS))
+        if after != before:
+            fail(
+                "snapshot: un .pyc sin commitear cambió la identidad del árbol "
+                f"auditado ({before!r} → {after!r})"
+            )
+        checked += 1
+        fresh = validate(stage, repo)
+        if fresh.returncode != 0:
+            fail(
+                "validate --repo: un .pyc sin commitear rechazó la pasada: "
+                f"{fresh.stdout}{fresh.stderr}"
+            )
+
+        git(repo, "add", "-A")
+        git(repo, "commit", "-qm", "bytecode colado")
+        checked += 1
+        committed = identity(repo, (Path("feature"), APPROVALS))
+        if code_identity(committed) != code_identity(before):
+            fail(
+                "snapshot: commitear bytecode cambió la identidad del árbol "
+                f"({code_identity(before)!r} → {code_identity(committed)!r})"
+            )
+        checked += 1
+        still = validate(stage, repo)
+        if still.returncode != 0:
+            fail(
+                "validate --repo: bytecode commiteado rechazó la pasada: "
+                f"{still.stdout}{still.stderr}"
+            )
+
+        (repo / "src.txt").write_text("tres\n", encoding="utf-8")
+        checked += 1
+        changed = identity(repo, (Path("feature"), APPROVALS))
+        if code_identity(changed) == code_identity(before):
+            fail("snapshot: excluir el bytecode cegó un cambio de código")
+        checked += 1
+        stale = validate(stage, repo)
+        text = stale.stdout + stale.stderr
+        if stale.returncode == 0:
+            fail("validate --repo: aceptó una pasada cuyo código cambió junto a un .pyc")
+        elif ".pyc" in text or "__pycache__" in text:
+            fail(f"validate --repo: el bytecode siguió contando al cambiar el código: {text}")
+        elif "la pasada auditó" not in text:
+            fail(f"validate --repo: falló por otro motivo: {text}")
+    finally:
+        shutil.rmtree(repo, ignore_errors=True)
+
+
 def check_document_commit(repo: Path) -> None:
     """Commitea un documento de la etapa sin tocar el árbol auditado.
 
@@ -711,6 +800,7 @@ def main() -> int:
         sin_exclusion.mkdir()
         init_repo(sin_exclusion)
         check_missing_approval_exclusion(sin_exclusion)
+        check_bytecode_ignored()
     for error in errors:
         print(f"ERROR: {error}")
     if not errors:

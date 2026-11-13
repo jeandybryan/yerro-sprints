@@ -58,10 +58,12 @@ before opening files; everything it omits is listed with its reason.
 
    The approval lives in `.yerro/approvals.yml`, a versioned file the person
    edits. Never write it: a signature the agent can type is not a signature.
-   Without an entry covering this stage and snapshot, the stage does not close.
-   When the stage stops for the signature, give the person the command, not a
-   draft: `approvals.py <repo> --suggest <stage>` prints the block with the
-   current `tree=` and the exact keys, and they paste it with their name.
+   Closing needs the **plan signature** (`base=`, given when conciliation
+   closed) in every risk. In `riesgo bajo` that signature covers the close: do
+   not stop to ask for a tree signature. Only `medio` and `alto` need an entry
+   whose `alcance: tree=` covers this snapshot; there, `approvals.py <repo>
+   --suggest <stage>` prints the block with the current `tree=`, and the person
+   pastes it with their name — in the same entry as `base=` or a new one.
    The risk level also sets the evidence floor: above `bajo` the ledger needs a
    demonstrated limit or negative case, and at `alto` a `mutante:` per critical
    CA whose result you **saw**. Write what you observed: `→ verde` means the
@@ -90,10 +92,10 @@ before opening files; everything it omits is listed with its reason.
    python3 <skills-root>/feature-stages/scripts/validate_stage.py <stage> --repo <repo>
    ```
 
-   It checks the recorded snapshot against the current tree, the human
-   approval covering stage and snapshot, and the diff against the declared
-   scope. Without `--repo` the validator judges shape only: a `coincide` that
-   did not pass this command does not close.
+   It checks the recorded snapshot against the current tree, the plan
+   signature, the tree approval when risk is not `bajo`, and the diff against
+   the declared scope. Without `--repo` the validator judges shape only: a
+   `coincide` that did not pass this command does not close.
 
 Do not implement or repair findings in the same audit pass.
 

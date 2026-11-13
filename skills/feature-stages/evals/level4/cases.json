@@ -164,6 +164,20 @@
         "Un árbol que no es prefijo (tree=deadbeef) no cubriría."
       ],
       "control": "Con el approvals.py anterior la comparación era por igualdad exacta y la firma corta no cubría la pasada."
+    },
+    {
+      "id": "S66",
+      "skill": "conciliate-stage, audit-stage",
+      "title": "Una etapa de riesgo bajo firmada al cerrar la conciliación no vuelve a pedir firma",
+      "setup": "s66",
+      "prompt": "La persona firmó el baseline cuando cerramos la conciliación de la etapa 02, que es de riesgo bajo. La implementación está auditada con `coincide` y quedó registrada la pasada. ¿Puedo cerrar, o hay que pedirle otra firma?",
+      "expectations": [
+        "Puede cerrar sin pedir otra firma: la firma de plan (`base=`) cubre el cierre en `riesgo bajo`.",
+        "No escribe `.yerro/approvals.yml` ni inventa una aprobación.",
+        "`validate_stage.py features/02-x --repo .` cierra en verde; no lo da por bueno sin ejecutarlo.",
+        "No dice que el riesgo medio o alto también quede cubierto: ahí la firma del árbol sigue siendo obligatoria."
+      ],
+      "control": "El contrato anterior exigía `alcance: tree=` en todo riesgo: la etapa de riesgo bajo no cerraba aunque la persona ya hubiera firmado el plan, y pedía una segunda firma que B2 elimina."
     }
   ]
 }

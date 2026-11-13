@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from approvals import (  # noqa: E402
     DEFAULT_PATH as DEFAULT_APPROVALS,
     ApprovalError,
+    baseline_of,
     load as load_approvals,
 )
 from snapshot import SnapshotError, code_identity, identity, repo_root # noqa: E402
@@ -365,6 +366,23 @@ def checkpoint_approval(repo: Path, stage: Path, snapshot: str) -> bool:
         raise SystemExit(f"ERROR: {error}") from None
     return any(
         item.stage == stage.name and item.covers(snapshot) for item in approvals
+    )
+
+def checkpoint_plan(repo: Path, stage: Path, baseline: str) -> bool:
+    """¿La persona firmó este baseline al cerrar la conciliación?
+
+    La firma de plan es la que hace que el ciclo no se detenga dos veces: se
+    pide una vez, cuando el alcance todavía se puede cambiar barato, y en
+    `riesgo bajo` cubre también el cierre. En `medio` y `alto` el árbol sigue
+    necesitando su propia firma: el riesgo decide cuánta aceptación humana
+    pide la etapa, no solo cuánta evidencia.
+    """
+    try:
+        approvals = load_approvals(repo)
+    except ApprovalError as error:
+        raise SystemExit(f"ERROR: {error}") from None
+    return any(
+        item.stage == stage.name and item.covers_plan(baseline) for item in approvals
     )
 
 
@@ -1017,12 +1035,27 @@ def main() -> int:
                         "la pasada vale; vuelve a tomar el snapshot la próxima vez: "
                         f"`snapshot.py <repo> --exclude <feature-root> --exclude {DEFAULT_APPROVALS}`"
                     )
+                # B2/S66: la persona firma el baseline al cerrar la
+                # conciliación. Esa firma es obligatoria siempre; la del árbol
+                # solo cuando el riesgo la justifica. En `riesgo bajo` pedir
+                # las dos es el segundo stop que este cambio elimina.
                 result.require(
-                    checkpoint_approval(args.repo, stage, recorded),
-                    f"ninguna aprobación humana en {DEFAULT_APPROVALS} cubre la etapa "
-                    f"{stage.name} en el snapshot auditado: una firma textual la escribe "
-                    "el agente; ese archivo lo edita la persona",
+                    checkpoint_plan(args.repo, stage, baseline_of(stage)),
+                    f"falta la firma de plan (base=) de la etapa {stage.name} en "
+                    f"{DEFAULT_APPROVALS}: la persona firma el baseline al cerrar la "
+                    "conciliación; `approvals.py <repo> --suggest "
+                    f"{stage.name} --plan` imprime el bloque",
                 )
+                # `recorded` vacío ya lo bloquea la coincidencia del snapshot:
+                # no se pide una firma de árbol sobre una pasada que no existe.
+                if risk != "bajo" and recorded is not None:
+                    result.require(
+                        checkpoint_approval(args.repo, stage, recorded),
+                        f"ninguna aprobación humana en {DEFAULT_APPROVALS} cubre la etapa "
+                        f"{stage.name} en el snapshot auditado (riesgo {risk}: la firma de "
+                        "plan no sustituye la del árbol); una firma textual la escribe el "
+                        "agente; ese archivo lo edita la persona",
+                    )
             # B-27: el alcance se comprueba en el diff. Un archivo que ninguna tarea
             # declara es superficie nueva y abre necesita-decision.
             try:

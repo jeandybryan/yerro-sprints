@@ -94,6 +94,14 @@ Lee solo lo que lista y no leas lo que justifica omitir; si crees que falta algo
    or have a named justified exception, criteria are clear, risk and delta
    budget are frozen, and open questions are empty or deferred to a named
    stage.
+   Ask for the **plan signature** at that same close: the person signs the
+   baseline in `.yerro/approvals.yml` and this is the one approval the stage
+   needs before `generate-stage-tasks`. Show the block with
+   `python3 <skills-root>/feature-stages/scripts/approvals.py <repo> --suggest <etapa> --plan`
+   and leave the file to them. In `riesgo bajo` that signature also covers
+   the close and no tree signature is asked later; in `medio`/`alto` the
+   tree is signed after the audit, as before. Wait for the signature before
+   writing `cerrada`.
 10. Update the feature README: stage `lista` only after `TAREAS.md` exists;
     until then keep `conciliando` and show conciliation `cerrada`.
 
@@ -111,7 +119,7 @@ Lee solo lo que lista y no leas lo que justifica omitir; si crees que falta algo
 - Extend `**Presupuesto de deltas:**` mid-flight to keep correcting without
   telling the user, or without the stated motive that makes the value stick.
 - Write `.yerro/approvals.yml`: the human approval of a stage is theirs, not
-  a field you fill in.
+  a field you fill in. `--suggest --plan` prints the block; it never writes it.
 - Rewrite the specification to justify an implementation shortcut.
 - Import product-specific constraints into this generic workflow; apply the
   relevant domain skill or project rule separately.

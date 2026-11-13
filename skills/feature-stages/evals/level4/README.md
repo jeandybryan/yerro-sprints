@@ -6,8 +6,10 @@ y lo ejecuta un agente real, una sesión por caso.
 
 ## Alcance de esta corrida
 
-El release `v0.4.0` cierra los casos **S52–S63** (contrato de alcance,
-snapshot, aprobaciones y evidencia). Son los que el release modifica; los
+`v0.4.0` cerró los casos **S52–S63** (contrato de alcance, snapshot,
+aprobaciones y evidencia). **S66** (B2: la firma del baseline en el cierre de
+la conciliación) se añadió después y la cubre el próximo release que toque
+`approvals.py`, `validate_stage.py`, `conciliate-stage` o `audit-stage`. Los
 demás casos retenidos no cambiaron y su última corrida sigue vigente.
 
 Cada caso mide una **decisión del agente**, no el script: el script ya está
@@ -76,8 +78,8 @@ el modelo a mitad, se parte en dos corridas y se reportan por separado.
 
 ## Coste
 
-Doce casos, una sesión cada uno. La petición es corta y el snapshot es
-pequeño; el coste dominante es el número de sesiones, no la longitud. Si el
-presupuesto no alcanza para los doce, se ejecutan primero S52, S55, S58, S60 y
-S63 (los cinco gates que el release cambia de forma más directa) y el resto se
-reporta como `no verificado`, nunca como verde.
+Un caso de `cases.json`, una sesión cada uno. La petición es corta y el
+snapshot es pequeño; el coste dominante es el número de sesiones, no la
+longitud. Si el presupuesto no alcanza para todos, se ejecutan primero los que
+el release cambia de forma más directa y el resto se reporta como
+`no verificado`, nunca como verde.

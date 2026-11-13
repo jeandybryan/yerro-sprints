@@ -138,15 +138,45 @@ def valid_stage(snapshot: Path, rel: str, snapshot_line: str | None = None) -> N
         write(snapshot, f"{rel}/{name}", text)
 
 
-def approve(snapshot: Path, stage: str, scope: str) -> None:
-    write(
-        snapshot,
-        ".yerro/approvals.yml",
-        f"- etapa: {stage}\n"
-        "  aprobado-por: Fixture\n"
-        "  fecha: 2026-11-06\n"
-        f"  alcance: {scope}\n",
+def baseline_of(snapshot: Path, stage: str) -> str:
+    """El `base=` que pide el cierre: sha256 de la conciliación sin `**Estado:**`."""
+    script = (
+        "import sys; from pathlib import Path\n"
+        "sys.path.insert(0, sys.argv[1])\n"
+        "from approvals import baseline_of\n"
+        "print(baseline_of(Path(sys.argv[2])))"
     )
+    result = run(
+        [
+            sys.executable,
+            "-c",
+            script,
+            str(snapshot / "skills" / "feature-stages" / "scripts"),
+            stage,
+        ],
+        cwd=snapshot,
+    )
+    line = result.stdout.strip().splitlines()[-1] if result.stdout.strip() else ""
+    if result.returncode != 0 or len(line) != 64:
+        raise RuntimeError(f"no se pudo calcular el baseline de {stage}: {result.stderr}")
+    return line
+
+def approve(snapshot: Path, stage: str, scope: str = "") -> None:
+    """Firma como lo haría la persona: el plan siempre, el árbol si se pide.
+
+    S66/B2: el cierre exige `base=` en todas las etapas; en riesgo bajo esa
+    firma basta. `scope` añade `alcance:` a la misma entrada, que es lo que
+    pide riesgo medio o alto.
+    """
+    entry = (
+        f"- etapa: {stage}\n"
+        " aprobado-por: Fixture\n"
+        " fecha: 2026-11-06\n"
+        f" base: {baseline_of(snapshot, f'features/{stage}')}\n"
+    )
+    if scope:
+        entry += f" alcance: {scope}\n"
+    write(snapshot, ".yerro/approvals.yml", entry)
 
 
 CONCILIACION = """# Etapa {name} — fixture
@@ -319,6 +349,41 @@ def build_s59(snapshot: Path) -> dict:
     return {}
 
 
+def build_s66(snapshot: Path) -> dict:
+    init_repo(snapshot)
+    valid_stage(snapshot, "features/02-x")
+    write(snapshot, "src/salida.py", "salida = 1\n")
+    write(snapshot, "tests/test_salida.py", "def test_salida():\n assert True\n")
+    commit(snapshot, "etapa 02 implementada")
+    before = snapshot_of(snapshot, "features/02-x", "--exclude", ".yerro/approvals.yml")
+    valid_stage(snapshot, "features/02-x", before)
+    tasks = snapshot / "features/02-x" / "TAREAS.md"
+    tasks.write_text(
+        tasks.read_text(encoding="utf-8").replace("- [ ] T1", "- [x] T1"),
+        encoding="utf-8",
+    )
+    # `valid_stage` copia la plantilla de `medio`, y es la última escritura
+    # del documento: el riesgo se baja después de grabar la pasada.
+    conciliation = snapshot / "features/02-x" / "CONCILIACION.md"
+    conciliation.write_text(
+        re.sub(
+            r"^\*\*Riesgo:\*\*\s*\w+$",
+            "**Riesgo:** bajo",
+            conciliation.read_text(encoding="utf-8"),
+            flags=re.M,
+        ),
+        encoding="utf-8",
+    )
+    # Se comprueba antes de la pasada final: si `**Riesgo:**` vuelve a `medio`,
+    # el snapshot no arranca en el estado que S66 mide y el caso no demuestra
+    # nada (el control sigue fallando, así que el arnés no lo notaría).
+    if "**Riesgo:** bajo" not in conciliation.read_text(encoding="utf-8"):
+        raise RuntimeError("S66: no se pudo bajar el riesgo de la etapa 02-x a bajo")
+    commit(snapshot, "etapa 02 auditada")
+    approve(snapshot, "02-x")
+    commit(snapshot, "firma de plan")
+    return {"snapshot": before}
+
 def build_s60(snapshot: Path) -> dict:
     init_repo(snapshot)
     valid_stage(snapshot, "features/01-x")
@@ -412,6 +477,7 @@ BUILDERS = {
     "s61": build_s61,
     "s62": build_s62,
     "s63": build_s63,
+    "s66": build_s66,
 }
 
 
@@ -568,6 +634,31 @@ def check_s62(snapshot: Path, esperado: dict) -> list[str]:
     return problems
 
 
+def check_s66(snapshot: Path, esperado: dict) -> list[str]:
+    problems = []
+    done = script(snapshot, "validate_stage.py", "features/02-x", "--repo", ".")
+    if done.returncode != 0:
+        problems.append(f"la firma de plan no cerró: {done.stdout.strip()}{done.stderr.strip()}")
+    with tempfile.TemporaryDirectory(prefix="n4-s66-") as raw:
+        copy = Path(raw) / "repo"
+        shutil.copytree(snapshot, copy)
+        approvals = copy / ".yerro" / "approvals.yml"
+        plan_only = approvals.read_text(encoding="utf-8")
+        # Control: la etapa es de riesgo bajo, así que no firmó árbol. Sin la
+        # firma de plan no queda nada que cubra el cierre.
+        if "alcance:" in plan_only:
+            problems.append("la etapa de riesgo bajo firmó el árbol; el control no mide lo que dice")
+        tree_only = "\n".join(
+            line for line in plan_only.splitlines() if not line.startswith(" base:")
+        ) + "\n"
+        approvals.write_text(tree_only, encoding="utf-8")
+        other = script(copy, "validate_stage.py", "features/02-x", "--repo", ".")
+        if other.returncode == 0:
+            problems.append("la firma del árbol cerró sin la firma de plan")
+        elif "falta la firma de plan" not in other.stdout:
+            problems.append(f"falló por otro motivo: {other.stdout.strip()}")
+    return problems
+
 def check_s63(snapshot: Path, esperado: dict) -> list[str]:
     done = script(snapshot, "validate_stage.py", "features/08-x", "--repo", ".")
     problems = []
@@ -596,6 +687,7 @@ CHECKS = {
     "s61": check_s61,
     "s62": check_s62,
     "s63": check_s63,
+    "s66": check_s66,
 }
 
 

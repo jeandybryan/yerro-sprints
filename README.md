@@ -262,23 +262,34 @@ que no pasó el cierre cruzado no cierra.
 ### Aprobación humana
 
 El cierre de una etapa requiere una entrada en `.yerro/approvals.yml`, un
-archivo versionado que **edita la persona**:
+archivo versionado que **edita la persona**. Hay dos firmas:
 
 ```yaml
 - etapa: 01-export
   aprobado-por: Ana Ruiz
   fecha: 2026-10-22
-  alcance: tree=<sha>   # opcional; completo o en forma corta
+  base: <sha256 del baseline> # firma de plan: al cerrar la conciliación
+  alcance: tree=<sha> # firma del árbol, al auditar; completo o en forma corta
 ```
 
-Sin entrada que cubra la etapa y el snapshot, la etapa no cierra. El agente
-nunca escribe ese archivo: una firma que el agente puede teclear no es una
-firma.
+- **La firma de plan** (`base=`) acepta el baseline —riesgo, alcance,
+criterios, presupuesto— al cerrar la conciliación. Se pide **siempre**, en todo
+riesgo, y editar el documento después de firmar invalida la firma. Cerrar o
+reabrir la etapa no: la línea `**Estado:**` no es baseline.
+- **La firma del árbol** (`alcance: tree=`) acepta el código auditado. En
+**riesgo bajo no se pide**: la firma de plan basta para cerrar y el ciclo no se
+detiene dos veces. En **riesgo medio o alto** sigue siendo obligatoria, en la
+misma entrada o en otra.
+- Una entrada con `base=` y sin `alcance` no cubre ningún árbol.
 
-No hace falta escribir el bloque de memoria ni copiar el sha: este comando lo
-imprime con el árbol del snapshot actual y las claves exactas:
+Sin las firmas que el riesgo exige, la etapa no cierra. El agente nunca escribe
+ese archivo: una firma que el agente puede teclear no es una firma.
+
+No hace falta escribir el bloque de memoria ni copiar el sha: estos comandos lo
+imprimen con las claves exactas (el del árbol necesita la pasada ya grabada):
 
 ```bash
+python3 <skills-root>/feature-stages/scripts/approvals.py <repo> --suggest <stage> --plan --by "Tu Nombre"
 python3 <skills-root>/feature-stages/scripts/approvals.py <repo> --suggest <stage> --by "Tu Nombre"
 ```
 

@@ -9,6 +9,10 @@ las dos direcciones: el bloque impreso, pegado tal cual, cubre la pasada que se
 graba; un bloque con otro árbol no la cubre; y `--suggest` no escribe el
 archivo. También cubre la pista del campo escrito con guion bajo.
 
+`--plan` imprime la firma del baseline (`base=`), que es la que se pide al
+cerrar la conciliación: ese bloque no cubre ningún árbol, y una entrada con
+`base=` y `alcance:` firma las dos cosas.
+
 Solo stdlib y el binario `git`; no consume tokens.
 """
 from __future__ import annotations
@@ -21,7 +25,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-from approvals import ApprovalError, Approval, load, parse  # noqa: E402
+from approvals import ApprovalError, Approval, baseline_of, load, parse # noqa: E402
 from snapshot import identity, tree_of  # noqa: E402
 
 APPROVALS = Path(".yerro") / "approvals.yml"
@@ -169,6 +173,78 @@ def check_non_stage_folder_fails(repo: Path) -> None:
     elif "no parece una etapa" not in result.stderr:
         fail(f"suggest: falló por otro motivo: {result.stderr!r}")
 
+def check_plan_signature_is_read_only_and_signed(repo: Path) -> None:
+    """`--plan` imprime la firma del baseline y no la confunde con el árbol.
+
+    S66/B2: la persona firma el baseline al cerrar la conciliación. El helper
+    imprime `base=` para que no lo copie a mano; el bloque no escribe nada, no
+    duplica una firma vigente y no cubre un árbol.
+    """
+    global checked
+    stage = repo / "feature" / "01-alfa"
+    approvals = repo / APPROVALS
+    approvals.parent.mkdir(parents=True, exist_ok=True)
+    approvals.write_text("", encoding="utf-8")
+
+    before = approvals.read_text(encoding="utf-8")
+    result = run(repo, "--suggest", str(stage), "--plan", "--by", "Ana Ruiz", "--date", "2026-11-11")
+    checked += 1
+    if result.returncode != 0:
+        fail(f"suggest --plan: salió {result.returncode}: {result.stderr}")
+        return
+    if approvals.read_text(encoding="utf-8") != before:
+        fail("suggest --plan: escribió el archivo de aprobaciones")
+
+    block = result.stdout
+    expected = baseline_of(stage)
+    if f"base: {expected}" not in block:
+        fail(f"suggest --plan: el bloque no lleva el baseline ({expected}): {block!r}")
+    if len(expected) != 64:
+        fail(f"suggest --plan: el baseline no es un sha256 completo: {expected!r}")
+    if "alcance:" in block:
+        fail(f"suggest --plan: el bloque de plan trae un alcance: {block!r}")
+
+    # Pegado tal cual, firma el baseline y no el árbol: la persona puede
+    # seguir el flujo con riesgo bajo sin añadir nada.
+    approvals.write_text(block, encoding="utf-8")
+    checked += 1
+    items = [item for item in load(repo) if item.stage == "01-alfa"]
+    if not items:
+        fail("suggest --plan: el archivo con el bloque impreso no se lee")
+        return
+    snapshot = identity(repo, (stage.parent, APPROVALS))
+    if not items[0].covers_plan(expected):
+        fail("suggest --plan: el bloque impreso no cubre el baseline que describe")
+    checked += 1
+    if items[0].covers(snapshot):
+        fail("suggest --plan: una firma de plan cubrió un árbol")
+
+    # El baseline ignora `**Estado:**`: cerrar la etapa no invalida la firma.
+    conciliation = stage / "CONCILIACION.md"
+    text = conciliation.read_text(encoding="utf-8")
+    conciliation.write_text(
+        text.replace("# Conciliación\n", "# Conciliación\n**Estado:** cerrada\n"),
+        encoding="utf-8",
+    )
+    checked += 1
+    if baseline_of(stage) != expected:
+        fail("suggest --plan: escribir **Estado:** movió el baseline firmado")
+
+    # Con una firma de plan vigente no hace falta otra: lo avisa y no duplica.
+    checked += 1
+    again = run(repo, "--suggest", str(stage), "--plan", "--by", "Ana Ruiz")
+    if again.returncode != 0:
+        fail(f"suggest --plan: la segunda llamada salió {again.returncode}: {again.stderr}")
+    elif "ya tiene la firma de plan" not in again.stderr:
+        fail(f"suggest --plan: no avisó de una firma de plan vigente: {again.stderr!r}")
+
+    # Editar el baseline después de firmar pide firma nueva.
+    checked += 1
+    conciliation.write_text(text.replace("Conciliación", "Conciliación (ampliada)"), encoding="utf-8")
+    edited = run(repo, "--suggest", str(stage), "--plan", "--by", "Ana Ruiz")
+    if "ya tiene la firma de plan" in edited.stderr:
+        fail("suggest --plan: dio por vigente una firma de un baseline que cambió")
+
 def main() -> int:
     with tempfile.TemporaryDirectory() as tmp:
         repo = Path(tmp) / "repo"
@@ -176,6 +252,7 @@ def main() -> int:
         init_repo(repo)
         check_suggest_is_read_only_and_covers(repo)
         check_block_with_foreign_tree_does_not_cover(repo)
+        check_plan_signature_is_read_only_and_signed(repo)
         check_missing_stage_fails(repo)
         check_non_stage_folder_fails(repo)
     check_typo_names_the_field()

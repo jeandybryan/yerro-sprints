@@ -3,7 +3,7 @@
 
 Uso: test_level4.py
 
-`prepare.py --check` materializa los doce snapshots y verifica que cada uno
+`prepare.py --check` materializa los snapshots de cada caso de `cases.json` y verifica que cada uno
 arranca en el estado que su caso mide; `score.py` agrega y no acepta un verde
 sin transcript, sin puntos o con metadatos vacíos. Ninguna de las dos consume
 tokens: lo que se prueba es que el arnés mide lo que dice, no el agente.
@@ -60,7 +60,7 @@ def check_catalog() -> None:
                 fail(f"level4: {case.get('id', '?')} no declara {field!r}")
         if case.get("setup") not in {
             "s52", "s53", "s54", "s55", "s56", "s57",
-            "s58", "s59", "s60", "s61", "s62", "s63",
+            "s58", "s59", "s60", "s61", "s62", "s63", "s66",
         }:
             fail(f"level4: {case.get('id')} usa un setup desconocido: {case.get('setup')}")
 
@@ -101,8 +101,11 @@ def check_score(out: Path) -> None:
     checked += 1
     if incomplete.returncode != 1:
         fail("level4: score.py aceptó una corrida incompleta con salida distinta de 1")
-    if "incompletos: 12" not in incomplete.stdout:
-        fail(f"level4: score.py no informa los doce casos incompletos:\n{incomplete.stdout}")
+    total = len(CASES)
+    if f"incompletos: {total}" not in incomplete.stdout:
+        fail(
+            f"level4: score.py no informa los {total} casos incompletos:\n{incomplete.stdout}"
+        )
 
     allowed = run(str(LEVEL4 / "score.py"), "--out", str(out), "--allow-incomplete")
     checked += 1
@@ -174,7 +177,8 @@ def check_score(out: Path) -> None:
     checked += 1
     if done.returncode != 0:
         fail(f"level4: una corrida completa salió {done.returncode}:\n{done.stdout}{done.stderr}")
-    if "pasan: 1 · fallan: 11" not in done.stdout:
+    fallan = len(CASES) - 1
+    if f"pasan: 1 · fallan: {fallan}" not in done.stdout:
         fail(f"level4: el agregado no cuenta los casos:\n{done.stdout}")
 
 

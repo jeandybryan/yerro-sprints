@@ -15,7 +15,7 @@ python3 <skills-root>/feature-stages/scripts/expres.py <repo> [--base REF]
 python3 <skills-root>/feature-stages/scripts/evidence.py run -- <comando...>
 python3 <skills-root>/feature-stages/scripts/evidence.py verify <stage>/AUDIT.md
 python3 <skills-root>/feature-stages/scripts/approvals.py <repo> --stage NN-slug
-python3 <skills-root>/feature-stages/scripts/approvals.py <repo> --suggest <etapa>
+python3 <skills-root>/feature-stages/scripts/approvals.py <repo> --suggest <etapa> [--plan]
 python3 <skills-root>/feature-stages/scripts/diff_scope.py <stage> --repo <repo> [--base REF]
 ```
 
@@ -67,9 +67,13 @@ El cierre exige **dos veredictos** (P18, B-38). `**Veredicto:** coincide | no co
 ## Aprobación humana
 
 - La firma vive en **`.yerro/approvals.yml`**, un archivo versionado del repositorio consumidor que **edita la persona**. `AUDIT.md` no lleva `**Aprobado por:**`: una marca que el agente puede escribir no distingue una firma de una invención.
-- `approvals.py <repo> --suggest <etapa>` **imprime** el bloque listo para pegar con el `tree=` del snapshot actual y las claves escritas como se leen (`aprobado-por`, no `aprobado_por`). No escribe el archivo ni se ejecuta solo: la persona copia el bloque, pone su nombre y lo pega. Quita el copiar-pegar del sha y el error de formato; no la decisión. Un campo escrito con guion bajo se nombra en el error en vez de aparecer como «falta `aprobado-por`» sobre una línea que ya lo dice.
+- `approvals.py <repo> --suggest <etapa>` **imprime** el bloque listo para pegar con el `tree=` del snapshot actual (`--plan` imprime el `base=` del baseline) y las claves escritas como se leen (`aprobado-por`, no `aprobado_por`). No escribe el archivo ni se ejecuta solo: la persona copia el bloque, pone su nombre y lo pega. Quita el copiar-pegar del sha y el error de formato; no la decisión. Un campo escrito con guion bajo se nombra en el error en vez de aparecer como «falta `aprobado-por`» sobre una línea que ya lo dice.
 - Cada entrada declara `etapa`, `aprobado-por`, `fecha` y, opcionalmente, `alcance`: el árbol aprobado, `tree=<sha>`, completo o en forma corta (`tree=152c3474`, el prefijo que muestra `git rev-parse --short` y que una persona copia de la pasada). Se compara con el `tree=` del snapshot, así que la firma sigue valiendo mientras el código no cambie, aunque un commit de documentos mueva `head=`. Un árbol que no es prefijo del auditado no cubre. Un prefijo literal del snapshot grabado (`head=<sha>`) se sigue aceptando para las firmas anteriores.
 - Sin entrada para la etapa, el cierre no se sostiene: `validate_stage.py <etapa> --repo <repo>` lo comprueba y falla. La aprobación se escribe **antes** de auditar; el validador excluye `.yerro/` del snapshot para que firmar no invalide la pasada.
+- **La persona firma el baseline al cerrar la conciliación (B2/S66).** Hay dos firmas y no se sustituyen entre sí:
+  - **Firma de plan** — `base=<sha256>` en la entrada. `approvals.py <repo> --suggest <etapa> --plan` imprime el bloque. El sha es el de `CONCILIACION.md` **sin** su línea `**Estado:**`: cerrar la etapa escribe esa línea, así que contarla invalidaría la firma en el mismo acto de cerrar. El sha se exige **completo**; a diferencia del árbol, no hay un comando que muestre su forma corta. Cambiar riesgo, alcance, criterios, decisiones o presupuesto cambia el baseline y pide firma nueva. Se pide **siempre**, en todo riesgo.
+  - **Firma del árbol** — `alcance: tree=<sha>`, como se describió arriba. Se pide al auditar, cuando ya existe código que aceptar.
+- **El riesgo decide cuál hace falta al cerrar:** en `riesgo bajo` la firma de plan basta y no se pide otra del árbol; en `medio` y `alto` el árbol sigue necesitando su propia firma. Una entrada puede llevar las dos (`base=` y `alcance:`) y firma las dos cosas. Una entrada con `base=` y **sin** `alcance` no cubre ningún árbol; una entrada sin `base=` **no** es firma de plan, aunque no lleve `alcance`. Una entrada sin `alcance` ni `base` sigue cubriendo la etapa entera: las firmas escritas antes de B2 no se invalidan.
 - Riesgo explícito y aceptado: un archivo del repositorio lo puede editar cualquier proceso con acceso, agente incluido, salvo que el host lo impida. La garantía es social —se revisa el diff—, no criptográfica. Un commit firmado es una extensión opcional.
 
 ## Cierre cruzado

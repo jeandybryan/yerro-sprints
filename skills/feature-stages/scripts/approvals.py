@@ -38,6 +38,7 @@ Solo stdlib. No consume tokens.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -63,6 +64,7 @@ class Approval:
     approved_by: str
     date: str
     scope: str = ""
+    base: str = ""
 
     def covers(self, snapshot: str) -> bool:
         """¿La aprobación cubre este snapshot? Sin alcance, cubre la etapa.
@@ -75,7 +77,10 @@ class Approval:
         para las firmas anteriores a S62, que anclaban el `head=`.
         """
         if not self.scope:
-            return True
+            # Una entrada con `base=` es firma de plan: cubre el baseline, no
+            # un árbol. Sin `alcance` ni `base` se mantiene la firma anterior,
+            # que cubría la etapa entera.
+            return not self.base
         if snapshot.lower().startswith(self.scope.lower()):
             return True
         wanted = tree_of(self.scope)
@@ -86,6 +91,34 @@ class Approval:
         # --short`: es lo que una persona escribe al copiar `tree=152c3474` de
         # la pasada. Un alcance que no es prefijo del árbol no cubre.
         return audited.startswith(wanted)
+
+    def covers_plan(self, baseline: str) -> bool:
+        """¿La firma cubre este baseline de la conciliación?
+
+        `base=` es el sha256 completo de `CONCILIACION.md` sin su línea
+        `**Estado:**`, que es ciclo de vida y no baseline. Se exige completo:
+        a diferencia del árbol, no hay un comando que muestre la forma corta,
+        así que un prefijo solo puede venir de un copiado a medias.
+        """
+        if not self.base:
+            return False
+        return self.base.strip().lower() == baseline.strip().lower()
+
+def baseline_of(stage: Path) -> str:
+    """sha256 del baseline firmable de una etapa.
+
+    Es la conciliación sin `**Estado:**`: cerrar la etapa escribe esa línea y
+    reabrirla la cambia, así que incluirla haría que la firma de plan dejara de
+    cubrir el baseline en el mismo acto de cerrar la conciliación. Todo lo
+    demás —riesgo, alcance, criterios, decisiones, presupuesto— sí es baseline:
+    editarlo invalida la firma y obliga a volver a firmar.
+    """
+    text = (stage / "CONCILIACION.md").read_text(encoding="utf-8")
+    lines = [
+        line for line in text.splitlines()
+        if not re.match(r"^\s*\*\*Estado:\*\*", line, re.I)
+    ]
+    return hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest()
 
 
 def parse(text: str) -> list[Approval]:
@@ -124,6 +157,7 @@ def parse(text: str) -> list[Approval]:
                 approved_by=entry["aprobado-por"],
                 date=entry["fecha"],
                 scope=entry.get("alcance", ""),
+                base=entry.get("base", ""),
             )
         )
     return approvals
@@ -148,6 +182,7 @@ def suggest(
     path: Path = DEFAULT_PATH,
     approved_by: str = "<tu nombre>",
     on_date: str | None = None,
+    plan: bool = False,
 ) -> tuple[str, str]:
     """Bloque listo para pegar, con el árbol del snapshot actual.
 
@@ -156,6 +191,10 @@ def suggest(
     aprobaciones), así que el bloque cubre la pasada que se grabe a
     continuación mientras no cambie el código. **No escribe nada**: quien
     firma pega el bloque en `.yerro/approvals.yml`.
+
+    Con `plan=True` imprime la firma del baseline (`base=`) en vez de la del
+    árbol: es la que se pide al cerrar la conciliación, antes de que exista
+    código que auditar.
     """
     stage_dir = stage_dir if stage_dir.is_absolute() else (repo / stage_dir)
     stage_dir = stage_dir.resolve()
@@ -182,6 +221,27 @@ def suggest(
         existing = load(repo.resolve(), path)
     except ApprovalError:
         existing = []
+    if plan:
+        baseline = baseline_of(stage_dir)
+        covering = next(
+            (
+                item for item in existing
+                if item.stage == stage_dir.name and item.covers_plan(baseline)
+            ),
+            None,
+        )
+        if covering is not None:
+            warning = (
+                f"{stage_dir.name} ya tiene la firma de plan de {covering.approved_by} "
+                f"({covering.date}) para este baseline: no hace falta otra entrada"
+            )
+        block = (
+            f"- etapa: {stage_dir.name}\n"
+            f" aprobado-por: {approved_by}\n"
+            f" fecha: {on_date or date.today().isoformat()}\n"
+            f" base: {baseline}\n"
+        )
+        return block, warning
     covering = find(existing, stage_dir.name, snapshot)
     if covering is not None:
         warning = (
@@ -190,10 +250,10 @@ def suggest(
         )
     block = (
         f"- etapa: {stage_dir.name}\n"
-        f"  aprobado-por: {approved_by}\n"
-        f"  fecha: {on_date or date.today().isoformat()}\n"
-        f"  alcance: tree={tree}\n"
-    )
+        " aprobado-por: {by}\n"
+        " fecha: {when}\n"
+        " alcance: tree={tree}\n"
+    ).format(by=approved_by, when=on_date or date.today().isoformat(), tree=tree)
     return block, warning
 
 def load(repo: Path, relative: Path = DEFAULT_PATH) -> list[Approval]:
@@ -229,6 +289,11 @@ def main(argv: list[str] | None = None) -> int:
         help="imprime el bloque de firma con el tree= del snapshot actual (no escribe nada)",
     )
     parser.add_argument("--by", default="<tu nombre>", help="nombre para --suggest")
+    parser.add_argument(
+        "--plan",
+        action="store_true",
+        help="con --suggest, imprime la firma del baseline (base=) en vez de la del árbol",
+    )
     parser.add_argument("--date", dest="on_date", help="fecha ISO para --suggest (por defecto, hoy)")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
@@ -241,6 +306,7 @@ def main(argv: list[str] | None = None) -> int:
                 path=args.path,
                 approved_by=args.by,
                 on_date=args.on_date,
+                plan=args.plan,
             )
         except ApprovalError as error:
             print(f"ERROR: {error}", file=sys.stderr)

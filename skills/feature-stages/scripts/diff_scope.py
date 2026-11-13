@@ -32,7 +32,11 @@ Qué no cuenta, y por qué:
   `snapshot.py`, para que el diff y el snapshot hablen del mismo árbol;
 - los secretos locales (`.env`, `.env.demo.local`, `*.local`): nunca se
   versionan y declararlos en una tarea empujaría a escribir la credencial en
-  el árbol de la etapa (B-46). Un `.env.example` sí cuenta: es contrato.
+  el árbol de la etapa (B-46). Un `.env.example` sí cuenta: es contrato;
+- el bytecode de Python (`__pycache__/`, `*.pyc`, `*.pyo`): lo escribe el
+  intérprete al importar estos scripts. Contarlo pediría declararlo en una
+  tarea y, en el snapshot, cambiaría el `tree=` de la pasada que acaba de
+  correr el validador. Misma exclusión que `snapshot.py`, por forma.
 
 Salida: 0 si el diff cabe en el alcance declarado; 1 si hay rutas no
 declaradas (alcance nuevo, B-27); 2 si no se puede leer el diff.
@@ -52,7 +56,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from snapshot import SnapshotError, _run, repo_root, STAGE_DIR_RE # noqa: E402
+from snapshot import SnapshotError, _is_bytecode, _run, repo_root, STAGE_DIR_RE # noqa: E402
 
 # Una tarea empieza por `- [ ] T1` / `- [x] T1` / `- [ ] D1-T1`; su cuerpo
 # llega hasta la tarea siguiente. Mismo patrón que `validate_stage.py`.
@@ -184,12 +188,15 @@ def touched_files(root: Path, base: str, excludes: tuple[Path, ...]) -> list[str
     changed.update(item for item in untracked.stdout.split("\0") if item)
 
     excluded = {_normalize(_relative_safe(root, item)) for item in excludes}
-    return sorted(
-        _normalize(item)
-        for item in changed
-        if not _is_evidence(_normalize(item))
-        and not any(_normalize(item).startswith(prefix) for prefix in excluded if prefix)
-    )
+    kept: list[str] = []
+    for item in changed:
+        normalized = _normalize(item)
+        if _is_evidence(normalized) or _is_bytecode(normalized):
+            continue
+        if any(normalized.startswith(prefix) for prefix in excluded if prefix):
+            continue
+        kept.append(normalized)
+    return sorted(kept)
 
 
 def _relative_safe(root: Path, path: Path) -> str:

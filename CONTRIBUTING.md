@@ -64,7 +64,9 @@ exentas.
       fallando: el mutante se juzga por el resultado observado (`rojo`), no
       por la palabra, y un mutante que sobrevive no cierra.
 - [ ] `test_diff_scope.py` pasa; un archivo no declarado sigue siendo alcance
-      nuevo (error) y uno declarado sin tocar sigue siendo advertencia. Una
+      nuevo (error) y uno declarado sin tocar sigue siendo advertencia. El
+      bytecode (`__pycache__/`, `*.pyc`, `*.pyo`) no es alcance ni cambia el
+      `tree=`; un `.py` sin declarar sigue bloqueando. Una
       ruta cuyo commit toca otra etapa se atribuye con su hash y su asunto y
       solo avisa; un commit sin etapa, del árbol de trabajo o mixto bloquea.
 - [ ] `test_snapshot.py` sigue comprobando aprobación: sin `.yerro/approvals.yml`,

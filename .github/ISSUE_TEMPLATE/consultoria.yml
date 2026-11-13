@@ -1,0 +1,43 @@
+name: Solicitud de consultoría
+description: Pide ayuda de pago para implantar YerroSprints, adaptarlo al CI o formar al equipo.
+title: "Consultoría: "
+labels: ["consultoria"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        YerroSprints se publica bajo licencia MIT. Esta plantilla es para
+        pedir ayuda de pago: implantación en un repositorio, adaptación al CI
+        o un taller de formación. El alcance se acuerda en cada caso.
+  - type: input
+    id: equipo
+    attributes:
+      label: Equipo o empresa
+      description: Nombre del equipo o de la empresa.
+      placeholder: Acme
+    validations:
+      required: true
+  - type: input
+    id: tamano
+    attributes:
+      label: Tamaño
+      description: Personas del equipo que usarían el paquete, o tamaño aproximado de la empresa.
+      placeholder: 8 personas
+    validations:
+      required: true
+  - type: input
+    id: host
+    attributes:
+      label: Host de agentes
+      description: Dónde corren los agentes (Cursor, Claude Code, Codex u otro).
+      placeholder: Cursor
+    validations:
+      required: true
+  - type: textarea
+    id: objetivo
+    attributes:
+      label: Qué quieren lograr
+      description: Implantación, adaptación al CI, taller u otra necesidad concreta.
+      placeholder: Implantar las seis skills en el repositorio y dejar el cierre con evidencia en CI.
+    validations:
+      required: true

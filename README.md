@@ -334,6 +334,20 @@ etapa**: la vía exprés no tiene override.
 - No publiques scripts no revisados, secretos, resultados locales ni archivos
   compilados. Inspecciona cualquier script antes de ejecutarlo.
 
+## Soporte, implantación y consultoría
+
+YerroSprints se publica bajo licencia MIT. Quien lo necesite puede pedir ayuda
+de pago para tres trabajos: implantar el paquete en su repositorio, adaptarlo
+a su CI y dar talleres de formación a su equipo. El alcance se acuerda en cada
+caso.
+
+El contacto es un mensaje directo en X a
+[jeandybryan](https://x.com/jeandybryan), o una issue con la etiqueta
+`consultoria` mediante la plantilla
+[Solicitud de consultoría](https://github.com/jeandybryan/yerro-sprints/issues/new?template=consultoria.yml&labels=consultoria).
+
+**Patrocina el proyecto:** [GitHub Sponsors](https://github.com/sponsors/jeandybryan).
+
 ## Gobernanza y contribución
 
 Las reglas de mantenimiento están en [GOVERNANCE.md](GOVERNANCE.md) y la lista

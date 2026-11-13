@@ -9,7 +9,7 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Añadido
 
-- **Ayuda de pago y patrocinio, con la licencia MIT.** El README ofrece implantación en el repositorio del equipo, adaptación a su CI y talleres de formación. El contacto es un mensaje directo en X o una issue con la etiqueta `consultoria`. `.github/FUNDING.yml` apunta a GitHub Sponsors (`jeandybryan`) y la plantilla «Solicitud de consultoría» pide equipo, tamaño, host de agentes y objetivo. `Reps: 1/1` — es documentación, sin comportamiento que medir; `validate_skill_evals.py` y `test_skill_evals.py` (24 comprobaciones documentales) salen en verde.
+- **Ayuda de pago y apoyo al proyecto, con la licencia MIT.** El README ofrece implantación en el repositorio del equipo, adaptación a su CI y talleres de formación. El contacto, también en la línea «Apoya el proyecto», es un mensaje directo en X o una issue con la etiqueta `consultoria`. La plantilla «Solicitud de consultoría» pide equipo, tamaño, host de agentes y objetivo. `Reps: 1/1` — es documentación, sin comportamiento que medir; `validate_skill_evals.py` y `test_skill_evals.py` (24 comprobaciones documentales) salen en verde.
 
 ## [0.5.1] - 2026-11-11
 

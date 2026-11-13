@@ -346,7 +346,9 @@ El contacto es un mensaje directo en X a
 `consultoria` mediante la plantilla
 [Solicitud de consultoría](https://github.com/jeandybryan/yerro-sprints/issues/new?template=consultoria.yml&labels=consultoria).
 
-**Patrocina el proyecto:** [GitHub Sponsors](https://github.com/sponsors/jeandybryan).
+**Apoya el proyecto:** un mensaje directo en X a
+[jeandybryan](https://x.com/jeandybryan) o una issue con la etiqueta
+`consultoria`.
 
 ## Gobernanza y contribución
 

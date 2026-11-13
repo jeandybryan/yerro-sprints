@@ -177,6 +177,61 @@ def check_local_secrets_ignored(repo: Path) -> None:
     secret.unlink()
 
 
+def check_bytecode_ignored() -> None:
+    """El bytecode que escribe el intérprete no es alcance nuevo.
+
+    Importar un script del paquete crea `__pycache__/*.pyc` junto al fuente.
+    Si el repositorio no ignora ese directorio, el cruce lo ve como código y
+    la única salida que ofrece es declararlo en una tarea. Se excluye por
+    forma, sin versionar y commiteado. Un `.py` sin declarar en el mismo
+    árbol sigue bloqueando: la exclusión no apaga el gate.
+    """
+    global checked
+    repo = Path(tempfile.mkdtemp(prefix="yerro-diffscope-pyc-"))
+    try:
+        init_repo(repo)
+        git(repo, "add", "-A")
+        git(repo, "commit", "-qm", "abre la etapa")
+
+        cache = repo / "skills" / "feature-stages" / "scripts" / "__pycache__"
+        cache.mkdir(parents=True)
+        (cache / "snapshot.cpython-311.pyc").write_bytes(b"\x00bytecode")
+        (cache / "nota.txt").write_text("artefacto\n", encoding="utf-8")
+        (repo / "legacy.pyc").write_bytes(b"\x00legacy")
+
+        checked += 1
+        result = run(repo)
+        payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        if result.returncode != 0 or payload.get("undeclared"):
+            fail(
+                "diff_scope: el bytecode sin versionar cuenta como alcance "
+                f"({result.returncode}, {payload.get('undeclared')})"
+            )
+
+        git(repo, "add", "-A")
+        git(repo, "commit", "-qm", "bytecode colado")
+        checked += 1
+        result = run(repo)
+        payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        if result.returncode != 0 or payload.get("undeclared"):
+            fail(
+                "diff_scope: el bytecode commiteado cuenta como alcance "
+                f"({result.returncode}, {payload.get('undeclared')})"
+            )
+
+        (repo / "src" / "intruso.py").write_text("codigo\n", encoding="utf-8")
+        checked += 1
+        result = run(repo)
+        payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        if result.returncode != 1 or payload.get("undeclared") != ["src/intruso.py"]:
+            fail(
+                "diff_scope: excluir bytecode apagó el gate de alcance "
+                f"({result.returncode}, {payload.get('undeclared')})"
+            )
+    finally:
+        shutil.rmtree(repo, ignore_errors=True)
+
+
 def check_undeclared(repo: Path) -> None:
     """Un archivo que ninguna tarea declara es alcance nuevo: exit 1."""
     global checked
@@ -575,6 +630,7 @@ def main() -> int:
         check_clean(work)
         check_evidence_ignored(work)
         check_local_secrets_ignored(work)
+        check_bytecode_ignored()
         check_undeclared(work)
         check_untracked(work)
         check_committed_change_is_seen()

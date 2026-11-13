@@ -26,6 +26,13 @@ escribirlos en la vecina cambiaría el árbol auditado y obligaría a repetir la
 pasada sin un cambio de código. Un archivo del panel que no es de etapa —un
 fichero compartido, código— sigue contando.
 
+El bytecode de Python tampoco entra: `__pycache__/` y `*.pyc` / `*.pyo`. Lo
+escribe el intérprete al importar, y las skills viven dentro del repositorio
+que se audita. Si ese repositorio no ignora `__pycache__` —un consumidor que
+no es un proyecto Python no lo tiene en `.gitignore`— correr el validador
+cambia el `tree=` de la pasada que acaba de medir. Se saca por forma, esté o
+no versionado.
+
 Salida canónica, apta para pegar después de `**Snapshot:**`:
 
     head=<sha> tree=<sha> dirty=<si|no> exclude=<ninguno|a,b>
@@ -142,6 +149,40 @@ def documentation(path: Path, excludes: tuple[Path, ...]) -> set[Path]:
     return found
 
 
+def _is_bytecode(path: str) -> bool:
+    """Un `__pycache__` o un `*.pyc`/`*.pyo` es ejecución, no código auditado.
+
+    Importar un módulo escribe el bytecode junto al fuente. Contarlo en el
+    árbol haría que la pasada quedara obsoleta por haber corrido el propio
+    validador, y el cruce pediría declararlo en una tarea. Se reconoce por
+    forma: el directorio `__pycache__` entero y cualquier `*.pyc` o `*.pyo`.
+    """
+    normalized = path.replace("\\", "/")
+    parts = [part for part in normalized.split("/") if part and part not in (".",)]
+    name = parts[-1] if parts else normalized
+    return "__pycache__" in parts or name.endswith((".pyc", ".pyo"))
+
+
+def _cached_paths(root: Path, env: dict[str, str]) -> list[str]:
+    listed = _run(root, ["ls-files", "--cached", "-z"], env=env)
+    if listed.returncode != 0:
+        raise SnapshotError(f"git ls-files falló: {listed.stderr.strip()}")
+    return [item for item in listed.stdout.split("\0") if item]
+
+
+def _force_remove(root: Path, env: dict[str, str], paths: list[str]) -> None:
+    if not paths:
+        return
+    removed = _run(
+        root,
+        ["update-index", "--force-remove", "-z", "--stdin"],
+        env=env,
+        stdin="\0".join(paths) + "\0",
+    )
+    if removed.returncode != 0:
+        raise SnapshotError(f"git update-index falló: {removed.stderr.strip()}")
+
+
 def identity(path: Path, excludes: tuple[Path, ...] = ()) -> str:
     """Identidad canónica del árbol de trabajo en `path`.
 
@@ -187,35 +228,50 @@ def identity(path: Path, excludes: tuple[Path, ...] = ()) -> str:
     work = Path(tempfile.mkdtemp(prefix="yerro-snapshot-"))
     env = os.environ.copy()
     env["GIT_INDEX_FILE"] = str(work / "index")
+    # El `dirty=` compara el árbol auditado con HEAD. Si HEAD ya contiene
+    # bytecode, hay que sacarlo también de ese lado: si no, commitear un
+    # `.pyc` —`git add -A` en un repo sin esa línea en `.gitignore`— deja la
+    # pasada en `dirty=si` sin haber cambiado código. Sin bytecode en HEAD la
+    # comparación es la de siempre, para no mover el `dirty=` de las pasadas
+    # ya grabadas.
+    comparable = head_tree
     try:
         read_args = ["read-tree", head_sha] if head_sha != "sin-head" else ["read-tree", "--empty"]
         read = _run(root, read_args, env=env)
         if read.returncode != 0:
             raise SnapshotError(f"git read-tree falló: {read.stderr.strip()}")
+        head_bytecode = [item for item in _cached_paths(root, env) if _is_bytecode(item)]
         added = _run(root, ["add", "-A", "--", "."], env=env)
         if added.returncode != 0:
             raise SnapshotError(f"git add falló: {added.stderr.strip()}")
+        _force_remove(
+            root,
+            env,
+            [item for item in _cached_paths(root, env) if _is_bytecode(item)],
+        )
         if relative_excludes:
             listed = _run(root, ["ls-files", "--cached", "-z", "--", *relative_excludes], env=env)
-            tracked = [item for item in listed.stdout.split("\0") if item]
-            if tracked:
-                removed = _run(
-                    root,
-                    ["update-index", "--force-remove", "-z", "--stdin"],
-                    env=env,
-                    stdin="\0".join(tracked) + "\0",
-                )
-                if removed.returncode != 0:
-                    raise SnapshotError(f"git update-index falló: {removed.stderr.strip()}")
+            if listed.returncode != 0:
+                raise SnapshotError(f"git ls-files falló: {listed.stderr.strip()}")
+            _force_remove(root, env, [item for item in listed.stdout.split("\0") if item])
         written = _run(root, ["write-tree"], env=env)
         if written.returncode != 0:
             raise SnapshotError(f"git write-tree falló: {written.stderr.strip()}")
         tree = written.stdout.strip()
+        if head_bytecode:
+            reread = _run(root, ["read-tree", head_sha], env=env)
+            if reread.returncode != 0:
+                raise SnapshotError(f"git read-tree falló: {reread.stderr.strip()}")
+            _force_remove(root, env, head_bytecode)
+            baseline = _run(root, ["write-tree"], env=env)
+            if baseline.returncode != 0:
+                raise SnapshotError(f"git write-tree falló: {baseline.stderr.strip()}")
+            comparable = baseline.stdout.strip()
     finally:
         shutil.rmtree(work, ignore_errors=True)
 
-    if head_tree is not None:
-        dirty = tree != head_tree
+    if comparable is not None:
+        dirty = tree != comparable
     else:
         dirty = tree != EMPTY_TREE
     excluded = ",".join(relative_excludes) if relative_excludes else "ninguno"

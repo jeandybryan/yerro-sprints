@@ -8,23 +8,25 @@ estados, gates y trazabilidad en archivos que podés leer y revisar.
 
 ## Instalación
 
-No hace falta copiar comandos: pegale este prompt a tu agente.
+No hace falta armar comandos: pegale este prompt a tu agente.
 
-> Instalá las seis skills de YerroSprints (github.com/jeandybryan/yerro-sprints)
-> en este proyecto, fijadas al tag v0.5.2.
->
-> 1. Pedime el host (Cursor, Claude Code, Codex u otro).
-> 2. Instalá con el CLI `skills`:
->    `npx skills add 'jeandybryan/yerro-sprints#v0.5.2' --skill '*' --agent <host> --copy --yes`
->    Si el proyecto usa pnpm, usá `pnpm dlx` en lugar de `npx`.
-> 3. Comprobá que aparezcan las seis: identify-feature-stages, feature-stages,
->    conciliate-stage, generate-stage-tasks, implement-stage y audit-stage.
-> 4. Verificá Python 3 (solo stdlib). Sin Python se puede implementar, pero no
->    cerrar con evidencia.
->
-> No modifiques ninguna skill ni escribas archivos fuera de la carpeta de skills
-> del host. Al terminar, decime dónde quedaron y qué comando debo usar para
-> actualizar a otro tag.
+```text
+Instalá las seis skills de YerroSprints (github.com/jeandybryan/yerro-sprints)
+en este proyecto, fijadas al tag v0.5.2.
+
+1. Pedime el host (Cursor, Claude Code, Codex u otro).
+2. Instalá con el CLI `skills`:
+   npx skills add 'jeandybryan/yerro-sprints#v0.5.2' --skill '*' --agent <host> --copy --yes
+   Si el proyecto usa pnpm, usá `pnpm dlx` en lugar de `npx`.
+3. Comprobá que aparezcan las seis: identify-feature-stages, feature-stages,
+   conciliate-stage, generate-stage-tasks, implement-stage y audit-stage.
+4. Verificá Python 3 (solo stdlib). Sin Python se puede implementar, pero no
+   cerrar con evidencia.
+
+No modifiques ninguna skill ni escribas archivos fuera de la carpeta de skills
+del host. Al terminar, decime dónde quedaron y qué comando debo usar para
+actualizar a otro tag.
+```
 
 Si preferís hacerlo a mano, los comandos están en
 [CONTRIBUTING.md](CONTRIBUTING.md#instalación) y la versión vigente es
@@ -36,13 +38,9 @@ Una vez instalado, tres prompts te bastan para empezar:
 
 ```text
 Divide esta spec en etapas implementables.
-```
 
-```text
 Conciliemos la etapa 01.
-```
 
-```text
 ¿Qué sigue?
 ```
 
@@ -84,30 +82,22 @@ identify-feature-stages
 └─ no coincide → TAREAS-delta-NN → implement-stage → audit-stage
 ```
 
-`feature-stages` es el contrato compartido: define estados, gates, plantillas y
-evaluación, pero no sustituye a ninguna fase.
-
-| Skill | Función |
-| --- | --- |
-| `identify-feature-stages` | Corta la especificación en resultados implementables y auditables. |
-| `feature-stages` | Define estados, gates, plantillas, contrato y evaluación. |
-| `conciliate-stage` | Cierra alcance, decisiones, criterios, riesgos y evidencia. |
-| `generate-stage-tasks` | Genera la única lista principal, trazada a los criterios. |
-| `implement-stage` | Ejecuta solo la lista aprobada y deja evidencia. |
-| `audit-stage` | Intenta refutar el cumplimiento; cierra, bloquea o emite un delta. |
+Las cinco fases están en la tabla de arriba. `feature-stages` es el contrato
+compartido: define estados, gates, plantillas y evaluación, pero no sustituye a
+ninguna fase.
 
 ## Qué te deja en el repositorio
 
 ```text
 <feature-root>/
-  <SPEC>.md               # qué se quiere
-  README.md               # índice de etapas y estado
+  <SPEC>.md            # qué se quiere
+  README.md            # índice de etapas y estado
   NN-slug/
-    CONCILIACION.md       # alcance, decisiones, criterios, riesgos, evidencia
-    TAREAS.md             # lista principal, tras cerrar la conciliación
-    AUDIT.md              # veredicto por pasada, con evidencia
-    TAREAS-delta-NN.md    # solo si la auditoría encuentra un hueco
-  EXPRES.md               # registro opcional de cambios fuera de etapa
+    CONCILIACION.md    # alcance, decisiones, criterios, riesgos, evidencia
+    TAREAS.md          # lista principal, tras cerrar la conciliación
+    AUDIT.md           # veredicto por pasada, con evidencia
+    TAREAS-delta-NN.md # solo si la auditoría encuentra un hueco
+  EXPRES.md            # registro opcional de cambios fuera de etapa
 ```
 
 ## El contrato en cinco reglas

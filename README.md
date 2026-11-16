@@ -103,7 +103,7 @@ ninguna fase.
 ## El contrato en cinco reglas
 
 - Cada criterio `CA-NN` enlaza una decisión `S-NN`; cada tarea declara
-  `**Archivos:**`, `Test-first:`, `Test:` y `Verificar:`.
+  `Archivos:`, `Test-first:`, `Test:` y `Verificar:`.
 - La evidencia demuestra **sensibilidad**: el test pudo fallar
   (`revertir → rojo → restaurar`, un mutante o una regresión contra `HEAD`).
 - Un `coincide` vale solo para el árbol que auditó. Si el código cambió, se

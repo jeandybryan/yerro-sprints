@@ -545,6 +545,45 @@ def build_s70(snapshot: Path) -> dict:
     commit(snapshot, "trabajar en la etapa 02")
     return {}
 
+def build_s71(snapshot: Path) -> dict:
+    init_repo(snapshot)
+    valid_stage(snapshot, "features/01-x")
+    write(snapshot, "src/salida.py", "salida = 1\n")
+    write(snapshot, "tests/test_salida.py", "def test_salida():\n assert True\n")
+    commit(snapshot, "etapa 01 implementada")
+    before = snapshot_of(snapshot, "features/01-x", "--exclude", ".yerro/approvals.yml")
+    valid_stage(snapshot, "features/01-x", before)
+    # La conciliación quedó en `bajo`; la pasada sube el riesgo a `alto` y no
+    # trae `mutante:`. El cierre tiene que juzgar el riesgo efectivo.
+    conciliation = snapshot / "features/01-x" / "CONCILIACION.md"
+    conciliation.write_text(
+        re.sub(
+            r"^\*\*Riesgo:\*\*\s*\w+$",
+            "**Riesgo:** bajo",
+            conciliation.read_text(encoding="utf-8"),
+            flags=re.M,
+        ),
+        encoding="utf-8",
+    )
+    audit = snapshot / "features/01-x" / "AUDIT.md"
+    audit.write_text(
+        re.sub(
+            r"^\*\*Riesgo auditado:\*\*\s*\w+$",
+            "**Riesgo auditado:** alto",
+            audit.read_text(encoding="utf-8"),
+            flags=re.M,
+        ),
+        encoding="utf-8",
+    )
+    if "**Riesgo:** bajo" not in conciliation.read_text(encoding="utf-8"):
+        raise RuntimeError("S71: la conciliación no quedó en riesgo bajo")
+    if "**Riesgo auditado:** alto" not in audit.read_text(encoding="utf-8"):
+        raise RuntimeError("S71: la pasada no subió el riesgo a alto")
+    commit(snapshot, "etapa 01 auditada con riesgo alto")
+    approve(snapshot, "01-x")
+    commit(snapshot, "firma de plan")
+    return {}
+
 BUILDERS = {
     "s52": build_s52,
     "s53": build_s53,
@@ -563,6 +602,7 @@ BUILDERS = {
     "s68": build_s68,
     "s69": build_s69,
     "s70": build_s70,
+    "s71": build_s71,
 }
 
 
@@ -828,6 +868,45 @@ def check_s70(snapshot: Path, esperado: dict) -> list[str]:
             problems.append(f"la 02 no reclama src/utilidades.py: {payload.get('undeclared')}")
     return problems
 
+def check_s71(snapshot: Path, esperado: dict) -> list[str]:
+    problems = []
+    conciliation = (snapshot / "features/01-x" / "CONCILIACION.md").read_text(encoding="utf-8")
+    audit = (snapshot / "features/01-x" / "AUDIT.md").read_text(encoding="utf-8")
+    if "**Riesgo:** bajo" not in conciliation:
+        problems.append("la conciliación no está en riesgo bajo")
+    if "**Riesgo auditado:** alto" not in audit:
+        problems.append("la pasada no subió el riesgo a alto")
+    done = script(snapshot, "validate_stage.py", "features/01-x", "--repo", ".")
+    if done.returncode == 0:
+        problems.append("la pasada alto cerró con la firma de plan sola")
+    else:
+        if "mutante" not in done.stdout:
+            problems.append(f"no exige el mutante del riesgo alto: {done.stdout.strip()}")
+        if "ninguna aprobación humana" not in done.stdout:
+            problems.append(f"no exige la firma del árbol: {done.stdout.strip()}")
+    # Control: con la pasada en `bajo`, la firma de plan cierra. El fallo es
+    # la subida del riesgo, no una fixture rota.
+    with tempfile.TemporaryDirectory(prefix="n4-s71-") as raw:
+        copy = Path(raw) / "repo"
+        shutil.copytree(snapshot, copy)
+        copied = copy / "features/01-x" / "AUDIT.md"
+        copied.write_text(
+            re.sub(
+                r"^\*\*Riesgo auditado:\*\*\s*\w+$",
+                "**Riesgo auditado:** bajo",
+                copied.read_text(encoding="utf-8"),
+                flags=re.M,
+            ),
+            encoding="utf-8",
+        )
+        low = script(copy, "validate_stage.py", "features/01-x", "--repo", ".")
+        if low.returncode != 0:
+            problems.append(
+                "con la pasada en bajo la firma de plan no cerró: "
+                f"{low.stdout.strip()}{low.stderr.strip()}"
+            )
+    return problems
+
 CHECKS = {
     "s52": check_s52,
     "s53": check_s53,
@@ -846,6 +925,7 @@ CHECKS = {
     "s68": check_s68,
     "s69": check_s69,
     "s70": check_s70,
+    "s71": check_s71,
 }
 
 

@@ -61,7 +61,7 @@ def check_catalog() -> None:
         if case.get("setup") not in {
             "s52", "s53", "s54", "s55", "s56", "s57",
             "s58", "s59", "s60", "s61", "s62", "s63", "s66",
-            "s67", "s68", "s69", "s70",
+            "s67", "s68", "s69", "s70", "s71",
         }:
             fail(f"level4: {case.get('id')} usa un setup desconocido: {case.get('setup')}")
 

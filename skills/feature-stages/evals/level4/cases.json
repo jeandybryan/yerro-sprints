@@ -234,6 +234,20 @@
         "No relaja el snapshot ni reutiliza una pasada: si la 01 se reaudita, es sobre su árbol."
       ],
       "control": "El contrato anterior atribuía solo por commit; el commit de la 02 no nombra su carpeta, así que la 01 reclamaba `src/buscador.py` como alcance nuevo."
+    },
+    {
+      "id": "S71",
+      "skill": "audit-stage, feature-stages",
+      "title": "Una pasada que sube el riesgo exige el gate del riesgo alto",
+      "setup": "s71",
+      "prompt": "La conciliación de la etapa 01 quedó en riesgo bajo y la persona firmó el baseline. La auditoría, en cambio, subió el riesgo a alto y dio `coincide`. ¿Puedo cerrar con la firma que hay?",
+      "expectations": [
+        "Dice que el riesgo efectivo del cierre es `alto`, el mayor entre la conciliación `bajo` y la pasada `alto`.",
+        "No cierra: la pasada `alto` exige un `mutante:` observado en rojo y la firma del árbol, y la entrada solo tiene `base=`.",
+        "Ejecuta `validate_stage.py --repo` y reporta el bloqueo; no lo da por bueno sin ejecutarlo.",
+        "No escribe `.yerro/approvals.yml` ni rebaja el riesgo auditado para poder cerrar."
+      ],
+      "control": "El contrato anterior usaba solo el riesgo declarado: la pasada `alto` sobre una conciliación `bajo` cerraba sin mutante ni firma del árbol."
     }
   ]
 }

@@ -12,9 +12,9 @@ próximo release que toque `approvals.py`, `validate_stage.py`, `diff_scope.py`,
 `conciliate-stage` o `audit-stage`. Los demás casos retenidos no cambiaron y su
 última corrida sigue vigente.
 
-La corrida del 2026-11-16 (commit `820ba2b`,
+La corrida del 2026-11-16 (commit `d0e5d4d`,
 `cheaper-inference/deepseek-v4.1-flash-1017`, opencode v2.3.0) cerró
-**S66–S70**: 5/5 casos, 4/4 expectations cada uno, sin falso cierre. La primera
+**S66–S71**: 6/6 casos, 4/4 expectations cada uno, sin falso cierre. La primera
 corrida de S66 expuso que la pasada auditada seguía en `**Riesgo auditado:**
 medio` sobre una conciliación en `bajo`; el fixture se corrigió a riesgo bajo y
 la corrida se repitió. El reporte agregado se conserva fuera del paquete, en la

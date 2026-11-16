@@ -333,6 +333,39 @@ def _stage_prefixes(root: Path, stage: Path) -> tuple[str, list[str]]:
     return mine, others
 
 
+def later_stage_requests(root: Path, stage: Path, paths: list[str]) -> dict[str, dict[str, str]]:
+    """B-51: rutas que una etapa posterior del mismo panel declara para sí.
+
+    Una etapa cerrada deja de ser la dueña de sus archivos cuando la siguiente
+    trabaja sobre ellos dentro de su alcance. Pedirle a la anterior que los
+    reclame convierte trabajo normal en «alcance nuevo» y manda a reabrir una
+    etapa que el equipo ya dio por cerrada. La etapa posterior se reconoce por
+    el número de su carpeta (`NN-nombre`): solo las de número mayor que la
+    auditada, y solo por los `**Archivos:**` que declara en sus listas.
+
+    Lo que no se cubre aquí es la pasada de la etapa auditada: su `tree=` es
+    el contrato y un árbol distinto pide una pasada nueva. Esto atribuye el
+    diff, no absuelve el snapshot.
+    """
+    current = STAGE_DIR_RE.match(stage.name)
+    if not current:
+        return {}
+    current_number = int(current.group(0).split("-", 1)[0])
+    mine, others = _stage_prefixes(root, stage)
+    found: dict[str, dict[str, str]] = {}
+    for prefix in others:
+        path = root / prefix
+        if not path.is_dir() or Path(prefix.rstrip("/")).parent != Path(mine.rstrip("/")).parent:
+            continue
+        matched = STAGE_DIR_RE.match(Path(prefix.rstrip("/")).name)
+        if not matched or int(matched.group(0).split("-", 1)[0]) <= current_number:
+            continue
+        for relative, files in declared_in(path).items():
+            for item in files:
+                if item in paths and item not in found:
+                    found[item] = {"stage": Path(prefix.rstrip("/")).name, "task": relative}
+    return found
+
 def attribute(root: Path, base: str, stage: Path, paths: list[str]) -> dict[str, dict[str, str]]:
     """B-50: qué rutas sin declarar vienen de commits de **otra** etapa.
 
@@ -389,6 +422,17 @@ def attribute(root: Path, base: str, stage: Path, paths: list[str]) -> dict[str,
                 "commit": sha[:8],
                 "subject": str(commits[sha]["subject"]),
             }
+
+    # B-51: un archivo que una etapa posterior declara en sus `**Archivos:**`
+    # es suyo aunque su commit no toque la carpeta de esa etapa. El commit de
+    # una etapa que solo cambia código no la nombra, así que la atribución por
+    # commit se quedaba corta y la etapa anterior reclamaba trabajo ajeno.
+    remaining = [path for path in paths if path not in foreign]
+    for path, owner in later_stage_requests(root, stage, remaining).items():
+        foreign[path] = {
+            "commit": "declarado",
+            "subject": f"{owner['stage']} lo declara en {owner['task']}",
+        }
     return foreign
 
 

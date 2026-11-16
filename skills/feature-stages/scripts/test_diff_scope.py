@@ -574,6 +574,68 @@ def check_foreign_attribution() -> None:
         shutil.rmtree(repo, ignore_errors=True)
 
 
+def check_later_stage_attribution() -> None:
+    """B-51: una etapa posterior que declara el archivo es su dueña.
+
+    La 01 cierra y la 02 trabaja dentro de su alcance: cambia `src/utilidades.py`,
+    que la 01 declara, y crea `src/buscador.py`, que solo declara la 02. El
+    commit de la 02 solo toca código y no nombra ninguna carpeta de etapa, así
+    que la atribución por commit (B-50) no lo veía y la 01 reclamaba el archivo
+    nuevo como «alcance nuevo». El que la 01 ya declare no se absuelve por
+    aparecer en el diff: ahí la 01 es dueña y la 02 no declaró el cambio.
+    """
+    global checked
+    repo = Path(tempfile.mkdtemp(prefix="yerro-diffscope-posterior-"))
+    try:
+        init_repo(repo)
+        mine = repo / "features" / "01-export"
+        later = repo / "features" / "02-texto"
+        later.mkdir(parents=True)
+        (later / "TAREAS.md").write_text(
+            "# Tareas — etapa 02\n\n**Principal:** sí\n\n## Listado\n\n"
+            "- [ ] T1 — buscar (CA-01)\n"
+            "  **Archivos:** `src/buscador.py`\n"
+            "  Test-first: sí; Test: pytest -q tests/test_export_csv.py;\n",
+            encoding="utf-8",
+        )
+        (later / "CONCILIACION.md").write_text("# Conciliación 02\n", encoding="utf-8")
+        git(repo, "add", "-A")
+        git(repo, "commit", "-qm", "abrir la etapa 02")
+
+        # La 02 produce un archivo nuevo y toca uno que la 01 declara. Su
+        # commit solo toca código: no nombra ninguna carpeta de etapa.
+        (repo / "src" / "buscador.py").write_text("busca\n", encoding="utf-8")
+        (repo / "src" / "utilidades.py").write_text("filtrada\n", encoding="utf-8")
+        git(repo, "add", "-A")
+        git(repo, "commit", "-qm", "trabajar en la etapa 02")
+
+        result = run(repo, "features/01-export")
+        checked += 1
+        payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        if payload.get("undeclared") != ["src/utilidades.py"]:
+            fail(
+                "posterior: la 01 declaró src/utilidades.py, la 02 no, y la 01 "
+                f"dejó de reclamarlo ({result.returncode}, {payload.get('undeclared')})"
+            )
+        foreign = payload.get("foreign") or {}
+        if foreign.get("src/buscador.py", {}).get("subject") != (
+            "02-texto lo declara en T1"
+        ):
+            fail(f"posterior: no atribuyó el archivo a la etapa 02 ({foreign})")
+
+        # Una etapa anterior no absuelve: desde la 02, un archivo que la 01
+        # declara y la 02 no declara es alcance nuevo.
+        result = run(repo, "features/02-texto")
+        checked += 1
+        payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        if payload.get("undeclared") != ["src/utilidades.py"]:
+            fail(
+                "posterior: una etapa anterior absolvió a la posterior "
+                f"({result.returncode}, {payload.get('undeclared')})"
+            )
+    finally:
+        shutil.rmtree(repo, ignore_errors=True)
+
 def check_bad_base(repo: Path) -> None:
     """Una base inexistente es error de lectura (2), no un falso limpio."""
     global checked
@@ -638,6 +700,7 @@ def main() -> int:
         check_default_base_is_stage_start()
         check_base_is_task_list_start()
         check_foreign_attribution()
+        check_later_stage_attribution()
         check_bad_base(work)
         check_unmigrated(work)
         check_delta_scope()

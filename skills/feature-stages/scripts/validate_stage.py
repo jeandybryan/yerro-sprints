@@ -331,11 +331,19 @@ def declarative_command(command: str) -> bool:
 
 
 def declared_runners(conciliation: str) -> list[str]:
-    """Runners que la conciliación declara, separados por `|` o comas."""
+    """Runners que la conciliación declara, separados por `|` o comas.
+
+    Cada entrada es el comando del runner, no una frase: `curl (contra el
+    servidor de desarrollo)` declara `curl` y deja la aclaración fuera, que es
+    el mismo comando que la tarea escribe en `Test:`. Un paréntesis final es
+    la aclaración en la forma que una persona escribe sin pensarlo; dejar que
+    entre en el nombre convertía en aviso un `Test:` correcto.
+    """
     match = RUNNERS_RE.search(conciliation)
     if not match:
         return []
-    return [item.strip() for item in re.split(r"[|,]", match.group(1)) if item.strip()]
+    items = [item.strip() for item in re.split(r"[|,]", match.group(1)) if item.strip()]
+    return [re.sub(r"\s*\([^)]*\)\s*$", "", item).strip() for item in items]
 
 
 def declares_approvals(snapshot: str) -> bool:
@@ -349,8 +357,18 @@ def declares_approvals(snapshot: str) -> bool:
     return any(str(item).replace("\\", "/").lower() == declared for item in parse_excludes(snapshot))
 
 
+def runner_command(command: str) -> str:
+    """El comando sin los acentos que lo envuelven.
+
+    La plantilla escribe cada comando entre acentos abiertos y muchas personas
+    los copian dentro de `Test:`. El acento es marcado, no parte del comando:
+    compararlo crudo convertía en aviso un `Test:` correcto.
+    """
+    stripped = command.strip().strip("`").strip()
+    return stripped
+
 def is_runner(command: str, runners: list[str]) -> bool:
-    command = command.strip()
+    command = runner_command(command)
     return any(command.startswith(runner) for runner in runners)
 
 
@@ -717,7 +735,9 @@ def main() -> int:
         line = next((item for item in conciliation.splitlines() if f"**{ca}" in item), "")
         result.require(
             bool(CA_TYPE_RE.search(line)),
-            f"{ca} no declara tipo condición de salida/invariante acumulado",
+            f"{ca} no declara tipo condición de salida/invariante acumulado; "
+            "la forma que el validador acepta es `**CA-NN — [condición de salida]:**` "
+            "(o `[invariante acumulado]`), con el tipo entre corchetes",
         )
         result.require(
             bool(CA_ORIGIN_RE.search(line)),

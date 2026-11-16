@@ -9,7 +9,8 @@
 pasar para cerrar; `ninguna` solo con **Motivo de la suite:** escrito)
 **Motivo de la suite:** <solo si se declara `ninguna`>
 **Runners:** <pytest | npm test | go test ./...> (opcional; si falta, un `Test:`
-fuera de la lista negra del validador solo avisa)
+fuera de la lista negra del validador solo avisa. Cada runner es el comando
+que una tarea escribe en `Test:`; la aclaración va fuera de la línea)
 **Presupuesto de deltas:** <derivado del riesgo: bajo 2 | medio 1 | alto 1; otro
 valor exige **Motivo del presupuesto:** aquí>
 **Motivo del presupuesto:** <solo si el valor escrito no es el derivado>

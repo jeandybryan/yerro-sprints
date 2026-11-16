@@ -227,7 +227,7 @@ trabajo aceptado se aprende a saltar.
 
 Una afirmación de cumplimiento no se sostiene con una transcripción. Ver [evidence.md](evidence.md) para el detalle; en resumen:
 
-- `Test:` debe invocar un runner. El validador rechaza el trivio (`true`, `echo`, `sleep`, `:`, `bash -c true`, `python -c pass`) y acepta los runners que la conciliación declare en `**Runners:**`. Si no hay `**Runners:**`, un comando fuera de la lista negra solo avisa: el validador no adivina runners.
+- `Test:` debe invocar un runner. El validador rechaza el trivio (`true`, `echo`, `sleep`, `:`, `bash -c true`, `python -c pass`) y acepta los runners que la conciliación declare en `**Runners:**`. Si no hay `**Runners:**`, un comando fuera de la lista negra solo avisa: el validador no adivina runners. Los acentos abiertos que copia la plantilla no son parte del comando, y un paréntesis final en `**Runners:**` es aclaración, no parte del nombre: `curl (contra el servidor de desarrollo)` declara `curl`.
 - La sensibilidad se demuestra con `revertir → rojo → restaurar`, con un mutante que produce rojo, o con una regresión funcional contra `HEAD`. No se exige herramienta de mutación: se exige **ver el rojo**.
 - Una sensibilidad `no demostrada` deja el criterio en `no verificado`; nunca en `cumple`.
 - `evidence.py run` ejecuta y deja `exit=` y `firma=` en la fila del ledger. `evidence.py verify` reejecuta lo declarado y compara: una firma que no se reproduce es evidencia inventada.

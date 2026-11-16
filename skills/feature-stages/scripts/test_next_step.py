@@ -281,6 +281,9 @@ VALIDATE_REJECTED = [
     # verde sin haber probado. El caso reproduce el patrón real (T2, T7 y T9 de
     # una etapa) y su gemela con un patrón que sí casa pasa.
     ("test-patron-vacio", "no casa ningún caso de tests/salida.test.mjs"),
+    # S69: la forma que el validador acepta se nombra en el error, no solo se
+    # exige. Un CA con el tipo en prosa cae aquí.
+    ("ca-tipo", "[condición de salida]:**` (o `[invariante acumulado]`"),
     # `**Archivos:**` no es opcional: sin él, la parte de la tarea queda sin
     # declarar y `diff_scope` no puede atribuirle nada. Con el contrato viejo
     # esta etapa valida en verde, porque solo `diff_scope` avisaba.
@@ -315,6 +318,9 @@ VALIDATE_ACCEPTED = [
     # patrón que casa un caso real. Sin ella el gate podría rechazar cualquier
     # patrón y nadie lo notaría.
     "test-patron-con-casos",
+    # S69: la etapa armada copiando las plantillas, sin retocar la forma de los
+    # campos. Si el validador pide otra forma, la plantilla enseña a fallar.
+    "plantilla-verbatim",
 ]
 
 

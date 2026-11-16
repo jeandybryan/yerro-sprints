@@ -97,6 +97,26 @@ exentas.
       skill manda re-ejecutar tareas para descubrir qué faltaba (P21).
 - [ ] Se revisaron [GOVERNANCE.md](GOVERNANCE.md) y [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md); las decisiones de licencia, distribución, tags y hosts no se inventaron.
 
+## Instalación
+
+Copia el árbol de un tag al directorio de skills del host:
+
+```bash
+npx skills add 'jeandybryan/yerro-sprints#v0.5.2' \
+  --skill '*' \
+  --agent cursor \
+  --copy \
+  --yes
+```
+
+Cambia `--agent cursor` por el host que uses. Con pnpm, `npx` es rechazado por
+`devEngines.packageManager`: usa `pnpm dlx skills add …` con el mismo
+`#<ref>`. El CLI separa repositorio y ref con `#`, no con `@`; `skills-lock.json`
+graba el ref y `npx skills update` sigue ese tag.
+
+La instalación global es personal. Para trabajo compartido, instala a nivel
+proyecto y versiona el resultado.
+
 ## Validación local
 
 ```bash

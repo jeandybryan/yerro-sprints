@@ -7,6 +7,10 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+### Cambiado
+
+- **El README es un prompt, no un manual de instalación.** La página abría con el ciclo y el modelo mental y enterraba la instalación en cuatro secciones de comandos (`npx`, tag fijado, pnpm, copia manual). Ahora abre con un bloque listo para pegar en el agente —que pregunta el host, instala el tag `v0.5.2`, comprueba las seis skills y verifica Python— y sigue con «cómo se usa» en tres prompts. La idea, el ciclo, las cinco reglas del contrato, el estado sin adivinar y el versionado caben en 178 líneas; los comandos manuales y la explicación de `#<ref>` pasan a [CONTRIBUTING.md](CONTRIBUTING.md#instalación). Sin cambio de comportamiento: `validate_skill_evals.py` y `test_skill_evals.py` (24 comprobaciones documentales) en verde, y las 11 suites también. `Reps: 1/1` — es documentación, sin comportamiento que medir.
+
 ## [0.5.2] - 2026-11-16
 
 ### Añadido

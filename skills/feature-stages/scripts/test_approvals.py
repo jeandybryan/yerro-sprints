@@ -245,6 +245,57 @@ def check_plan_signature_is_read_only_and_signed(repo: Path) -> None:
     if "ya tiene la firma de plan" in edited.stderr:
         fail("suggest --plan: dio por vigente una firma de un baseline que cambió")
 
+def check_suggest_does_not_claim_a_foreign_tree(repo: Path) -> None:
+    """El aviso de `--suggest` habla del árbol que se firma, no de la etapa.
+
+    S66/B2: una firma de otro `tree=` no cubre el snapshot actual y el cierre
+    la rechaza. Decir «ya está aprobada» ahí mandaba a no firmar justo cuando
+    hacía falta una entrada nueva.
+    """
+    global checked
+    stage = repo / "feature" / "01-alfa"
+    approvals = repo / APPROVALS
+    approvals.parent.mkdir(parents=True, exist_ok=True)
+
+    # Árbol A: la etapa queda firmada para el árbol actual.
+    current = tree_of(identity(repo, (stage.parent, APPROVALS))) or ""
+    if not current:
+        fail("suggest/otro-árbol: la fixture no produjo un tree= reconocible")
+        return
+    approvals.write_text(
+        "- etapa: 01-alfa\n"
+        " aprobado-por: Ana Ruiz\n"
+        " fecha: 2026-11-09\n"
+        f" alcance: tree={current}\n",
+        encoding="utf-8",
+    )
+    checked += 1
+    same = run(repo, "--suggest", str(stage), "--by", "Ana Ruiz")
+    if "ya está aprobada" not in same.stderr:
+        fail(f"suggest/otro-árbol: no avisó de la firma vigente: {same.stderr!r}")
+
+    # Árbol B: cambia el código. La firma de A ya no cubre este snapshot.
+    (repo / "src.txt").write_text("dos\n", encoding="utf-8")
+    new_tree = tree_of(identity(repo, (stage.parent, APPROVALS))) or ""
+    if new_tree == current:
+        fail("suggest/otro-árbol: el código cambió pero el árbol no")
+        return
+    before = approvals.read_text(encoding="utf-8")
+    checked += 1
+    changed = run(repo, "--suggest", str(stage), "--by", "Ana Ruiz")
+    if changed.returncode != 0:
+        fail(f"suggest/otro-árbol: salió {changed.returncode}: {changed.stderr}")
+        return
+    if "ya está aprobada" in changed.stderr:
+        fail("suggest/otro-árbol: dio por aprobada una firma de otro árbol")
+    if "otro árbol" not in changed.stderr:
+        fail(f"suggest/otro-árbol: no avisó de que hace falta una entrada nueva: {changed.stderr!r}")
+    if f"alcance: tree={new_tree}" not in changed.stdout:
+        fail(f"suggest/otro-árbol: el bloque no lleva el árbol actual ({new_tree}): {changed.stdout!r}")
+    checked += 1
+    if approvals.read_text(encoding="utf-8") != before:
+        fail("suggest/otro-árbol: escribió el archivo de aprobaciones")
+
 def main() -> int:
     with tempfile.TemporaryDirectory() as tmp:
         repo = Path(tmp) / "repo"
@@ -252,6 +303,7 @@ def main() -> int:
         init_repo(repo)
         check_suggest_is_read_only_and_covers(repo)
         check_block_with_foreign_tree_does_not_cover(repo)
+        check_suggest_does_not_claim_a_foreign_tree(repo)
         check_plan_signature_is_read_only_and_signed(repo)
         check_missing_stage_fails(repo)
         check_non_stage_folder_fails(repo)

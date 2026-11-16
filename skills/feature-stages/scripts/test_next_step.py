@@ -60,6 +60,13 @@ CASES = [
     ("sin-principal", None, DECISION, None, ["TAREA_NO_PRINCIPAL"]),
 ("estado-tareas-desconocido", None, DECISION, None, ["TAREAS_ESTADO_DESCONOCIDO"]),
     ("presupuesto-agotado", None, DECISION, None, ["PRESUPUESTO_DE_DELTAS_AGOTADO"]),
+    # Un delta `pendiente` no gastó el presupuesto: abrirlo es el primer paso
+    # del flujo, no el último. Con el derivado `medio → 1`, contar el archivo
+    # en cuanto existe dejaba el ciclo sin poder implementar el único delta.
+    ("presupuesto-pendiente", None, TRABAJANDO, "implement-stage", []),
+    # Un delta `implementada` sin pasada posterior tampoco gastó: toca
+    # reauditarlo. Solo la pasada que lo reaudita (o lo declara) lo consume.
+    ("presupuesto-implementado", None, VERIFICANDO, "audit-stage", []),
     ("presupuesto-excedido", None, DECISION, None, ["PRESUPUESTO_DE_DELTAS_AGOTADO"]),
     ("presupuesto-excedido-coincide", None, DECISION, None, ["PRESUPUESTO_DE_DELTAS_AGOTADO"]),
     ("presupuesto-amplio", None, VERIFICANDO, "audit-stage", []),
@@ -581,9 +588,11 @@ def check_validate_no_crash() -> None:
 def check_budget_branches() -> None:
     """`agotado` y `excedido` son estados distintos, no dos nombres del mismo.
 
-    Agotado: se usó todo el presupuesto y la auditoría sigue en `no coincide`.
+    Agotado: se gastó todo el presupuesto y la auditoría sigue en `no coincide`.
     Excedido: se escribió un delta más de los que el presupuesto permite. Si se
-    confunden, el auditor no sabe si puede escribir otro delta.
+    confunden, el auditor no sabe si puede escribir otro delta. Un delta
+    `pendiente` no gasta: el presupuesto se consume al implementarlo y
+    reauditarlo, no al abrir el archivo.
     """
     global checked
     agotado = analyze(FIXTURES / "presupuesto-agotado")
@@ -604,6 +613,34 @@ def check_budget_branches() -> None:
         fail(f"presupuesto-excedido: se leyó como agotado: {mensaje}")
     if len(excedido["deltas"]) <= excedido["presupuesto_deltas"]:
         fail("presupuesto-excedido: la fixture no excede el presupuesto")
+
+    pendiente = analyze(FIXTURES / "presupuesto-pendiente")
+    checked += 1
+    if pendiente["blockers"]:
+        fail(
+            "presupuesto-pendiente: un delta sin implementar agotó el presupuesto: "
+            + " ".join(item["mensaje"] for item in pendiente["blockers"])
+        )
+    checked += 1
+    if pendiente["siguiente"] != "implement-stage":
+        fail(
+            "presupuesto-pendiente: el siguiente paso no es implementar el delta "
+            f"(obtenido {pendiente['siguiente']!r})"
+        )
+
+    implementado = analyze(FIXTURES / "presupuesto-implementado")
+    checked += 1
+    if implementado["blockers"]:
+        fail(
+            "presupuesto-implementado: un delta sin reauditar agotó el presupuesto: "
+            + " ".join(item["mensaje"] for item in implementado["blockers"])
+        )
+    checked += 1
+    if implementado["siguiente"] != "audit-stage":
+        fail(
+            "presupuesto-implementado: el siguiente paso no es reauditar el delta "
+            f"(obtenido {implementado['siguiente']!r})"
+        )
 
 
 # Los casos de `evals/cases/` se materializan en un árbol temporal. Qué

@@ -242,11 +242,26 @@ def suggest(
             f" base: {baseline}\n"
         )
         return block, warning
-    covering = find(existing, stage_dir.name, snapshot)
+    # El aviso tiene que hablar del árbol que se va a firmar, no de la etapa:
+    # una firma de otro `tree=` no cubre este snapshot y el cierre la rechaza.
+    # `find()` cae a la última entrada de la etapa cuando ninguna cubre, así
+    # que aquí se filtra por cobertura real.
+    covering = next(
+        (
+            item for item in existing
+            if item.stage == stage_dir.name and item.covers(snapshot)
+        ),
+        None,
+    )
     if covering is not None:
         warning = (
             f"{stage_dir.name} ya está aprobada por {covering.approved_by} "
             f"({covering.date}) para este árbol: no hace falta otra entrada"
+        )
+    elif any(item.stage == stage_dir.name for item in existing):
+        warning = (
+            f"{stage_dir.name} tiene una firma para otro árbol: hace falta una "
+            f"entrada nueva para tree={tree}"
         )
     block = (
         f"- etapa: {stage_dir.name}\n"

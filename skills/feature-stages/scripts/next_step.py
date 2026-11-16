@@ -48,6 +48,7 @@ REOPENING_RE = re.compile(r"\*\*Reapertura:\*\*\s*([^\n]+)", re.I)
 PASS_RE = re.compile(
     r"^##\s+Pasada\b.*?$(.*?)(?=^##\s+Pasada\b|\Z)", re.M | re.S | re.I
 )
+PASS_NUMBER_RE = re.compile(r"^##\s+Pasada\s+(\d+)", re.M | re.I)
 CIERRA_RE = re.compile(r"\*\*Cierra:\*\*\s*([^\n]+)", re.I)
 # Una pasada que cierra declara los deltas que auditó (`**Deltas:** D1, D2`).
 # Es la evidencia del delta, no la prosa: la palabra «deltas» aparece en un
@@ -218,6 +219,42 @@ def delta_files(stage: Path) -> list[Path]:
         key=lambda path: int(DELTA_RE.match(path.name).group(1)),
     )
 
+def closes_pass(text: str) -> int | None:
+    """Número de la pasada que el delta dice cerrar (`**Cierra:** … pasada N`)."""
+    match = CIERRA_RE.search(text)
+    if not match:
+        return None
+    number = re.search(r"pasada\s+(\d+)", match.group(1), re.I)
+    return int(number.group(1)) if number else None
+
+def spent_deltas(deltas: list[Path], audit: str) -> list[Path]:
+    """Deltas que ya consumieron presupuesto: implementados y reauditados.
+
+    Un delta `pendiente` o `en curso` todavía no gastó nada: abrirlo es el
+    primer paso del flujo que el presupuesto acota, no el último. Tampoco lo
+    gastó un delta `implementada` que aún no tiene una pasada posterior: el
+    siguiente paso es reauditarlo, no detenerse. Contar el archivo en cuanto
+    existe hacía inutilizable el derivado `medio → 1` y `alto → 1`: el único
+    delta permitido bloqueaba el ciclo antes de poder implementarse o
+    reauditarse. Se cuenta como gastado el que una pasada nombra en
+    `**Deltas:**` —la evidencia del delta es la pasada, no el campo que
+    escribe el agente— o el que está `implementada`/`auditada` y ya tiene una
+    pasada posterior a la que declara cerrar.
+    """
+    declared = set(declared_deltas(audit))
+    numbers = [int(item) for item in PASS_NUMBER_RE.findall(audit)]
+    latest = max(numbers) if numbers else 0
+    spent: list[Path] = []
+    for path in deltas:
+        text = read(path)
+        state = normalize(parse_state(text))
+        delta_id = f"D{int(DELTA_RE.match(path.name).group(1))}"
+        closes = closes_pass(text)
+        reaudited = closes is not None and latest > closes
+        if delta_id in declared or (state in ("implementada", "auditada") and reaudited):
+            spent.append(path)
+    return spent
+
 def analyze_stage(feature_root: Path, name: str, row: dict[str, str] | None) -> dict:
     """Estado de una etapa según sus artefactos, no según lo que diga el agente."""
     stage = feature_root / name
@@ -265,16 +302,17 @@ def analyze_stage(feature_root: Path, name: str, row: dict[str, str] | None) -> 
     # gana el valor derivado del riesgo.
     justified = BUDGET_REASON_RE.search(conciliation) is not None
     budget = declared if declared <= derived or justified else derived
+    spent = spent_deltas(deltas, audit)
     if len(deltas) > budget:
         block(
             "PRESUPUESTO_DE_DELTAS_AGOTADO",
             f"{len(deltas)} delta(s) con presupuesto {budget}: la corrección dejó de estar acotada",
             "reabrir la conciliación, aceptar el riesgo residual con owner, o detener la etapa",
         )
-    elif verdict == "no coincide" and len(deltas) >= budget and not reopened:
+    elif verdict == "no coincide" and len(spent) >= budget and not reopened:
         block(
             "PRESUPUESTO_DE_DELTAS_AGOTADO",
-            f"{len(deltas)} delta(s) usados de {budget} y la auditoría sigue en no coincide",
+            f"{len(spent)} delta(s) usados de {budget} y la auditoría sigue en no coincide",
             "reabrir la conciliación o detener la etapa; no escribir otro delta",
         )
 

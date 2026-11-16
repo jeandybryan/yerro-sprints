@@ -239,6 +239,9 @@ VALIDATE_REJECTED = [
     ("test-first-invalido", "no declara Test-first"),
     ("audit-trazabilidad-invalida", "sin **Trazabilidad:**"),
     ("riesgo-rebajado", "rebaja el riesgo"),
+    # S71: el auditor puede subir el riesgo en la pasada. Si la subida no
+    # cambia lo que el cierre exige, la frase del contrato es decorativa.
+    ("riesgo-auditado-sube", "ningún CA crítico registra `mutante:`"),
     # B-25: un ruling sin coste oculta la decisión.
     ("ruling-sin-coste", "sin las tres partes"),
     # B-26: un ruling de categoría 2 sin revisar impide el cierre.

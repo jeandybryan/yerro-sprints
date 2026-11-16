@@ -996,6 +996,18 @@ def main() -> int:
     )
     deltas = len(delta_ids(audit))
     risk = declared_risk.group(1).lower() if declared_risk else ""
+    # El auditor puede **subir** el riesgo en la pasada; bajarlo reabre la
+    # conciliación. Si la subida no cambia lo que el cierre exige, la frase
+    # del contrato es decorativa: una etapa declarada `bajo` con una pasada
+    # `alto` cerraba sin mutante ni firma del árbol. El riesgo efectivo es el
+    # mayor de los dos; el presupuesto de deltas sigue siendo el que la
+    # conciliación derivó, porque es una decisión del corte, no de la pasada.
+    audited = AUDITED_RISK_RE.findall(audit)
+    effective_risk = risk
+    if risk and audited:
+        last = audited[-1].lower()
+        if RISK_RANK[last] > RISK_RANK[risk]:
+            effective_risk = last
     if budget_match and risk:
         derived = DELTA_BUDGET_BY_RISK[risk]
         result.require(
@@ -1004,7 +1016,7 @@ def main() -> int:
             f"**Presupuesto de deltas:** {budget_match.group(1)} con riesgo {risk} "
             f"supera el derivado ({derived}) sin **Motivo del presupuesto:**",
         )
-    for gap in risk_evidence_gaps(risk, audit):
+    for gap in risk_evidence_gaps(effective_risk, audit):
         result.require(False, gap)
     if crosses_risk_gate(audit, deltas, measured_budget):
         result.require(
@@ -1068,11 +1080,11 @@ def main() -> int:
                 )
                 # `recorded` vacío ya lo bloquea la coincidencia del snapshot:
                 # no se pide una firma de árbol sobre una pasada que no existe.
-                if risk != "bajo" and recorded is not None:
+                if effective_risk != "bajo" and recorded is not None:
                     result.require(
                         checkpoint_approval(args.repo, stage, recorded),
                         f"ninguna aprobación humana en {DEFAULT_APPROVALS} cubre la etapa "
-                        f"{stage.name} en el snapshot auditado (riesgo {risk}: la firma de "
+                        f"{stage.name} en el snapshot auditado (riesgo {effective_risk}: la firma de "
                         "plan no sustituye la del árbol); una firma textual la escribe el "
                         "agente; ese archivo lo edita la persona",
                     )

@@ -254,6 +254,12 @@ def validate(stage: Path, repo: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
+def audit_text(snapshot: str, risk: str = "medio") -> str:
+    """El AUDIT de la fixture con el riesgo auditado que el caso necesita."""
+    return AUDIT.format(snapshot=snapshot).replace(
+        "**Riesgo auditado:** medio", f"**Riesgo auditado:** {risk}"
+    )
+
 def check_whole_panel_excluded(repo: Path) -> None:
     """Los documentos de las demás etapas no son código auditado.
 
@@ -551,7 +557,7 @@ def check_bytecode_ignored() -> None:
         stage.mkdir(parents=True)
         (stage / "CONCILIACION.md").write_text(STAGE.format(risk="bajo"), encoding="utf-8")
         (stage / "TAREAS.md").write_text(TASKS, encoding="utf-8")
-        (stage / "AUDIT.md").write_text(AUDIT.format(snapshot="pendiente"), encoding="utf-8")
+        (stage / "AUDIT.md").write_text(audit_text("pendiente", "bajo"), encoding="utf-8")
         approvals = repo / APPROVALS
         approvals.parent.mkdir(parents=True)
         # Riesgo bajo: la firma de plan cubre el cierre (S66/B2), así que el
@@ -564,7 +570,7 @@ def check_bytecode_ignored() -> None:
         git(repo, "add", "-A")
         git(repo, "commit", "-qm", "abre la etapa")
         before = identity(repo, (Path("feature"), APPROVALS))
-        (stage / "AUDIT.md").write_text(AUDIT.format(snapshot=before), encoding="utf-8")
+        (stage / "AUDIT.md").write_text(audit_text(before, "bajo"), encoding="utf-8")
 
         _plant_bytecode(repo)
         checked += 1
@@ -635,7 +641,7 @@ def check_plan_signature(repo: Path) -> None:
     (stage / "TAREAS.md").write_text(TASKS, encoding="utf-8")
     audit = stage / "AUDIT.md"
     snapshot = identity(repo, (panel, APPROVALS))
-    audit.write_text(AUDIT.format(snapshot=snapshot), encoding="utf-8")
+    audit.write_text(audit_text(snapshot, "bajo"), encoding="utf-8")
 
     approvals = repo / APPROVALS
     approvals.parent.mkdir(parents=True, exist_ok=True)
@@ -692,6 +698,7 @@ def check_plan_signature(repo: Path) -> None:
 
     # 4. Riesgo medio: la firma de plan no sustituye la del árbol.
     (stage / "CONCILIACION.md").write_text(STAGE.format(risk="medio"), encoding="utf-8")
+    audit.write_text(audit_text(snapshot, "medio"), encoding="utf-8")
     approvals.write_text(block(base=baseline_of(stage)), encoding="utf-8")
     checked += 1
     medio = validate(stage, repo)
@@ -703,7 +710,7 @@ def check_plan_signature(repo: Path) -> None:
     # 5. Cambiar el baseline después de firmar invalida la firma de plan.
     (stage / "CONCILIACION.md").write_text(STAGE.format(risk="bajo"), encoding="utf-8")
     signed = baseline_of(stage)
-    (stage / "AUDIT.md").write_text(AUDIT.format(snapshot=snapshot), encoding="utf-8")
+    audit.write_text(audit_text(snapshot, "bajo"), encoding="utf-8")
     conciliation.write_text(
         STAGE.format(risk="bajo").replace(
             "- **S-01 — Decisión:** se valida el snapshot antes del cierre.",
@@ -950,6 +957,52 @@ def check_missing_approval_exclusion(repo: Path) -> None:
     if closed.returncode != 0:
         fail(f"validate --repo: rechazó el snapshot con la exclusión correcta: {closed.stdout}")
 
+def check_audited_risk_raises_signature(repo: Path) -> None:
+    """S71: una pasada que sube el riesgo exige la firma del árbol.
+
+    La conciliación declaró `bajo` y la pasada auditada declara `medio`. El
+    contrato deja al auditor subir el riesgo; si la subida no cambia lo que el
+    cierre exige, la frase es decorativa. Con la firma de plan sola la etapa no
+    cierra; con la firma del árbol, sí.
+    """
+    global checked
+    stage = repo / "feature" / "02-riesgo"
+    stage.mkdir(parents=True)
+    (stage / "CONCILIACION.md").write_text(STAGE.format(risk="bajo"), encoding="utf-8")
+    (stage / "TAREAS.md").write_text(TASKS, encoding="utf-8")
+    audit = stage / "AUDIT.md"
+    audit.write_text(AUDIT.format(snapshot="pendiente"), encoding="utf-8")
+    approvals = repo / APPROVALS
+    approvals.parent.mkdir(parents=True, exist_ok=True)
+    approvals.write_text(
+        f"- etapa: 02-riesgo\n aprobado-por: Ana\n fecha: 2026-11-16\n"
+        f" base: {baseline_of(stage)}\n",
+        encoding="utf-8",
+    )
+    snapshot = identity(repo, (Path("feature"), APPROVALS))
+    audit.write_text(AUDIT.format(snapshot=snapshot), encoding="utf-8")
+
+    checked += 1
+    plan_only = validate(stage, repo)
+    if plan_only.returncode == 0:
+        fail("validate --repo: una pasada que sube el riesgo cerró con la firma de plan sola")
+    elif "ninguna aprobación humana" not in plan_only.stdout:
+        fail(f"validate --repo: rechazó por otro motivo: {plan_only.stdout}")
+
+    tree = tree_of(snapshot) or ""
+    approvals.write_text(
+        f"- etapa: 02-riesgo\n aprobado-por: Ana\n fecha: 2026-11-16\n"
+        f" base: {baseline_of(stage)}\n alcance: tree={tree}\n",
+        encoding="utf-8",
+    )
+    checked += 1
+    signed = validate(stage, repo)
+    if signed.returncode != 0:
+        fail(
+            "validate --repo: la firma del árbol no cubrió la pasada que sube el "
+            f"riesgo: {signed.stdout}"
+        )
+
 def main() -> int:
     if shutil.which("git") is None:
         print("SKIP: git no está disponible")
@@ -965,6 +1018,7 @@ def main() -> int:
         check_panel_index_excluded(repo)
         check_validate(repo)
         check_plan_signature(repo)
+        check_audited_risk_raises_signature(repo)
         check_document_commit(repo)
         check_whole_panel_excluded(repo)
         check_new_stage_does_not_invalidate(repo)

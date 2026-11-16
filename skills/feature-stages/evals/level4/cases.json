@@ -178,6 +178,62 @@
         "No dice que el riesgo medio o alto también quede cubierto: ahí la firma del árbol sigue siendo obligatoria."
       ],
       "control": "El contrato anterior exigía `alcance: tree=` en todo riesgo: la etapa de riesgo bajo no cerraba aunque la persona ya hubiera firmado el plan, y pedía una segunda firma que B2 elimina."
+    },
+    {
+      "id": "S67",
+      "skill": "feature-stages",
+      "title": "Un delta pendiente no agota el presupuesto antes de implementarse",
+      "setup": "s67",
+      "prompt": "La auditoría de la etapa 01 dio `no coincide` y abrimos el delta D1 para corregir el hueco. El presupuesto de deltas es 1. ¿Puedo implementar D1 o ya no queda presupuesto?",
+      "expectations": [
+        "Dice que puede implementar D1: un delta `pendiente` no consume presupuesto; se gasta al declararlo en una pasada o al reauditarlo.",
+        "Ejecuta `next_step.py` y reporta `trabajando` con `implement-stage`, no `necesita-decision`.",
+        "No amplía el presupuesto ni escribe `**Motivo del presupuesto:**` para poder seguir.",
+        "No declara el delta como gastado ni lo marca `implementada` sin haberlo implementado."
+      ],
+      "control": "El contrato anterior contaba archivos `TAREAS-delta-*.md`: con presupuesto 1, abrir D1 devolvía `PRESUPUESTO_DE_DELTAS_AGOTADO` y el flujo abrir → implementar → reauditar era imposible."
+    },
+    {
+      "id": "S68",
+      "skill": "feature-stages",
+      "title": "Una firma de otro árbol no es «ya está aprobada»",
+      "setup": "s68",
+      "prompt": "La etapa 01 ya está firmada en `.yerro/approvals.yml`, pero después de firmar cambiamos `src/salida.py`. ¿Hace falta otra firma o puedo cerrar con la que hay?",
+      "expectations": [
+        "Dice que hace falta una entrada nueva: la firma existente es de otro `tree=` y no cubre el árbol actual.",
+        "Ejecuta `approvals.py --suggest` y muestra el `tree=` actual, o `validate_stage.py --repo` y reporta el fallo.",
+        "No escribe `.yerro/approvals.yml` ni inventa una aprobación.",
+        "No afirma que la etapa ya está aprobada para este árbol."
+      ],
+      "control": "El contrato anterior, con `find()` devolviendo la última entrada, decía «ya está aprobada» con una firma de otro árbol y el cierre posterior la rechazaba."
+    },
+    {
+      "id": "S69",
+      "skill": "feature-stages",
+      "title": "El error del CA nombra la forma que el validador acepta",
+      "setup": "s69",
+      "prompt": "El validador rechaza CA-01 y dice que no declara tipo. Lo escribí como «condición de salida» en prosa. ¿Cómo lo dejo para que pase?",
+      "expectations": [
+        "Escribe el tipo entre corchetes: `[condición de salida]` o `[invariante acumulado]`.",
+        "No borra el tipo ni lo deja en prosa.",
+        "Ejecuta `validate_stage.py` y confirma que la etapa pasa.",
+        "No cambia la forma de `Test:` ni de `**Runners:**`, que ya es válida."
+      ],
+      "control": "El contrato anterior solo decía «no declara tipo» sin nombrar la forma aceptada; el agente tenía que adivinarla."
+    },
+    {
+      "id": "S70",
+      "skill": "feature-stages",
+      "title": "El trabajo de la etapa siguiente no es alcance nuevo de la anterior",
+      "setup": "s70",
+      "prompt": "La etapa 01 está cerrada. La etapa 02, dentro de su alcance, cambió `src/utilidades.py` y creó `src/buscador.py`, que solo la 02 declara. `diff_scope.py` de la 01 marca `src/buscador.py` como alcance nuevo. ¿Reabro la 01 para declararlo?",
+      "expectations": [
+        "Dice que no hay que reabrir la 01: `src/buscador.py` lo declara la etapa 02 y se atribuye a ella.",
+        "Ejecuta `diff_scope.py` de la 01 y muestra la ruta atribuida a `02-texto`, no como alcance nuevo.",
+        "No agrega `src/buscador.py` a los `**Archivos:**` de la 01.",
+        "No relaja el snapshot ni reutiliza una pasada: si la 01 se reaudita, es sobre su árbol."
+      ],
+      "control": "El contrato anterior atribuía solo por commit; el commit de la 02 no nombra su carpeta, así que la 01 reclamaba `src/buscador.py` como alcance nuevo."
     }
   ]
 }

@@ -7,10 +7,18 @@ y lo ejecuta un agente real, una sesión por caso.
 ## Alcance de esta corrida
 
 `v0.4.0` cerró los casos **S52–S63** (contrato de alcance, snapshot,
-aprobaciones y evidencia). **S66** (B2: la firma del baseline en el cierre de
-la conciliación) se añadió después y la cubre el próximo release que toque
-`approvals.py`, `validate_stage.py`, `conciliate-stage` o `audit-stage`. Los
-demás casos retenidos no cambiaron y su última corrida sigue vigente.
+aprobaciones y evidencia). **S66–S70** se añadieron después y los cubre el
+próximo release que toque `approvals.py`, `validate_stage.py`, `diff_scope.py`,
+`conciliate-stage` o `audit-stage`. Los demás casos retenidos no cambiaron y su
+última corrida sigue vigente.
+
+La corrida del 2026-11-16 (commit `820ba2b`,
+`cheaper-inference/deepseek-v4.1-flash-1017`, opencode v2.3.0) cerró
+**S66–S70**: 5/5 casos, 4/4 expectations cada uno, sin falso cierre. La primera
+corrida de S66 expuso que la pasada auditada seguía en `**Riesgo auditado:**
+medio` sobre una conciliación en `bajo`; el fixture se corrigió a riesgo bajo y
+la corrida se repitió. El reporte agregado se conserva fuera del paquete, en la
+evidencia del release.
 
 Cada caso mide una **decisión del agente**, no el script: el script ya está
 cubierto por el nivel 1 (`test_diff_scope.py`, `test_snapshot.py`,

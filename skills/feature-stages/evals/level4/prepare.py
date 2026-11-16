@@ -374,11 +374,27 @@ def build_s66(snapshot: Path) -> dict:
         ),
         encoding="utf-8",
     )
+    # La pasada también declara el riesgo auditado: el contrato deja al
+    # auditor **subirlo**, así que una pasada en `medio` sobre una
+    # conciliación en `bajo` no es una etapa de riesgo bajo, y pedir la firma
+    # del árbol sería lo correcto. El caso mide el riesgo bajo completo.
+    audit = snapshot / "features/02-x" / "AUDIT.md"
+    audit.write_text(
+        re.sub(
+            r"^\*\*Riesgo auditado:\*\*\s*\w+$",
+            "**Riesgo auditado:** bajo",
+            audit.read_text(encoding="utf-8"),
+            flags=re.M,
+        ),
+        encoding="utf-8",
+    )
     # Se comprueba antes de la pasada final: si `**Riesgo:**` vuelve a `medio`,
     # el snapshot no arranca en el estado que S66 mide y el caso no demuestra
     # nada (el control sigue fallando, así que el arnés no lo notaría).
     if "**Riesgo:** bajo" not in conciliation.read_text(encoding="utf-8"):
         raise RuntimeError("S66: no se pudo bajar el riesgo de la etapa 02-x a bajo")
+    if "**Riesgo auditado:** bajo" not in audit.read_text(encoding="utf-8"):
+        raise RuntimeError("S66: la pasada auditada no quedó en riesgo bajo")
     commit(snapshot, "etapa 02 auditada")
     approve(snapshot, "02-x")
     commit(snapshot, "firma de plan")
@@ -464,6 +480,71 @@ def build_s63(snapshot: Path) -> dict:
     return {"snapshot": before}
 
 
+def build_s67(snapshot: Path) -> dict:
+    init_repo(snapshot)
+    shutil.copytree(FIXTURES / "presupuesto-pendiente", snapshot / "features")
+    commit(snapshot, "etapa 01 con delta pendiente")
+    return {}
+
+def build_s68(snapshot: Path) -> dict:
+    init_repo(snapshot)
+    valid_stage(snapshot, "features/01-x")
+    write(snapshot, "src/salida.py", "salida = 1\n")
+    write(snapshot, "tests/test_salida.py", "def test_salida():\n assert True\n")
+    commit(snapshot, "etapa 01 implementada")
+    before = snapshot_of(snapshot, "features/01-x", "--exclude", ".yerro/approvals.yml")
+    valid_stage(snapshot, "features/01-x", before)
+    commit(snapshot, "etapa 01 auditada")
+    approve(snapshot, "01-x", f"tree={tree_of(before)}")
+    commit(snapshot, "firma del árbol auditado")
+    # El código cambia después de firmar: la firma es de otro árbol.
+    write(snapshot, "src/salida.py", "salida = 2\n")
+    commit(snapshot, "cambio posterior a la firma")
+    return {"snapshot": before}
+
+def build_s69(snapshot: Path) -> dict:
+    init_repo(snapshot)
+    valid_stage(snapshot, "features/01-x")
+    conciliation = snapshot / "features/01-x" / "CONCILIACION.md"
+    text = conciliation.read_text(encoding="utf-8")
+    # El tipo del CA escrito en prosa: la forma que el validador rechaza y
+    # que el error nuevo nombra. El resto de la etapa es válido.
+    text = text.replace(
+        "[condición de salida | invariante acumulado]",
+        "condición de salida",
+    )
+    conciliation.write_text(text, encoding="utf-8")
+    commit(snapshot, "etapa 01 con el tipo del CA en prosa")
+    return {}
+
+def build_s70(snapshot: Path) -> dict:
+    init_repo(snapshot)
+    mine = snapshot / "features" / "01-export"
+    later = snapshot / "features" / "02-texto"
+    later.mkdir(parents=True)
+    write(snapshot, "src/utilidades.py", "base\n")
+    write(snapshot, "features/01-export/CONCILIACION.md", CONCILIACION.format(name="01-export"))
+    write(snapshot, "features/02-texto/CONCILIACION.md", CONCILIACION.format(name="02-texto"))
+    commit(snapshot, "corte de las etapas 01 y 02")
+    write(
+        snapshot,
+        "features/01-export/TAREAS.md",
+        TAREAS.format(name="01-export", source="src/utilidades.py"),
+    )
+    commit(snapshot, "abre la etapa 01")
+    write(
+        snapshot,
+        "features/02-texto/TAREAS.md",
+        TAREAS.format(name="02-texto", source="src/buscador.py"),
+    )
+    commit(snapshot, "abre la etapa 02")
+    # La 02 trabaja dentro de su alcance: toca un archivo de la 01 y crea el
+    # suyo. Su commit solo cambia código y no nombra ninguna carpeta de etapa.
+    write(snapshot, "src/utilidades.py", "filtrada\n")
+    write(snapshot, "src/buscador.py", "busca\n")
+    commit(snapshot, "trabajar en la etapa 02")
+    return {}
+
 BUILDERS = {
     "s52": build_s52,
     "s53": build_s53,
@@ -478,6 +559,10 @@ BUILDERS = {
     "s62": build_s62,
     "s63": build_s63,
     "s66": build_s66,
+    "s67": build_s67,
+    "s68": build_s68,
+    "s69": build_s69,
+    "s70": build_s70,
 }
 
 
@@ -636,6 +721,9 @@ def check_s62(snapshot: Path, esperado: dict) -> list[str]:
 
 def check_s66(snapshot: Path, esperado: dict) -> list[str]:
     problems = []
+    audit = (snapshot / "features/02-x" / "AUDIT.md").read_text(encoding="utf-8")
+    if "**Riesgo auditado:** bajo" not in audit:
+        problems.append("la pasada auditada no es de riesgo bajo; el caso mide otra cosa")
     done = script(snapshot, "validate_stage.py", "features/02-x", "--repo", ".")
     if done.returncode != 0:
         problems.append(f"la firma de plan no cerró: {done.stdout.strip()}{done.stderr.strip()}")
@@ -674,6 +762,72 @@ def check_s63(snapshot: Path, esperado: dict) -> list[str]:
     return problems
 
 
+def check_s67(snapshot: Path, esperado: dict) -> list[str]:
+    problems = []
+    done = script(snapshot, "next_step.py", "features", "--json")
+    if done.returncode != 0:
+        return [f"next_step.py salió {done.returncode}: {done.stderr.strip()}"]
+    data = json.loads(done.stdout)
+    if data.get("state") != "trabajando" or data.get("siguiente") != "implement-stage":
+        problems.append(
+            "un delta pendiente no deja implementar: "
+            f"{data.get('state')}/{data.get('siguiente')}"
+        )
+    if data.get("blockers"):
+        problems.append(f"el delta pendiente bloquea: {data['blockers']}")
+    return problems
+
+def check_s68(snapshot: Path, esperado: dict) -> list[str]:
+    problems = []
+    done = script(snapshot, "approvals.py", ".", "--suggest", "features/01-x")
+    if done.returncode != 0:
+        problems.append(f"approvals.py --suggest salió {done.returncode}: {done.stderr.strip()}")
+    elif "otro árbol" not in done.stderr or "entrada nueva" not in done.stderr:
+        problems.append(f"no avisa de la firma de otro árbol: {done.stderr.strip()}")
+    closed = script(snapshot, "validate_stage.py", "features/01-x", "--repo", ".")
+    if closed.returncode == 0:
+        problems.append("la firma de otro árbol cerró la etapa")
+    with tempfile.TemporaryDirectory(prefix="n4-s68-") as raw:
+        copy = Path(raw) / "repo"
+        shutil.copytree(snapshot, copy)
+        # Control: con el árbol que se firmó, el aviso sí reconoce la firma.
+        write(copy, "src/salida.py", "salida = 1\n")
+        same = script(copy, "approvals.py", ".", "--suggest", "features/01-x")
+        if "ya está aprobada" not in same.stderr:
+            problems.append(f"con el mismo árbol no reconoce la firma: {same.stderr.strip()}")
+    return problems
+
+def check_s69(snapshot: Path, esperado: dict) -> list[str]:
+    problems = []
+    done = script(snapshot, "validate_stage.py", "features/01-x")
+    if done.returncode == 0:
+        problems.append("el CA en prosa pasó el validador; el caso no mide nada")
+    elif "[condición de salida]:**" not in done.stdout:
+        problems.append(f"el error no nombra la forma aceptada: {done.stdout.strip()}")
+    return problems
+
+def check_s70(snapshot: Path, esperado: dict) -> list[str]:
+    problems = []
+    done = script(snapshot, "diff_scope.py", "features/01-export", "--repo", ".", "--json")
+    if done.returncode != 0:
+        return [f"diff_scope.py salió {done.returncode}: {done.stderr.strip()}"]
+    data = json.loads(done.stdout)
+    if data.get("undeclared"):
+        problems.append(f"la etapa 01 reclama trabajo de la 02: {data['undeclared']}")
+    foreign = data.get("foreign") or {}
+    if foreign.get("src/buscador.py", {}).get("subject") != "02-texto lo declara en T1":
+        problems.append(f"no atribuye src/buscador.py a la etapa 02: {foreign}")
+    # Control: desde la 02, un archivo que solo declara la 01 sigue siendo
+    # alcance nuevo; la etapa anterior no absuelve a la posterior.
+    other = script(snapshot, "diff_scope.py", "features/02-texto", "--repo", ".", "--json")
+    if other.returncode == 0:
+        problems.append("la etapa 01 absolvió a la 02")
+    else:
+        payload = json.loads(other.stdout) if other.stdout.strip() else {}
+        if payload.get("undeclared") != ["src/utilidades.py"]:
+            problems.append(f"la 02 no reclama src/utilidades.py: {payload.get('undeclared')}")
+    return problems
+
 CHECKS = {
     "s52": check_s52,
     "s53": check_s53,
@@ -688,6 +842,10 @@ CHECKS = {
     "s62": check_s62,
     "s63": check_s63,
     "s66": check_s66,
+    "s67": check_s67,
+    "s68": check_s68,
+    "s69": check_s69,
+    "s70": check_s70,
 }
 
 
